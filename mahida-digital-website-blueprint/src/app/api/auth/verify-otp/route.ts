@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { users, otpCodes } from '@/db/schema';
-import { generateToken } from '@/lib/utils';
-import { eq, and, gt } from 'drizzle-orm';
+import {
+  generateToken,
+  SESSION_COOKIE_NAME,
+  SESSION_MAX_AGE,
+} from '@/lib/utils';
+import { eq, and, gt, desc } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, code, type = 'verification' } = body;
+    const email = String(body.email ?? '').trim().toLowerCase();
+    const code = String(body.code ?? '').trim();
+    const type = String(body.type ?? 'verification');
 
     if (!email || !code) {
       return NextResponse.json(
@@ -16,7 +22,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user
+    if (!/^\d{6}$/.test(code)) {
+      return NextResponse.json(
+        { error: 'Kode OTP harus terdiri dari 6 digit' },
+        { status: 400 }
+      );
+    }
+
     const [user] = await db.select().from(users).where(eq(users.email, email));
 
     if (!user) {
@@ -26,7 +38,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find valid OTP
     const now = new Date();
     const [validOtp] = await db
       .select()
@@ -39,7 +50,8 @@ export async function POST(request: NextRequest) {
           gt(otpCodes.expiresAt, now)
         )
       )
-      .orderBy(otpCodes.createdAt);
+      .orderBy(desc(otpCodes.createdAt))
+      .limit(1);
 
     if (!validOtp) {
       return NextResponse.json(
@@ -48,51 +60,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check attempts
     if ((validOtp.attempts ?? 0) >= 5) {
-      await db.update(otpCodes).set({ used: true }).where(eq(otpCodes.id, validOtp.id));
+      await db.update(otpCodes)
+        .set({ used: true })
+        .where(eq(otpCodes.id, validOtp.id));
+
       return NextResponse.json(
         { error: 'Kode OTP sudah tidak berlaku. Silakan minta kode baru.' },
         { status: 400 }
       );
     }
 
-    // Increment attempts
-    await db.update(otpCodes).set({
-      attempts: (validOtp.attempts ?? 0) + 1,
-    }).where(eq(otpCodes.id, validOtp.id));
-
-    // Verify code
     if (validOtp.code !== code) {
+      const nextAttempts = (validOtp.attempts ?? 0) + 1;
+      await db.update(otpCodes)
+        .set({
+          attempts: nextAttempts,
+          used: nextAttempts >= 5,
+        })
+        .where(eq(otpCodes.id, validOtp.id));
+
       return NextResponse.json(
         { error: 'Kode OTP salah' },
         { status: 400 }
       );
     }
 
-    // Mark OTP as used
-    await db.update(otpCodes).set({ used: true }).where(eq(otpCodes.id, validOtp.id));
+    await db.update(otpCodes)
+      .set({ used: true })
+      .where(eq(otpCodes.id, validOtp.id));
 
-    // Verify user email
     if (type === 'verification') {
-      await db.update(users).set({ emailVerified: true }).where(eq(users.id, user.id));
+      await db.update(users)
+        .set({ emailVerified: true, updatedAt: new Date() })
+        .where(eq(users.id, user.id));
     }
 
-    // Generate token for auto-login after verification
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role as 'user' | 'admin',
     });
 
-    const { password: _, ...userData } = user;
+    const { password: _password, ...userData } = user;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: 'Verifikasi berhasil',
-      token,
       user: { ...userData, emailVerified: true },
     });
 
+    response.cookies.set({
+      name: SESSION_COOKIE_NAME,
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: SESSION_MAX_AGE,
+    });
+
+    return response;
   } catch (error) {
     console.error('OTP verification error:', error);
     return NextResponse.json(
