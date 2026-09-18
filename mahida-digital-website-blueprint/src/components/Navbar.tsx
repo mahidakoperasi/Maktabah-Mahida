@@ -86,13 +86,35 @@ export default function Navbar() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
-    
-    // Check if user is logged in
-    const token = localStorage.getItem('mahida_token');
-    setIsLoggedIn(!!token);
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    let active = true;
+
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        if (active) {
+          setIsLoggedIn(response.ok);
+        }
+      } catch {
+        if (active) {
+          setIsLoggedIn(false);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('mahida-auth-changed', checkSession);
+    handleScroll();
+    checkSession();
+
+    return () => {
+      active = false;
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('mahida-auth-changed', checkSession);
+    };
   }, []);
 
   return (
