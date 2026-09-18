@@ -40,6 +40,8 @@ export default function LoginPage() {
         return;
       }
 
+      window.dispatchEvent(new Event('mahida-auth-changed'));
+
       const next = searchParams.get('next');
       const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : null;
 
