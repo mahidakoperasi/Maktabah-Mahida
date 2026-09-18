@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,7 +13,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [requiresVerification, setRequiresVerification] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,7 +41,7 @@ export default function LoginPage() {
 
       window.dispatchEvent(new Event('mahida-auth-changed'));
 
-      const next = searchParams.get('next');
+      const next = new URLSearchParams(window.location.search).get('next');
       const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : null;
 
       if (safeNext) {
