@@ -1,14 +1,27 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { randomInt } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'mahida-digital-secret-key-change-in-production';
+export const SESSION_COOKIE_NAME = 'mahida_session';
+export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
 const JWT_EXPIRES_IN = '7d';
 
 export interface JWTPayload {
   userId: number;
   email: string;
   role: 'user' | 'admin';
+}
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new Error('JWT_SECRET is required');
+  }
+
+  return secret;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -20,25 +33,19 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 }
 
 export function generateToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
 }
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    return jwt.verify(token, getJwtSecret()) as JWTPayload;
   } catch {
     return null;
   }
 }
 
 export function generateOTP(): string {
-  // Generate 6-digit OTP
-  const digits = '0123456789';
-  let otp = '';
-  for (let i = 0; i < 6; i++) {
-    otp += digits[Math.floor(Math.random() * 10)];
-  }
-  return otp;
+  return randomInt(0, 1_000_000).toString().padStart(6, '0');
 }
 
 export function generateUUID(): string {
@@ -79,13 +86,11 @@ export function formatShortDate(date: Date | string | null, locale: string = 'id
   });
 }
 
-// Truncate text
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength - 3) + '...';
 }
 
-// Extract plain text from HTML
 export function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '');
 }
