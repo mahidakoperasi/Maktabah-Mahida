@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -18,10 +18,16 @@ function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const prefillEmail = searchParams.get('email') || '';
+  const verifyMode = searchParams.get('verify') === '1';
 
-  if (prefillEmail && !email) {
-    setEmail(prefillEmail);
-  }
+  useEffect(() => {
+    if (prefillEmail) {
+      setEmail(prefillEmail);
+    }
+    if (verifyMode) {
+      setStep('verify');
+    }
+  }, [prefillEmail, verifyMode]);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -77,10 +83,7 @@ function RegisterContent() {
         return;
       }
 
-      // Auto-login after verification
-      localStorage.setItem('mahida_token', data.token);
-      localStorage.setItem('mahida_user', JSON.stringify(data.user));
-      
+      window.dispatchEvent(new Event('mahida-auth-changed'));
       setStep('success');
     } catch (err) {
       setError('Terjadi kesalahan. Silakan coba lagi.');
