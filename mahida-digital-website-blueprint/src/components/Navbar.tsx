@@ -159,11 +159,11 @@ export default function Navbar() {
     <>
       <nav className="site-nav fixed inset-x-0 top-0 z-50 px-3 pt-3 lg:px-6">
         <div
-          className={`relative mx-auto flex h-[72px] max-w-[1500px] items-center border border-[#dfe4d9] bg-[#fbfaf4]/96 shadow-[0_12px_40px_rgba(16,56,39,0.08)] backdrop-blur-xl transition-all duration-300 lg:h-[78px] ${isScrolled ? 'lg:h-[68px]' : ''}`}
+          className={`relative mx-auto flex h-[72px] max-w-[1500px] items-center rounded-[28px] border border-[#dfe4d9] bg-[#fbfaf4]/96 shadow-[0_16px_46px_rgba(16,56,39,0.10)] backdrop-blur-xl transition-all duration-300 lg:h-[78px] ${isScrolled ? 'lg:h-[68px]' : ''}`}
         >
           <Link
             href="/"
-            className="relative z-10 flex h-full min-w-[218px] items-center gap-3 overflow-hidden bg-[#eef3e9] px-4 pr-8 sm:min-w-[260px] lg:min-w-[292px] lg:rounded-br-[56px]"
+            className="relative z-10 flex h-full min-w-[218px] items-center gap-3 overflow-hidden rounded-l-[28px] bg-[#eef3e9] px-4 pr-8 sm:min-w-[260px] lg:min-w-[292px] lg:rounded-br-[56px]"
           >
             <span className="absolute bottom-1 right-2 h-[3px] w-20 -rotate-[7deg] bg-[#e4c72f]" />
             <span className="absolute -bottom-8 -right-8 h-20 w-20 rounded-full border border-[#0a6a44]/10" />
@@ -263,7 +263,7 @@ export default function Navbar() {
 
             <button
               onClick={() => setMegaMenuOpen((value) => !value)}
-              className="hidden h-10 w-10 place-items-center bg-[#075b3a] text-white transition-colors hover:bg-[#06472e] xl:grid"
+              className="hidden h-11 w-11 place-items-center rounded-[10px] bg-[#075b3a] text-white transition-colors hover:bg-[#06472e] xl:grid"
               aria-label="Buka menu Mahida"
               aria-expanded={megaMenuOpen}
             >
@@ -272,7 +272,7 @@ export default function Navbar() {
 
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="grid h-10 w-10 place-items-center bg-[#075b3a] text-white xl:hidden"
+              className="grid h-11 w-11 place-items-center rounded-[10px] bg-[#075b3a] text-white xl:hidden"
               aria-label="Menu"
             >
               <Menu size={20} />
@@ -280,7 +280,7 @@ export default function Navbar() {
           </div>
 
           {megaMenuOpen && (
-            <div className="absolute right-0 top-[calc(100%+10px)] hidden w-[620px] border border-[#dfe4d9] bg-[#fffef9] p-7 shadow-[0_24px_70px_rgba(11,59,39,0.18)] xl:block">
+            <div className="absolute right-0 top-[calc(100%+10px)] hidden w-[660px] rounded-[22px] border border-[#dfe4d9] bg-[#fffef9] p-8 shadow-[0_28px_80px_rgba(11,59,39,0.20)] xl:block">
               <div className="mb-6 flex items-start justify-between gap-6 border-b border-[#ece9dc] pb-5">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#a18725]">Mahida Digital</p>
