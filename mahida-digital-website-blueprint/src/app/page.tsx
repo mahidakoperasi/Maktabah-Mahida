@@ -83,19 +83,23 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 overflow-hidden opacity-[0.18]" aria-hidden="true">
-          <div className="absolute bottom-0 left-[38%] h-24 w-40 bg-[#031f15]" />
-          <div className="absolute bottom-24 left-[44%] h-14 w-14 rounded-t-full bg-[#031f15]" />
-          <div className="absolute bottom-[138px] left-[46.5%] h-7 w-2 bg-[#031f15]" />
-          <div className="absolute bottom-0 left-[29%] h-14 w-4 bg-[#031f15]" />
-          <div className="absolute bottom-14 left-[28.2%] h-8 w-8 rounded-full bg-[#031f15]" />
-          <div className="absolute bottom-0 left-[67%] h-20 w-5 bg-[#031f15]" />
-          <div className="absolute bottom-20 left-[66.2%] h-9 w-9 rounded-full bg-[#031f15]" />
-          <div className="absolute inset-x-0 bottom-0 h-12 bg-[#031f15]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[78%] overflow-hidden" aria-hidden="true">
+          <div className="absolute bottom-[-6%] left-[4%] h-[94%] w-[63%] opacity-[0.28] mix-blend-screen">
+            <Image
+              src="/brand/mahida-pondok-hero.webp"
+              alt=""
+              fill
+              priority
+              sizes="65vw"
+              className="object-contain object-bottom"
+            />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#075b3a]/35 via-transparent to-[#103d2d]/20" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#052f21] to-transparent" />
         </div>
 
-        <div className="relative mx-auto grid min-h-[760px] max-w-[1500px] items-center gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:px-12 lg:py-16 xl:gap-16">
-          <div className="relative z-10 max-w-[735px]">
+        <div className="relative mx-auto grid min-h-[760px] max-w-[1500px] items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:px-12 lg:pb-14 lg:pt-20 xl:gap-16">
+          <div className="relative z-10 max-w-[700px] lg:-translate-y-2">
             <div className="mb-6 flex items-center gap-3">
               <span className="h-[3px] w-9 -skew-x-[30deg] bg-[#e4c72f]" />
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/62 sm:text-xs">
@@ -103,7 +107,7 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <h1 className="font-serif text-[clamp(3rem,5.5vw,5.55rem)] font-bold leading-[0.98] tracking-[-0.042em] text-[#fffef9]">
+            <h1 className="font-serif text-[clamp(3rem,5.15vw,5.35rem)] font-bold leading-[0.98] tracking-[-0.042em] text-[#fffef9]">
               <span className="block">{settings.heroTitleLine1}</span>
               <span className="mt-2 block">{settings.heroTitleLine2}</span>
               <span className="mt-2 inline-block text-[#e4c72f]">{settings.heroTitleAccent}</span>
@@ -136,7 +140,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="relative mx-auto min-h-[500px] w-full max-w-[600px] lg:min-h-[580px]">
+          <div className="relative mx-auto min-h-[500px] w-full max-w-[590px] lg:min-h-[570px] lg:translate-x-2">
             <div className="absolute -right-16 top-12 h-[360px] w-[360px] rounded-full border border-[#e4c72f]/16" />
             <div className="absolute -left-10 bottom-12 h-[240px] w-[240px] rounded-full border border-white/8" />
 
