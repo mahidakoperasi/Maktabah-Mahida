@@ -5,12 +5,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  BookOpen,
   ChevronDown,
   Grid3X3,
   LogIn,
+  MapPin,
   Menu,
+  PenTool,
   Search,
   User,
+  UsersRound,
   X,
 } from 'lucide-react';
 
@@ -280,37 +284,62 @@ export default function Navbar() {
           </div>
 
           {megaMenuOpen && (
-            <div className="absolute right-0 top-[calc(100%+10px)] hidden w-[660px] rounded-[22px] border border-[#dfe4d9] bg-[#fffef9] p-8 shadow-[0_28px_80px_rgba(11,59,39,0.20)] xl:block">
-              <div className="mb-6 flex items-start justify-between gap-6 border-b border-[#ece9dc] pb-5">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#a18725]">Mahida Digital</p>
-                  <p className="mt-2 max-w-md font-serif text-2xl font-bold leading-tight text-[#18372b]">
-                    Ilmu, karya, dan kehidupan pesantren dalam satu ruang.
-                  </p>
-                </div>
-                <Image src="/brand/mahida-logo.webp" alt="" width={54} height={54} className="h-12 w-12 object-contain" />
-              </div>
-
-              <div className="grid grid-cols-3 gap-7">
-                {megaColumns.map((column) => (
-                  <div key={column.title}>
-                    <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#90978f]">{column.title}</p>
-                    <div className="space-y-2">
-                      {column.items.map((item) => (
-                        <Link key={item.href} href={item.href} className="block text-sm font-medium text-[#39443d] hover:text-[#075b3a]">
-                          {item.label}
-                        </Link>
-                      ))}
-                    </div>
+            <div className="absolute right-[18%] top-[calc(100%+8px)] hidden w-[720px] overflow-hidden rounded-[22px] border border-[#e3e0d4] bg-[#fffdf7] shadow-[0_30px_80px_rgba(11,59,39,0.22)] xl:block">
+              <div className="relative p-8 pb-6">
+                <div className="grid grid-cols-[1fr_210px] gap-8 border-b border-[#ece8dc] pb-6">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#0c7850]">Mahida Digital</p>
+                    <p className="mt-3 max-w-[430px] font-serif text-[28px] font-bold leading-[1.08] text-[#173d2d]">
+                      Ilmu, karya, dan kehidupan pesantren dalam satu ruang.
+                    </p>
                   </div>
-                ))}
-              </div>
+                  <div className="relative overflow-hidden rounded-[18px] bg-[#f4f5ef] p-5">
+                    <div className="absolute -right-4 -top-7 h-24 w-24 rounded-full border border-[#0b6c48]/10" />
+                    <p className="font-serif text-[13px] italic leading-5 text-[#7e847f]">
+                      “Menjaga tradisi,<br />merawat masa depan.”
+                    </p>
+                    <span className="mt-3 block h-[2px] w-7 bg-[#e4c72f]" />
+                  </div>
+                </div>
 
-              <div className="mt-7 flex items-center justify-between border-t border-[#ece9dc] pt-5">
-                <span className="text-xs text-[#8a918a]">Salam · Kedawung · Nglegok · Blitar</span>
-                <Link href="/koperasi" className="text-sm font-bold text-[#075b3a]">
-                  Koperasi Mahida →
-                </Link>
+                <div className="grid grid-cols-3 divide-x divide-[#ece8dc] py-6">
+                  {megaColumns.map((column, index) => {
+                    const Icon = index === 0 ? BookOpen : index === 1 ? PenTool : UsersRound;
+                    return (
+                      <div key={column.title} className="px-6 first:pl-0 last:pr-0">
+                        <div className="mb-4 flex items-center gap-3">
+                          <span className="grid h-11 w-11 place-items-center rounded-full bg-[#edf2e9] text-[#075b3a]">
+                            <Icon size={19} />
+                          </span>
+                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#075b3a]">{column.title}</p>
+                        </div>
+                        <div className="space-y-3">
+                          {column.items.map((item) => (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              className="flex items-center justify-between text-[14px] font-medium text-[#3f4842] hover:text-[#075b3a]"
+                            >
+                              <span>{item.label}</span>
+                              <span className="text-[#77827b]">›</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="relative flex items-center justify-between border-t border-[#ece8dc] pt-5">
+                  <div className="flex items-center gap-2 text-xs text-[#717a73]">
+                    <MapPin size={15} className="text-[#075b3a]" />
+                    <span>Salam · Kedawung · Nglegok · Blitar</span>
+                  </div>
+                  <Link href="/koperasi" className="inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
+                    Koperasi Mahida <span>→</span>
+                  </Link>
+                  <div className="pointer-events-none absolute -bottom-7 right-10 h-12 w-44 rotate-[-9deg] rounded-[50%] border-t-[14px] border-[#e4c72f]/28" />
+                </div>
               </div>
             </div>
           )}
