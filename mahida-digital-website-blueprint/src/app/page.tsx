@@ -72,8 +72,17 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="relative -mt-[88px] overflow-hidden bg-[#075b3a] pt-[88px] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_22%,rgba(20,154,99,0.28),transparent_32%),radial-gradient(circle_at_88%_74%,rgba(0,33,22,0.68),transparent_34%),linear-gradient(120deg,#075b3a_0%,#08734b_48%,#103d2d_100%)]" />
+      <section
+        className="relative -mt-[88px] overflow-hidden bg-[#075b3a] pt-[88px] text-white"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, rgba(7,91,58,0.88) 0%, rgba(8,115,75,0.74) 48%, rgba(5,47,33,0.58) 100%), url('/brand/pondok-mahida-hero-v2.webp')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 72%',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_22%,rgba(20,154,99,0.14),transparent_32%),radial-gradient(circle_at_88%_74%,rgba(0,33,22,0.26),transparent_34%)]" />
         <div
           className="absolute inset-0 opacity-[0.055]"
           style={{
@@ -83,21 +92,7 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[46%] overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 opacity-[0.82]">
-            <Image
-              src="/brand/pondok-mahida-hero-v2.webp"
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover object-[50%_68%] grayscale contrast-125 brightness-90"
-            />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#075b3a]/18 via-transparent to-[#103d2d]/22" />
-          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#08734b] to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#052f21]/90 to-transparent" />
-        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#042b1e]/85 to-transparent" aria-hidden="true" />
 
         <div className="relative mx-auto grid min-h-[760px] max-w-[1500px] items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:px-12 lg:pb-14 lg:pt-20 xl:gap-16">
           <div className="relative z-10 max-w-[700px] lg:-translate-y-2">
