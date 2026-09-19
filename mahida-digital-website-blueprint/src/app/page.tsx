@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, PenTool, Video, ShoppingBag, CalendarDays } from 'lucide-react';
 import { and, desc, eq, inArray } from 'drizzle-orm';
@@ -64,31 +65,124 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="relative min-h-[88vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-forest via-emerald-rich to-charcoal" />
-        <div className="relative max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-          <div className="max-w-3xl">
-            <p className="label text-white/60 mb-6 tracking-[0.15em]">
-              {settings.heroEyebrow}
-            </p>
-            <h1 className="text-white text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-serif font-bold leading-[1.08] mb-8">
-              {settings.heroTitleLine1}<br />
-              {settings.heroTitleLine2}<br />
-              <span className="text-brass-light">{settings.heroTitleAccent}</span>
+      <section className="relative overflow-hidden bg-[#075b3a] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(18,151,96,0.34),transparent_34%),radial-gradient(circle_at_86%_76%,rgba(2,39,26,0.72),transparent_38%),linear-gradient(120deg,#075b3a_0%,#086d46_48%,#12382a_100%)]" />
+        <div
+          className="absolute inset-0 opacity-[0.055]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,.42) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.42) 1px, transparent 1px)',
+            backgroundSize: '54px 54px',
+          }}
+        />
+        <div className="absolute left-[6%] top-10 hidden items-center gap-2 text-[#e4c72f]/60 lg:flex" aria-hidden="true">
+          <span className="text-[10px]">★</span>
+          <span className="text-[10px]">★</span>
+          <span className="text-[10px]">★</span>
+          <span className="text-[10px]">★</span>
+          <span className="text-[10px]">★</span>
+        </div>
+
+        <div className="relative mx-auto grid min-h-[690px] max-w-[1500px] items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.04fr_.96fr] lg:px-12 lg:py-20 xl:gap-16">
+          <div className="relative z-10 max-w-[760px]">
+            <div className="mb-7 flex items-center gap-3">
+              <span className="h-[3px] w-10 -skew-x-[30deg] bg-[#e4c72f]" />
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/58 sm:text-xs">
+                {settings.heroEyebrow}
+              </p>
+            </div>
+
+            <h1 className="font-serif text-[clamp(3.05rem,6vw,6rem)] font-bold leading-[0.98] tracking-[-0.045em] text-[#fffef9]">
+              <span className="block">{settings.heroTitleLine1}</span>
+              <span className="mt-2 block">{settings.heroTitleLine2}</span>
+              <span className="mt-2 inline-block text-[#e4c72f]">{settings.heroTitleAccent}</span>
             </h1>
-            <p className="text-lg md:text-xl text-white/75 leading-relaxed max-w-xl mb-10">
+
+            <p className="mt-8 max-w-2xl text-base leading-8 text-white/72 sm:text-lg lg:max-w-xl">
               {settings.heroDescription}
             </p>
-            <div className="flex flex-wrap gap-4">
-              <Link href={settings.heroPrimaryHref} className="bg-white text-emerald-forest px-6 py-3 font-semibold text-sm hover:bg-cream transition-colors flex items-center gap-2">
+
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <Link
+                href={settings.heroPrimaryHref}
+                className="inline-flex items-center gap-2 bg-[#fffef9] px-6 py-3.5 text-sm font-bold text-[#075b3a] transition-all hover:-translate-y-0.5 hover:bg-white"
+              >
                 {settings.heroPrimaryLabel}
                 <ArrowRight size={16} />
               </Link>
-              <Link href={settings.heroSecondaryHref} className="border border-white/30 text-white px-6 py-3 font-medium text-sm hover:bg-white/10 transition-colors flex items-center gap-2">
+              <Link
+                href={settings.heroSecondaryHref}
+                className="inline-flex items-center gap-2 border border-white/25 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:border-[#e4c72f] hover:text-[#f3dc55]"
+              >
                 {settings.heroSecondaryLabel}
+                <ArrowRight size={15} />
               </Link>
             </div>
+
+            <div className="mt-12 flex items-center gap-4 text-[10px] font-semibold uppercase tracking-[0.19em] text-white/38">
+              <span>Manba&apos;ul Hidayah</span>
+              <span className="h-px w-10 bg-white/18" />
+              <span>Mahida Digital</span>
+            </div>
           </div>
+
+          <div className="relative mx-auto hidden min-h-[530px] w-full max-w-[570px] lg:block">
+            <div className="absolute -left-8 top-16 h-[330px] w-[330px] rounded-full border border-white/10" />
+            <div className="absolute -right-14 bottom-6 h-[230px] w-[230px] rounded-full border border-[#e4c72f]/18" />
+
+            <div
+              className="absolute inset-x-5 inset-y-4 overflow-hidden border border-white/14 bg-[#f5f2e7]"
+              style={{
+                clipPath: 'polygon(0 0, 100% 0, 100% 84%, 86% 100%, 0 100%)',
+                borderTopLeftRadius: '180px',
+              }}
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_42%,rgba(7,91,58,0.06),transparent_34%),linear-gradient(145deg,#f8f6ed_0%,#edf2e8_100%)]" />
+              <div className="absolute left-10 top-12 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8a928a]">
+                Crest V1 · Mahida
+              </div>
+
+              <div className="absolute inset-0 grid place-items-center">
+                <div className="relative text-center">
+                  <div className="absolute inset-0 scale-[1.45] rounded-full border border-[#075b3a]/7" />
+                  <Image
+                    src="/brand/mahida-logo.webp"
+                    alt="Logo Pondok Pesantren Mahida"
+                    width={260}
+                    height={260}
+                    priority
+                    className="relative mx-auto h-[230px] w-[230px] object-contain drop-shadow-[0_20px_35px_rgba(4,62,39,0.12)]"
+                  />
+                  <p className="mt-5 font-arabic text-3xl text-[#075b3a]">مَنْبَعُ الْهِدَايَةِ</p>
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.26em] text-[#7f887f]">
+                    Sumber Petunjuk
+                  </p>
+                </div>
+              </div>
+
+              <div className="absolute -right-16 bottom-20 h-7 w-[310px] -rotate-[13deg] bg-[#e4c72f]" />
+              <div className="absolute bottom-5 left-10 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#647168]">
+                Belajar · Berkarya · Berkhidmah
+              </div>
+            </div>
+
+            <div className="absolute -right-1 top-1/2 flex -translate-y-1/2 rotate-90 items-center gap-3 origin-center text-[9px] font-semibold uppercase tracking-[0.28em] text-white/38">
+              <span>Salam</span>
+              <span className="h-px w-9 bg-[#e4c72f]/70" />
+              <span>Kedawung</span>
+              <span className="h-px w-9 bg-[#e4c72f]/70" />
+              <span>Blitar</span>
+            </div>
+
+            <div className="absolute bottom-0 left-0 flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-white/35">
+              <span className="grid h-7 w-7 place-items-center border border-white/14">01</span>
+              <span>Identitas · Ilmu · Khidmah</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute bottom-0 left-0 h-[5px] w-full bg-[#06472e]">
+          <div className="h-full w-[32%] -skew-x-[32deg] bg-[#e4c72f]" />
         </div>
       </section>
 
