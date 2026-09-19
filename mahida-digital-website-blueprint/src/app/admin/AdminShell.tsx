@@ -24,6 +24,12 @@ const navItems: NavItem[] = [
     href: '/admin',
   },
   {
+    label: 'Tampilan Website',
+    children: [
+      { label: 'Beranda', icon: LayoutDashboard, href: '/admin/tampilan/beranda' },
+    ],
+  },
+  {
     label: 'Konten',
     children: [
       { label: 'Artikel', icon: FileText, href: '/admin/konten/artikel' },
