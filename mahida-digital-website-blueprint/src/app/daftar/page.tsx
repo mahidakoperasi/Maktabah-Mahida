@@ -45,6 +45,10 @@ function RegisterContent() {
 
       if (!res.ok) {
         setError(data.error || 'Registrasi gagal');
+        if (data.requiresVerification) {
+          if (data.userId) setUserId(data.userId);
+          setStep('verify');
+        }
         return;
       }
 
@@ -87,6 +91,33 @@ function RegisterContent() {
       setStep('success');
     } catch (err) {
       setError('Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleResendOtp() {
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Gagal mengirim ulang kode');
+        return;
+      }
+
+      setOtp(['', '', '', '', '', '']);
+      setError('Kode verifikasi baru telah dikirim. Periksa kotak masuk atau folder spam.');
+    } catch {
+      setError('Gagal mengirim ulang kode. Silakan coba lagi.');
     } finally {
       setIsLoading(false);
     }
@@ -284,8 +315,10 @@ function RegisterContent() {
             <p className="mt-6 text-center text-sm text-warm-gray-500">
               Tidak menerima kode?{' '}
               <button 
-                onClick={() => { /* TODO: Resend */ }}
-                className="font-semibold text-emerald-forest hover:underline"
+                type="button"
+                onClick={handleResendOtp}
+                disabled={isLoading || !email}
+                className="font-semibold text-emerald-forest hover:underline disabled:opacity-50"
               >
                 Kirim Ulang
               </button>
