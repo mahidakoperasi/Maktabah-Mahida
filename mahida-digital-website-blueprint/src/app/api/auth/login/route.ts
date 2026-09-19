@@ -8,6 +8,7 @@ import {
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE,
 } from '@/lib/utils';
+import { sendVerificationEmail } from '@/lib/email';
 import { eq } from 'drizzle-orm';
 
 const loginRateLimit = new Map<string, { count: number; lastAttempt: number }>();
@@ -85,12 +86,22 @@ export async function POST(request: NextRequest) {
         attempts: 0,
       });
 
-      console.log(`[OTP] Re-sent for ${email}: ${otp}`);
+      try {
+        await sendVerificationEmail(email, otp);
+      } catch (mailError) {
+        console.error('Verification email error:', mailError);
+        return NextResponse.json(
+          {
+            error: 'Kode verifikasi dibuat, tetapi email gagal dikirim. Silakan coba lagi beberapa saat.',
+            requiresVerification: true,
+          },
+          { status: 502 }
+        );
+      }
 
       return NextResponse.json({
         requiresVerification: true,
-        message: 'Silakan verifikasi email Anda terlebih dahulu',
-        devOtp: process.env.NODE_ENV === 'development' ? otp : undefined,
+        message: 'Kode verifikasi baru telah dikirim ke email Anda.',
       });
     }
 
