@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BookOpen,
   CalendarDays,
-  Images,
   PenTool,
   ShoppingBag,
   Video,
