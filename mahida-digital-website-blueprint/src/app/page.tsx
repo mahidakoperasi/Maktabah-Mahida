@@ -84,17 +84,17 @@ export default async function HomePage() {
         />
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[46%] overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 opacity-[0.68] mix-blend-screen">
+          <div className="absolute inset-0 opacity-[0.82]">
             <Image
-              src="/brand/mahida-pondok-hero.webp"
+              src="/brand/pondok-mahida-hero-v2.webp"
               alt=""
               fill
               priority
               sizes="100vw"
-              className="object-cover object-[50%_72%] contrast-125"
+              className="object-cover object-[50%_68%] grayscale contrast-125 brightness-90"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#075b3a]/25 via-transparent to-[#103d2d]/36" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#075b3a]/18 via-transparent to-[#103d2d]/22" />
           <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#08734b] to-transparent" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#052f21]/90 to-transparent" />
         </div>
