@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Facebook, Instagram, Youtube } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const columns = [
   {
@@ -58,14 +58,14 @@ export default function Footer() {
             </p>
 
             <div className="mt-8 flex items-center gap-3">
-              <a href="#" aria-label="Facebook" className="grid h-10 w-10 place-items-center rounded-full border border-white/14 text-white/70 transition-colors hover:border-[#e4c72f] hover:text-[#e4c72f]">
-                <Facebook size={17} />
+              <a href="#" aria-label="Facebook" className="grid h-10 w-10 place-items-center rounded-full border border-white/14 text-[10px] font-bold tracking-wide text-white/70 transition-colors hover:border-[#e4c72f] hover:text-[#e4c72f]">
+                FB
               </a>
-              <a href="#" aria-label="Instagram" className="grid h-10 w-10 place-items-center rounded-full border border-white/14 text-white/70 transition-colors hover:border-[#e4c72f] hover:text-[#e4c72f]">
-                <Instagram size={17} />
+              <a href="#" aria-label="Instagram" className="grid h-10 w-10 place-items-center rounded-full border border-white/14 text-[10px] font-bold tracking-wide text-white/70 transition-colors hover:border-[#e4c72f] hover:text-[#e4c72f]">
+                IG
               </a>
-              <a href="#" aria-label="YouTube" className="grid h-10 w-10 place-items-center rounded-full border border-white/14 text-white/70 transition-colors hover:border-[#e4c72f] hover:text-[#e4c72f]">
-                <Youtube size={17} />
+              <a href="#" aria-label="YouTube" className="grid h-10 w-10 place-items-center rounded-full border border-white/14 text-[10px] font-bold tracking-wide text-white/70 transition-colors hover:border-[#e4c72f] hover:text-[#e4c72f]">
+                YT
               </a>
             </div>
           </div>
