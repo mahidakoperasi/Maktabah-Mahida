@@ -1,32 +1,42 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { Search, Menu, X, User, LogIn } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import {
+  ChevronDown,
+  Grid3X3,
+  LogIn,
+  Menu,
+  Search,
+  User,
+  X,
+} from 'lucide-react';
 
 const navItems = [
   { label: 'Beranda', href: '/' },
-  { 
-    label: 'Tentang', 
+  {
+    label: 'Tentang',
     href: '/tentang',
     children: [
       { label: 'Profil Pondok', href: '/tentang/profil' },
       { label: 'Sejarah', href: '/tentang/sejarah' },
       { label: 'Pengasuh', href: '/tentang/pengasuh' },
       { label: 'Pendidikan', href: '/tentang/pendidikan' },
-    ]
+    ],
   },
-  { 
-    label: 'Literasi', 
+  {
+    label: 'Literasi',
     href: '/literasi',
     children: [
       { label: 'Artikel', href: '/literasi/artikel' },
       { label: 'Esai & Opini', href: '/literasi/esai' },
       { label: 'Resensi', href: '/literasi/resensi' },
-    ]
+    ],
   },
-  { 
-    label: 'Karya', 
+  {
+    label: 'Karya',
     href: '/karya',
     children: [
       { label: 'Esai & Gagasan', href: '/karya/esai' },
@@ -37,10 +47,10 @@ const navItems = [
       { label: 'Budaya & Tradisi', href: '/karya/budaya' },
       { label: 'Fotografi', href: '/karya/fotografi' },
       { label: 'Media Kreatif', href: '/karya/media-kreatif' },
-    ]
+    ],
   },
-  { 
-    label: 'Maktabah', 
+  {
+    label: 'Maktabah',
     href: '/maktabah',
     children: [
       { label: 'Kitab', href: '/maktabah/kitab' },
@@ -51,7 +61,7 @@ const navItems = [
       { label: 'Fiqh', href: '/maktabah/fiqh' },
       { label: 'Tafsir', href: '/maktabah/tafsir' },
       { label: 'Hadits', href: '/maktabah/hadits' },
-    ]
+    ],
   },
   {
     label: 'Kegiatan',
@@ -61,7 +71,7 @@ const navItems = [
       { label: 'Agenda', href: '/agenda' },
       { label: 'Pengumuman', href: '/kegiatan/pengumuman' },
       { label: 'Prestasi', href: '/kegiatan/prestasi' },
-    ]
+    ],
   },
   {
     label: 'Media',
@@ -70,23 +80,49 @@ const navItems = [
       { label: 'Mahida TV', href: '/media/tv' },
       { label: 'Video', href: '/media/video' },
       { label: 'Galeri', href: '/media/galeri' },
-    ]
+    ],
   },
   { label: 'Koperasi', href: '/koperasi' },
 ];
 
+const megaColumns = [
+  {
+    title: 'Ilmu',
+    items: [
+      { label: 'Literasi', href: '/literasi' },
+      { label: 'Maktabah', href: '/maktabah' },
+      { label: 'Kajian', href: '/maktabah/kajian' },
+    ],
+  },
+  {
+    title: 'Karya',
+    items: [
+      { label: 'Esai & Gagasan', href: '/karya/esai' },
+      { label: 'Terjemahan', href: '/karya/terjemahan' },
+      { label: 'Sastra', href: '/karya/sastra' },
+    ],
+  },
+  {
+    title: 'Mahida',
+    items: [
+      { label: 'Profil Pondok', href: '/tentang/profil' },
+      { label: 'Kegiatan', href: '/kegiatan' },
+      { label: 'Media', href: '/media' },
+    ],
+  },
+];
+
 export default function Navbar() {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 16);
     let active = true;
 
     const checkSession = async () => {
@@ -95,13 +131,9 @@ export default function Navbar() {
           credentials: 'same-origin',
           cache: 'no-store',
         });
-        if (active) {
-          setIsLoggedIn(response.ok);
-        }
+        if (active) setIsLoggedIn(response.ok);
       } catch {
-        if (active) {
-          setIsLoggedIn(false);
-        }
+        if (active) setIsLoggedIn(false);
       }
     };
 
@@ -117,55 +149,80 @@ export default function Navbar() {
     };
   }, []);
 
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setMegaMenuOpen(false);
+    setDropdownOpen(null);
+  }, [pathname]);
+
   return (
     <>
-      <nav 
-        className={`site-nav fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled 
-            ? 'bg-white/95 backdrop-blur-md shadow-elevated' 
-            : 'bg-transparent'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-18">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-              <div className={`font-serif font-bold text-xl tracking-tight transition-colors ${isScrolled ? 'text-emerald-forest' : 'text-white'}`}>
-                <span className={isScrolled ? '' : 'drop-shadow-lg'}>MAHIDA</span>
-              </div>
-              {!isScrolled && (
-                <span className="hidden sm:block text-white/80 text-xs uppercase tracking-[0.2em] font-medium">
-                  Digital
-                </span>
-              )}
-            </Link>
+      <nav className="site-nav fixed inset-x-0 top-0 z-50 px-3 pt-3 lg:px-6">
+        <div
+          className={`relative mx-auto flex h-[72px] max-w-[1500px] items-center border border-[#dfe4d9] bg-[#fbfaf4]/96 shadow-[0_12px_40px_rgba(16,56,39,0.08)] backdrop-blur-xl transition-all duration-300 lg:h-[78px] ${isScrolled ? 'lg:h-[68px]' : ''}`}
+        >
+          <Link
+            href="/"
+            className="relative z-10 flex h-full min-w-[218px] items-center gap-3 overflow-hidden bg-[#eef3e9] px-4 pr-8 sm:min-w-[260px] lg:min-w-[292px] lg:rounded-br-[56px]"
+          >
+            <span className="absolute bottom-1 right-2 h-[3px] w-20 -rotate-[7deg] bg-[#e4c72f]" />
+            <span className="absolute -bottom-8 -right-8 h-20 w-20 rounded-full border border-[#0a6a44]/10" />
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-1">
-              {navItems.map((item) => (
-                <div 
+            <Image
+              src="/brand/mahida-logo.webp"
+              alt="Logo Pondok Pesantren Mahida"
+              width={54}
+              height={54}
+              priority
+              className="h-12 w-12 shrink-0 object-contain lg:h-14 lg:w-14"
+            />
+
+            <span className="min-w-0 leading-none">
+              <span className="block font-serif text-[19px] font-bold tracking-[-0.02em] text-[#075b3a] lg:text-[21px]">
+                MAHIDA
+              </span>
+              <span className="mt-1.5 block truncate text-[8px] font-semibold uppercase tracking-[0.17em] text-[#778078] sm:text-[9px]">
+                Digital Pesantren
+              </span>
+            </span>
+          </Link>
+
+          <div className="hidden min-w-0 flex-1 items-center justify-center px-4 xl:flex">
+            {navItems.map((item) => {
+              const active =
+                pathname === item.href ||
+                (item.href !== '/' && pathname.startsWith(`${item.href}/`));
+
+              return (
+                <div
                   key={item.label}
                   className="relative"
                   onMouseEnter={() => item.children && setDropdownOpen(item.label)}
                   onMouseLeave={() => setDropdownOpen(null)}
                 >
-                  <Link 
+                  <Link
                     href={item.href}
-                    className={`px-3 py-2 text-sm font-medium nav-link ${
-                      isScrolled ? 'text-warm-gray-700 hover:text-emerald-forest' : 'text-white/90 hover:text-white'
-                    }`}
+                    className={`group relative flex items-center gap-1 px-2.5 py-6 text-[13px] font-semibold transition-colors 2xl:px-3 ${active ? 'text-[#075b3a]' : 'text-[#505851] hover:text-[#075b3a]'}`}
                   >
                     {item.label}
+                    {item.children && <ChevronDown size={12} className="opacity-45" />}
+                    <span
+                      className={`absolute bottom-[13px] left-1/2 h-[3px] -translate-x-1/2 -skew-x-[32deg] bg-[#e4c72f] transition-all duration-300 ${active ? 'w-7' : 'w-0 group-hover:w-5'}`}
+                    />
                   </Link>
-                  
-                  {/* Dropdown */}
+
                   {item.children && dropdownOpen === item.label && (
-                    <div className="absolute top-full left-0 mt-0 w-56 bg-white rounded shadow-card border border-warm-gray-200 py-2 animate-fade-in">
+                    <div className="absolute left-1/2 top-[64px] w-60 -translate-x-1/2 border border-[#e2e5dc] bg-[#fffef9] p-2 shadow-[0_18px_50px_rgba(17,54,38,0.14)]">
+                      <div className="mb-1 border-b border-[#ece9dc] px-3 py-2">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#a18725]">
+                          {item.label}
+                        </p>
+                      </div>
                       {item.children.map((child) => (
                         <Link
                           key={child.href}
                           href={child.href}
-                          className="block px-4 py-2.5 text-sm text-warm-gray-700 hover:bg-mahida-50 hover:text-emerald-forest transition-colors"
+                          className="block border-l-2 border-transparent px-3 py-2.5 text-sm text-[#505851] transition-all hover:border-[#e4c72f] hover:bg-[#f4f6ef] hover:text-[#075b3a]"
                         >
                           {child.label}
                         </Link>
@@ -173,129 +230,154 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-
-            {/* Right side actions */}
-            <div className="flex items-center gap-2">
-              {/* Search */}
-              <button
-                onClick={() => setSearchOpen(true)}
-                className={`p-2 rounded-sm transition-colors ${
-                  isScrolled ? 'text-warm-gray-600 hover:bg-mahida-50' : 'text-white/90 hover:text-white'
-                }`}
-                aria-label="Cari"
-              >
-                <Search size={19} />
-              </button>
-
-              {/* Auth */}
-              {isLoggedIn ? (
-                <Link
-                  href="/profil"
-                  className={`p-2 rounded-sm transition-colors ${
-                    isScrolled ? 'text-warm-gray-600 hover:bg-mahida-50' : 'text-white/90 hover:text-white'
-                  }`}
-                >
-                  <User size={19} />
-                </Link>
-              ) : (
-                <Link
-                  href="/masuk"
-                  className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-sm transition-colors ${
-                    isScrolled 
-                      ? 'text-emerald-forest border border-emerald-forest hover:bg-emerald-forest hover:text-white' 
-                      : 'text-white border border-white/40 hover:bg-white hover:text-emerald-forest'
-                  }`}
-                >
-                  <LogIn size={15} />
-                  <span>Masuk</span>
-                </Link>
-              )}
-
-              {/* Mobile menu toggle */}
-              <button
-                onClick={() => setMobileMenuOpen(true)}
-                className={`lg:hidden p-2 rounded-sm transition-colors ${
-                  isScrolled ? 'text-warm-gray-600' : 'text-white'
-                }`}
-                aria-label="Menu"
-              >
-                <Menu size={21} />
-              </button>
-            </div>
+              );
+            })}
           </div>
+
+          <div className="ml-auto flex h-full items-center gap-1.5 pr-3 sm:gap-2 lg:pr-4">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="grid h-10 w-10 place-items-center text-[#465049] transition-colors hover:bg-[#f0f3eb] hover:text-[#075b3a]"
+              aria-label="Cari"
+            >
+              <Search size={19} />
+            </button>
+
+            {isLoggedIn ? (
+              <Link
+                href="/profil"
+                className="grid h-10 w-10 place-items-center text-[#465049] transition-colors hover:bg-[#f0f3eb] hover:text-[#075b3a]"
+                aria-label="Profil"
+              >
+                <User size={19} />
+              </Link>
+            ) : (
+              <Link
+                href="/masuk"
+                className="hidden items-center gap-1.5 border border-[#b8c7b9] px-3 py-2 text-xs font-semibold text-[#075b3a] transition-colors hover:border-[#075b3a] hover:bg-[#075b3a] hover:text-white sm:flex"
+              >
+                <LogIn size={14} />
+                Masuk
+              </Link>
+            )}
+
+            <button
+              onClick={() => setMegaMenuOpen((value) => !value)}
+              className="hidden h-10 w-10 place-items-center bg-[#075b3a] text-white transition-colors hover:bg-[#06472e] xl:grid"
+              aria-label="Buka menu Mahida"
+              aria-expanded={megaMenuOpen}
+            >
+              {megaMenuOpen ? <X size={18} /> : <Grid3X3 size={18} />}
+            </button>
+
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="grid h-10 w-10 place-items-center bg-[#075b3a] text-white xl:hidden"
+              aria-label="Menu"
+            >
+              <Menu size={20} />
+            </button>
+          </div>
+
+          {megaMenuOpen && (
+            <div className="absolute right-0 top-[calc(100%+10px)] hidden w-[620px] border border-[#dfe4d9] bg-[#fffef9] p-7 shadow-[0_24px_70px_rgba(11,59,39,0.18)] xl:block">
+              <div className="mb-6 flex items-start justify-between gap-6 border-b border-[#ece9dc] pb-5">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#a18725]">Mahida Digital</p>
+                  <p className="mt-2 max-w-md font-serif text-2xl font-bold leading-tight text-[#18372b]">
+                    Ilmu, karya, dan kehidupan pesantren dalam satu ruang.
+                  </p>
+                </div>
+                <Image src="/brand/mahida-logo.webp" alt="" width={54} height={54} className="h-12 w-12 object-contain" />
+              </div>
+
+              <div className="grid grid-cols-3 gap-7">
+                {megaColumns.map((column) => (
+                  <div key={column.title}>
+                    <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#90978f]">{column.title}</p>
+                    <div className="space-y-2">
+                      {column.items.map((item) => (
+                        <Link key={item.href} href={item.href} className="block text-sm font-medium text-[#39443d] hover:text-[#075b3a]">
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-7 flex items-center justify-between border-t border-[#ece9dc] pt-5">
+                <span className="text-xs text-[#8a918a]">Salam · Kedawung · Nglegok · Blitar</span>
+                <Link href="/koperasi" className="text-sm font-bold text-[#075b3a]">
+                  Koperasi Mahida →
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
-      <div 
-        className={`mobile-nav-overlay ${mobileMenuOpen ? 'open' : ''}`}
+      <div
+        className={`fixed inset-0 z-[70] bg-[#10251d]/60 backdrop-blur-sm transition-opacity xl:hidden ${mobileMenuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}
         onClick={() => setMobileMenuOpen(false)}
       />
 
-      {/* Mobile Menu Panel */}
-      <div className={`mobile-nav-panel ${mobileMenuOpen ? 'open' : ''}`}>
-        <div className="flex items-center justify-between mb-8">
-          <span className="font-serif font-bold text-lg text-emerald-forest">MAHIDA</span>
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            className="p-2 text-warm-gray-500 hover:text-warm-gray-800"
-          >
-            <X size={22} />
+      <aside
+        className={`fixed inset-y-0 right-0 z-[80] w-full max-w-[390px] bg-[#fffef9] transition-transform duration-300 xl:hidden ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      >
+        <div className="flex items-center justify-between border-b border-[#e4e4dc] p-5">
+          <div className="flex items-center gap-3">
+            <Image src="/brand/mahida-logo.webp" alt="Logo Mahida" width={48} height={48} className="h-12 w-12 object-contain" />
+            <div>
+              <p className="font-serif text-xl font-bold text-[#075b3a]">MAHIDA</p>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#8b918a]">Digital Pesantren</p>
+            </div>
+          </div>
+          <button onClick={() => setMobileMenuOpen(false)} className="grid h-10 w-10 place-items-center bg-[#eef3e9] text-[#075b3a]">
+            <X size={20} />
           </button>
         </div>
 
-        <div className="space-y-1">
-          {navItems.map((item) => (
-            <div key={item.label}>
-              <Link
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block py-2.5 text-base font-medium text-charcoal hover:text-emerald-forest"
-              >
-                {item.label}
-              </Link>
-              {item.children && (
-                <div className="ml-4 space-y-1 mb-3">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block py-1.5 text-sm text-warm-gray-600 hover:text-emerald-forest"
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <div className="h-[calc(100vh-89px)] overflow-y-auto px-5 py-6">
+          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em] text-[#a18725]">Navigasi</p>
+          <div className="divide-y divide-[#ece9dc]">
+            {navItems.map((item, index) => (
+              <div key={item.label}>
+                <Link
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-4 py-4"
+                >
+                  <span className="w-6 font-serif text-xs text-[#b5a44b]">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="font-serif text-xl font-semibold text-[#24342c]">{item.label}</span>
+                </Link>
+                {item.children && (
+                  <div className="mb-3 ml-10 grid grid-cols-2 gap-x-4 gap-y-2">
+                    {item.children.slice(0, 6).map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-xs font-medium text-[#737b74] hover:text-[#075b3a]"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
 
-        <div className="mt-8 pt-6 border-t border-warm-gray-200">
-          {!isLoggedIn ? (
-            <Link
-              href="/masuk"
-              onClick={() => setMobileMenuOpen(false)}
-              className="btn-primary w-full justify-center"
-            >
-              Masuk / Daftar
-            </Link>
-          ) : (
-            <Link
-              href="/profil"
-              onClick={() => setMobileMenuOpen(false)}
-              className="btn-secondary w-full justify-center"
-            >
-              Profil Saya
-            </Link>
-          )}
+          <div className="mt-7 border-l-4 border-[#e4c72f] bg-[#f2f5ed] p-4">
+            <p className="font-serif text-lg font-bold text-[#075b3a]">Belajar · Berkarya · Berkhidmah</p>
+            <p className="mt-1 text-xs leading-relaxed text-[#737b74]">
+              Satu rumah digital untuk ilmu, karya, dokumentasi, dan perjalanan Mahida.
+            </p>
+          </div>
         </div>
-      </div>
+      </aside>
 
-      {/* Search Overlay */}
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
@@ -306,73 +388,47 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
 
   useEffect(() => {
     if (isOpen) {
-      // Focus input when opened
       setTimeout(() => document.getElementById('global-search')?.focus(), 100);
-      // Prevent body scroll
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
       setQuery('');
     }
-    return () => { document.body.style.overflow = ''; };
+
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div 
-      className={`search-overlay ${isOpen ? 'open' : ''}`} 
-      onClick={onClose}
-    >
-      <div 
-        className="max-w-2xl mx-auto mt-[20vh] p-4" 
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-[100] bg-[#10251d]/90 backdrop-blur-md" onClick={onClose}>
+      <div className="mx-auto mt-[18vh] max-w-2xl p-4" onClick={(event) => event.stopPropagation()}>
         <div className="relative">
-          <Search 
-            size={22} 
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-warm-gray-400" 
-          />
+          <Search size={22} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8c938d]" />
           <input
             id="global-search"
             type="text"
             placeholder="Cari artikel, karya, kitab, video..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-12 pr-12 py-4 bg-white text-lg rounded-sm border-0 outline-none shadow-modal focus:ring-2 focus:ring-emerald-forest/30"
+            onChange={(event) => setQuery(event.target.value)}
+            className="w-full border-0 bg-[#fffef9] py-4 pl-12 pr-12 text-lg text-[#24342c] outline-none shadow-2xl focus:ring-2 focus:ring-[#e4c72f]/40"
           />
-          <button
-            onClick={onClose}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-warm-gray-400 hover:text-warm-gray-700"
-          >
+          <button onClick={onClose} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#68716b]">
             <X size={20} />
           </button>
         </div>
-        
+
         {query.length > 2 && (
-          <div className="mt-4 bg-white rounded-sm overflow-hidden shadow-modal">
-            <div className="p-4 border-b border-warm-gray-100">
-              <p className="label">Hasil pencarian untuk</p>
-              <p className="text-lg font-medium text-charcoal">&quot;{query}&quot;</p>
-            </div>
-            <div className="p-8 text-center text-warm-gray-500">
-              <p>Ketik untuk mencari di seluruh Mahida Digital</p>
-              <p className="text-sm mt-2">Mendukung pencarian dalam bahasa Arab</p>
-            </div>
+          <div className="mt-3 border border-white/10 bg-[#fffef9] p-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#a18725]">Pencarian Mahida</p>
+            <p className="mt-2 font-serif text-xl font-bold text-[#24342c]">&quot;{query}&quot;</p>
+            <p className="mt-3 text-sm text-[#747b75]">
+              Mesin pencarian penuh akan dihubungkan ke database pada tahap berikutnya.
+            </p>
           </div>
         )}
-
-        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-          {['Esai', 'Terjemahan', 'Kitab', 'Video'].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => { setQuery(cat); }}
-              className="py-2 px-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-sm transition-colors"
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
       </div>
     </div>
   );
