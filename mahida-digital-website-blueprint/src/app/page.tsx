@@ -1,6 +1,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, PenTool, Video, ShoppingBag, CalendarDays } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  Images,
+  PenTool,
+  ShoppingBag,
+  Video,
+} from 'lucide-react';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
@@ -65,8 +73,8 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-[#075b3a] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(18,151,96,0.34),transparent_34%),radial-gradient(circle_at_86%_76%,rgba(2,39,26,0.72),transparent_38%),linear-gradient(120deg,#075b3a_0%,#086d46_48%,#12382a_100%)]" />
+      <section className="relative -mt-[88px] overflow-hidden bg-[#075b3a] pt-[88px] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_22%,rgba(20,154,99,0.28),transparent_32%),radial-gradient(circle_at_88%_74%,rgba(0,33,22,0.68),transparent_34%),linear-gradient(120deg,#075b3a_0%,#08734b_48%,#103d2d_100%)]" />
         <div
           className="absolute inset-0 opacity-[0.055]"
           style={{
@@ -75,149 +83,158 @@ export default async function HomePage() {
             backgroundSize: '54px 54px',
           }}
         />
-        <div className="absolute left-[6%] top-10 hidden items-center gap-2 text-[#e4c72f]/60 lg:flex" aria-hidden="true">
-          <span className="text-[10px]">★</span>
-          <span className="text-[10px]">★</span>
-          <span className="text-[10px]">★</span>
-          <span className="text-[10px]">★</span>
-          <span className="text-[10px]">★</span>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 overflow-hidden opacity-[0.18]" aria-hidden="true">
+          <div className="absolute bottom-0 left-[38%] h-24 w-40 bg-[#031f15]" />
+          <div className="absolute bottom-24 left-[44%] h-14 w-14 rounded-t-full bg-[#031f15]" />
+          <div className="absolute bottom-[138px] left-[46.5%] h-7 w-2 bg-[#031f15]" />
+          <div className="absolute bottom-0 left-[29%] h-14 w-4 bg-[#031f15]" />
+          <div className="absolute bottom-14 left-[28.2%] h-8 w-8 rounded-full bg-[#031f15]" />
+          <div className="absolute bottom-0 left-[67%] h-20 w-5 bg-[#031f15]" />
+          <div className="absolute bottom-20 left-[66.2%] h-9 w-9 rounded-full bg-[#031f15]" />
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-[#031f15]" />
         </div>
 
-        <div className="relative mx-auto grid min-h-[690px] max-w-[1500px] items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.04fr_.96fr] lg:px-12 lg:py-20 xl:gap-16">
-          <div className="relative z-10 max-w-[760px]">
-            <div className="mb-7 flex items-center gap-3">
-              <span className="h-[3px] w-10 -skew-x-[30deg] bg-[#e4c72f]" />
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/58 sm:text-xs">
+        <div className="relative mx-auto grid min-h-[760px] max-w-[1500px] items-center gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:px-12 lg:py-16 xl:gap-16">
+          <div className="relative z-10 max-w-[735px]">
+            <div className="mb-6 flex items-center gap-3">
+              <span className="h-[3px] w-9 -skew-x-[30deg] bg-[#e4c72f]" />
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/62 sm:text-xs">
                 {settings.heroEyebrow}
               </p>
             </div>
 
-            <h1 className="font-serif text-[clamp(3.05rem,6vw,6rem)] font-bold leading-[0.98] tracking-[-0.045em] text-[#fffef9]">
+            <h1 className="font-serif text-[clamp(3rem,5.5vw,5.55rem)] font-bold leading-[0.98] tracking-[-0.042em] text-[#fffef9]">
               <span className="block">{settings.heroTitleLine1}</span>
               <span className="mt-2 block">{settings.heroTitleLine2}</span>
               <span className="mt-2 inline-block text-[#e4c72f]">{settings.heroTitleAccent}</span>
             </h1>
 
-            <p className="mt-8 max-w-2xl text-base leading-8 text-white/72 sm:text-lg lg:max-w-xl">
+            <p className="mt-7 max-w-xl text-base leading-8 text-white/72 sm:text-lg">
               {settings.heroDescription}
             </p>
 
-            <div className="mt-9 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href={settings.heroPrimaryHref}
-                className="inline-flex items-center gap-2 bg-[#fffef9] px-6 py-3.5 text-sm font-bold text-[#075b3a] transition-all hover:-translate-y-0.5 hover:bg-white"
+                className="inline-flex items-center gap-2 rounded-full bg-[#f3d43a] px-6 py-3.5 text-sm font-bold text-[#073c29] transition-all hover:-translate-y-0.5 hover:bg-[#f6dc55]"
               >
                 {settings.heroPrimaryLabel}
                 <ArrowRight size={16} />
               </Link>
               <Link
                 href={settings.heroSecondaryHref}
-                className="inline-flex items-center gap-2 border border-white/25 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:border-[#e4c72f] hover:text-[#f3dc55]"
+                className="inline-flex items-center gap-2 rounded-full border border-white/35 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:border-[#e4c72f] hover:text-[#f3dc55]"
               >
                 {settings.heroSecondaryLabel}
                 <ArrowRight size={15} />
               </Link>
             </div>
 
-            <div className="mt-12 flex items-center gap-4 text-[10px] font-semibold uppercase tracking-[0.19em] text-white/38">
-              <span>Manba&apos;ul Hidayah</span>
-              <span className="h-px w-10 bg-white/18" />
-              <span>Mahida Digital</span>
+            <div className="mt-10 flex items-center gap-3 text-sm italic text-white/52">
+              <span className="h-[2px] w-8 bg-[#e4c72f]" />
+              <span className="font-serif">Ilmu hari ini, peradaban esok.</span>
             </div>
           </div>
 
-          <div className="relative mx-auto hidden min-h-[530px] w-full max-w-[570px] lg:block">
-            <div className="absolute -left-8 top-16 h-[330px] w-[330px] rounded-full border border-white/10" />
-            <div className="absolute -right-14 bottom-6 h-[230px] w-[230px] rounded-full border border-[#e4c72f]/18" />
+          <div className="relative mx-auto min-h-[500px] w-full max-w-[600px] lg:min-h-[580px]">
+            <div className="absolute -right-16 top-12 h-[360px] w-[360px] rounded-full border border-[#e4c72f]/16" />
+            <div className="absolute -left-10 bottom-12 h-[240px] w-[240px] rounded-full border border-white/8" />
 
             <div
-              className="absolute inset-x-5 inset-y-4 overflow-hidden border border-white/14 bg-[#f5f2e7]"
+              className="absolute inset-x-3 inset-y-0 overflow-hidden border border-white/12 bg-[#f8f6ed] shadow-[0_28px_80px_rgba(1,35,23,0.22)]"
               style={{
-                clipPath: 'polygon(0 0, 100% 0, 100% 84%, 86% 100%, 0 100%)',
-                borderTopLeftRadius: '180px',
+                borderRadius: '168px 168px 42px 168px',
+                clipPath: 'polygon(0 0, 100% 0, 100% 88%, 88% 100%, 0 100%)',
               }}
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_42%,rgba(7,91,58,0.06),transparent_34%),linear-gradient(145deg,#f8f6ed_0%,#edf2e8_100%)]" />
-              <div className="absolute left-10 top-12 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8a928a]">
-                Crest V1 · Mahida
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(7,91,58,0.055),transparent_34%),linear-gradient(145deg,#fbfaf4_0%,#edf1e7_100%)]" />
+              <div className="absolute inset-x-14 top-14 h-px bg-[#dfe5d8]" />
+              <div className="absolute left-14 top-10 text-[10px] font-bold uppercase tracking-[0.22em] text-[#a18725]">
+                Mahida Digital Pesantren
               </div>
 
-              <div className="absolute inset-0 grid place-items-center">
+              <div className="absolute inset-0 flex items-center justify-center px-10 pb-14 pt-20">
                 <div className="relative text-center">
-                  <div className="absolute inset-0 scale-[1.45] rounded-full border border-[#075b3a]/7" />
+                  <div className="absolute inset-0 scale-[1.5] rounded-full border border-[#075b3a]/7" />
                   <Image
                     src="/brand/mahida-logo.webp"
                     alt="Logo Pondok Pesantren Mahida"
-                    width={260}
-                    height={260}
+                    width={280}
+                    height={280}
                     priority
-                    className="relative mx-auto h-[230px] w-[230px] object-contain drop-shadow-[0_20px_35px_rgba(4,62,39,0.12)]"
+                    className="relative mx-auto h-[245px] w-[245px] object-contain drop-shadow-[0_24px_38px_rgba(4,62,39,0.14)]"
                   />
-                  <p className="mt-5 font-arabic text-3xl text-[#075b3a]">مَنْبَعُ الْهِدَايَةِ</p>
-                  <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.26em] text-[#7f887f]">
+                  <p className="mt-4 font-arabic text-4xl text-[#075b3a]">مَنْبَعُ الْهِدَايَةِ</p>
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.27em] text-[#7d867e]">
                     Sumber Petunjuk
                   </p>
                 </div>
               </div>
 
-              <div className="absolute -right-16 bottom-20 h-7 w-[310px] -rotate-[13deg] bg-[#e4c72f]" />
-              <div className="absolute bottom-5 left-10 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#647168]">
-                Belajar · Berkarya · Berkhidmah
+              <div className="absolute -right-14 bottom-16 h-8 w-[360px] -rotate-[12deg] bg-[#e4c72f]" />
+              <div className="absolute bottom-5 left-14 text-[9px] font-bold uppercase tracking-[0.24em] text-[#758077]">
+                Mahida Digital Pesantren
               </div>
             </div>
 
-            <div className="absolute -right-1 top-1/2 flex -translate-y-1/2 rotate-90 items-center gap-3 origin-center text-[9px] font-semibold uppercase tracking-[0.28em] text-white/38">
+            <div className="absolute -right-1 top-1/2 hidden -translate-y-1/2 rotate-90 items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.28em] text-white/38 sm:flex">
               <span>Salam</span>
-              <span className="h-px w-9 bg-[#e4c72f]/70" />
+              <span className="h-px w-8 bg-[#e4c72f]/70" />
               <span>Kedawung</span>
-              <span className="h-px w-9 bg-[#e4c72f]/70" />
+              <span className="h-px w-8 bg-[#e4c72f]/70" />
               <span>Blitar</span>
-            </div>
-
-            <div className="absolute bottom-0 left-0 flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-white/35">
-              <span className="grid h-7 w-7 place-items-center border border-white/14">01</span>
-              <span>Identitas · Ilmu · Khidmah</span>
             </div>
           </div>
         </div>
-
-        <div className="absolute bottom-0 left-0 h-[5px] w-full bg-[#06472e]">
-          <div className="h-full w-[32%] -skew-x-[32deg] bg-[#e4c72f]" />
-        </div>
       </section>
 
-      <section className="py-14 bg-mahida-50 border-b border-mahida-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4 mb-8">
+      <section className="bg-[#f6f5ee] py-20">
+        <div className="mx-auto max-w-[1450px] px-5 sm:px-8 lg:px-12">
+          <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="label mb-2">Terbaru</p>
-              <h2 className="heading-lg font-serif text-charcoal">Hari Ini di Mahida</h2>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#a18725]">Terbaru dari Mahida</p>
+              <h2 className="mt-2 font-serif text-3xl font-bold tracking-[-0.02em] text-[#173d2d] md:text-4xl">
+                Hari Ini di Mahida
+              </h2>
             </div>
-            <Link href="/literasi/artikel" className="text-sm font-semibold text-emerald-forest hover:underline">
-              Semua Artikel →
+            <Link href="/literasi/artikel" className="inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
+              Semua Artikel <ArrowRight size={15} />
             </Link>
           </div>
 
           {latestPublished.length === 0 ? (
-            <div className="bg-white border border-mahida-200 p-8 text-sm text-warm-gray-500">
+            <div className="border border-[#dfe4d9] bg-[#fffef9] p-10 text-sm text-[#777f78]">
               Belum ada konten terbit. Konten terbaru dari Admin Panel akan tampil di sini.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-              {latestPublished.slice(0, 4).map((item) => (
-                <Link key={item.id} href={articleHref(item.slug)} className="group bg-white p-5 border border-mahida-200 hover:border-mahida-300 hover:shadow-elevated transition-all">
-                  <span className="category-pill mb-3">{item.type === 'article' ? 'Artikel' : item.type}</span>
-                  <h3 className="font-semibold text-charcoal group-hover:text-emerald-forest transition-colors line-clamp-3 mt-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {latestPublished.slice(0, 4).map((item, index) => (
+                <Link
+                  key={item.id}
+                  href={articleHref(item.slug)}
+                  className="group relative min-h-[250px] overflow-hidden border border-[#dde3d8] bg-[#fffef9] p-6 transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
+                >
+                  <span className="absolute right-5 top-4 font-serif text-5xl font-bold text-[#edf1e9]">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="inline-flex bg-[#edf2e9] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#50705f]">
+                    {item.type === 'article' ? 'Artikel' : item.type}
+                  </span>
+                  <h3 className="relative mt-12 font-serif text-xl font-bold leading-snug text-[#203d31] transition-colors group-hover:text-[#075b3a]">
                     {item.title}
                   </h3>
-                  <div className="mt-3 text-xs text-warm-gray-400">
-                    {item.publishedAt
-                      ? new Date(item.publishedAt).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })
-                      : ''}
+                  <div className="absolute bottom-5 left-6 right-6 flex items-center justify-between border-t border-[#e8ebe3] pt-4 text-xs text-[#8a918a]">
+                    <span>
+                      {item.publishedAt
+                        ? new Date(item.publishedAt).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })
+                        : ''}
+                    </span>
+                    <ArrowRight size={14} className="text-[#075b3a]" />
                   </div>
                 </Link>
               ))}
@@ -226,89 +243,90 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
-            <div className="lg:col-span-5">
-              <div className="aspect-[4/5] bg-gradient-to-br from-mahida-100 to-mahida-200 overflow-hidden relative">
-                {settings.aboutImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={settings.aboutImageUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-emerald-forest/10 flex items-center justify-center">
-                        <span className="font-arabic text-3xl text-emerald-forest">مَنْبَعُ الْهِدَايَةِ</span>
-                      </div>
-                      <p className="text-sm text-warm-gray-500 italic">&quot;Sumber Petunjuk&quot;</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="lg:col-span-7">
-              <p className="label mb-3">{settings.aboutEyebrow}</p>
-              <h2 className="display-md text-charcoal mb-6">{settings.aboutTitle}</h2>
-              <p className="body-lg text-warm-gray-600 mb-6 leading-relaxed">
-                {settings.aboutDescription}
-              </p>
-
-              {stats.length > 0 && (
-                <div className="flex flex-wrap gap-8 mb-8">
-                  {stats.map(([value, label]) => (
-                    <div key={label}>
-                      <span className="text-3xl font-serif font-bold text-emerald-forest">{value}</span>
-                      <p className="text-sm text-warm-gray-500">{label}</p>
-                    </div>
-                  ))}
+      <section className="bg-[#fffef9] py-24">
+        <div className="mx-auto grid max-w-[1450px] items-center gap-12 px-5 sm:px-8 lg:grid-cols-[.92fr_1.08fr] lg:px-12 xl:gap-20">
+          <div className="relative min-h-[560px] overflow-hidden bg-[#edf2e8]" style={{ borderRadius: '140px 24px 140px 24px' }}>
+            {settings.aboutImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={settings.aboutImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 grid place-items-center">
+                <div className="text-center">
+                  <Image src="/brand/mahida-logo.webp" alt="" width={190} height={190} className="mx-auto h-44 w-44 object-contain opacity-95" />
+                  <p className="mt-5 font-arabic text-3xl text-[#075b3a]">مَنْبَعُ الْهِدَايَةِ</p>
+                  <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[#839087]">Sumber Petunjuk</p>
                 </div>
-              )}
+              </div>
+            )}
+            <div className="absolute -right-16 bottom-16 h-7 w-[330px] -rotate-[13deg] bg-[#e4c72f]" />
+          </div>
 
-              <Link href="/tentang/profil" className="btn-primary">
-                Mengenal Mahida
-                <ArrowRight size={16} />
-              </Link>
-            </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#a18725]">{settings.aboutEyebrow}</p>
+            <h2 className="mt-3 max-w-3xl font-serif text-[clamp(2.4rem,4vw,4.7rem)] font-bold leading-[1.02] tracking-[-0.035em] text-[#173d2d]">
+              {settings.aboutTitle}
+            </h2>
+            <p className="mt-7 max-w-2xl text-base leading-8 text-[#657168] sm:text-lg">
+              {settings.aboutDescription}
+            </p>
+
+            {stats.length > 0 && (
+              <div className="mt-9 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
+                {stats.map(([value, label]) => (
+                  <div key={label} className="border-t-2 border-[#e4c72f] pt-4">
+                    <span className="font-serif text-3xl font-bold text-[#075b3a]">{value}</span>
+                    <p className="mt-1 text-sm text-[#778079]">{label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Link href="/tentang/profil" className="mt-10 inline-flex items-center gap-2 rounded-full bg-[#075b3a] px-6 py-3.5 text-sm font-bold text-white">
+              Mengenal Mahida
+              <ArrowRight size={16} />
+            </Link>
           </div>
         </div>
       </section>
 
-      <section className="py-20 bg-cream">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-10">
+      <section className="relative overflow-hidden bg-[#0c3b2b] py-24 text-white">
+        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle,#fff 1px,transparent 1px)', backgroundSize: '26px 26px' }} />
+        <div className="relative mx-auto max-w-[1450px] px-5 sm:px-8 lg:px-12">
+          <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="label mb-2">Literasi</p>
-              <h2 className="display-md text-charcoal">Bacaan Pilihan</h2>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#e4c72f]">Literasi Mahida</p>
+              <h2 className="mt-2 font-serif text-4xl font-bold tracking-[-0.03em] md:text-5xl">Bacaan Pilihan</h2>
             </div>
-            <Link href="/literasi/artikel" className="hidden md:flex items-center gap-2 text-sm font-semibold text-emerald-forest hover:underline">
+            <Link href="/literasi/artikel" className="inline-flex items-center gap-2 text-sm font-semibold text-white/75 hover:text-[#f3dc55]">
               Jelajahi Artikel <ArrowRight size={15} />
             </Link>
           </div>
 
           {featured.length === 0 ? (
-            <div className="bg-white border border-mahida-200 p-8 text-sm text-warm-gray-500">
+            <div className="border border-white/12 bg-white/5 p-9 text-sm text-white/60">
               Belum ada bacaan pilihan. Admin dapat memilih artikel setelah artikel diterbitkan.
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-8">
-              {featured.map((article) => (
-                <article key={article.id} className="group">
-                  <Link href={articleHref(article.slug)}>
-                    <div className="aspect-[3/2] bg-mahida-100 overflow-hidden mb-4 flex items-center justify-center">
-                      <PenTool size={28} className="text-mahida-400" />
-                    </div>
-                    <span className="category-pill">Artikel</span>
-                    <h3 className="font-serif font-bold text-lg text-charcoal mt-3 group-hover:text-emerald-forest transition-colors line-clamp-2">
-                      {article.title}
-                    </h3>
-                    {article.excerpt && (
-                      <p className="text-warm-gray-600 text-sm mt-2 line-clamp-3">{article.excerpt}</p>
-                    )}
-                    {article.readingTime ? (
-                      <span className="text-xs text-warm-gray-400 mt-3 block">{article.readingTime} menit baca</span>
-                    ) : null}
-                  </Link>
+            <div className="grid gap-6 md:grid-cols-3">
+              {featured.map((article, index) => (
+                <article key={article.id} className="group relative min-h-[390px] overflow-hidden border border-white/12 bg-white/[0.045] p-7">
+                  <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full border border-[#e4c72f]/20" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#e4c72f]">
+                    Pilihan {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div className="mt-10 grid h-20 w-20 place-items-center rounded-full bg-white/[0.07] text-[#f1d63d]">
+                    <PenTool size={27} />
+                  </div>
+                  <h3 className="mt-8 font-serif text-2xl font-bold leading-snug text-white group-hover:text-[#f3dc55]">
+                    <Link href={articleHref(article.slug)}>{article.title}</Link>
+                  </h3>
+                  {article.excerpt && (
+                    <p className="mt-4 line-clamp-3 text-sm leading-7 text-white/60">{article.excerpt}</p>
+                  )}
+                  <div className="absolute bottom-6 left-7 right-7 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
+                    <span>{article.readingTime ? `${article.readingTime} menit baca` : 'Artikel'}</span>
+                    <ArrowRight size={15} className="text-[#e4c72f]" />
+                  </div>
                 </article>
               ))}
             </div>
@@ -316,36 +334,55 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="py-20 bg-charcoal text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mb-12">
-            <p className="label text-brass-light mb-3">Jelajahi Mahida Digital</p>
-            <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">
+      <section className="bg-[#f6f5ee] py-24">
+        <div className="mx-auto max-w-[1450px] px-5 sm:px-8 lg:px-12">
+          <div className="mb-12 max-w-3xl">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#a18725]">Jelajahi Mahida Digital</p>
+            <h2 className="mt-3 font-serif text-4xl font-bold tracking-[-0.03em] text-[#173d2d] md:text-5xl">
               Satu rumah untuk ilmu, karya, dokumentasi, dan khidmah.
             </h2>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {[
               { label: 'Karya', href: '/karya', icon: PenTool, desc: 'Tulisan, terjemahan, sastra, dan karya santri.' },
-              { label: 'Maktabah', href: '/maktabah', icon: BookOpen, desc: 'Kitab, buku, dan ruang ilmu.' },
-              { label: 'Media', href: '/media', icon: Video, desc: 'Video, galeri, dan dokumentasi.' },
-              { label: 'Kegiatan', href: '/agenda', icon: CalendarDays, desc: 'Agenda dan kegiatan Mahida.' },
-            ].map((item) => (
-              <Link key={item.label} href={item.href} className="group p-6 border border-white/10 hover:border-brass-light transition-all">
-                <item.icon size={24} className="text-brass-light mb-4" />
-                <h3 className="font-semibold text-lg mb-2 group-hover:text-brass-light">{item.label}</h3>
-                <p className="text-sm text-warm-gray-400 leading-relaxed">{item.desc}</p>
+              { label: 'Maktabah', href: '/maktabah', icon: BookOpen, desc: 'Kitab, buku, kajian, dan ruang ilmu.' },
+              { label: 'Media', href: '/media', icon: Video, desc: 'Video, galeri, dokumentasi, dan cerita visual.' },
+              { label: 'Kegiatan', href: '/agenda', icon: CalendarDays, desc: 'Agenda, berita, prestasi, dan perjalanan Mahida.' },
+            ].map((item, index) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="group relative min-h-[275px] overflow-hidden border border-[#dfe4d9] bg-[#fffef9] p-7 transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.1)]"
+              >
+                <span className="absolute right-5 top-4 font-serif text-5xl font-bold text-[#edf1e9]">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <div className="grid h-12 w-12 place-items-center rounded-full bg-[#edf2e9] text-[#075b3a]">
+                  <item.icon size={22} />
+                </div>
+                <h3 className="mt-8 font-serif text-2xl font-bold text-[#173d2d]">{item.label}</h3>
+                <p className="mt-3 text-sm leading-7 text-[#6f7871]">{item.desc}</p>
+                <span className="absolute bottom-6 left-7 inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
+                  Jelajahi <ArrowRight size={14} />
+                </span>
               </Link>
             ))}
           </div>
 
-          <div className="mt-8">
-            <Link href="/koperasi" className="inline-flex items-center gap-2 text-sm font-semibold text-brass-light">
-              <ShoppingBag size={16} />
-              Kunjungi Koperasi Mahida
-              <ArrowRight size={15} />
-            </Link>
+          <div className="mt-12 overflow-hidden bg-[#075b3a] text-white" style={{ borderRadius: '34px 110px 34px 34px' }}>
+            <div className="grid items-center gap-8 px-8 py-10 md:grid-cols-[1fr_auto] lg:px-12">
+              <div>
+                <div className="mb-3 flex items-center gap-2 text-[#e4c72f]">
+                  <ShoppingBag size={18} />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.22em]">Koperasi Mahida</span>
+                </div>
+                <h3 className="font-serif text-3xl font-bold">Khidmah yang tumbuh menjadi kemandirian.</h3>
+              </div>
+              <Link href="/koperasi" className="inline-flex items-center gap-2 rounded-full bg-[#f3d43a] px-6 py-3 text-sm font-bold text-[#073c29]">
+                Kunjungi Koperasi <ArrowRight size={15} />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
