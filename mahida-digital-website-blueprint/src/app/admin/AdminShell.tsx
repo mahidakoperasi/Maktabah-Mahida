@@ -71,7 +71,7 @@ const navItems: NavItem[] = [
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Konten']);
+  const [expandedItems, setExpandedItems] = useState<string[]>(['Konten', 'Tampilan Website']);
   const pathname = usePathname();
 
   function toggleExpand(label: string) {
