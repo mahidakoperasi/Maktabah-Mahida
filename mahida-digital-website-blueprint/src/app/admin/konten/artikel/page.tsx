@@ -13,9 +13,9 @@ export default async function AdminArticlesPage({
   const q = (params.q ?? '').trim();
   const status = (params.status ?? '').trim();
 
-  const readyResult = await db.execute(sql\`
+  const readyResult = await db.execute(sql`
     select to_regclass('public.posts') is not null as ready
-  \`);
+  `);
   const ready = Boolean((readyResult.rows?.[0] as { ready?: boolean } | undefined)?.ready);
 
   if (!ready) {
@@ -40,9 +40,9 @@ export default async function AdminArticlesPage({
 
   if (q) {
     const search = or(
-      ilike(posts.title, \`%\${q}%\`),
-      ilike(posts.slug, \`%\${q}%\`),
-      ilike(posts.excerpt, \`%\${q}%\`)
+      ilike(posts.title, `%${q}%`),
+      ilike(posts.slug, `%${q}%`),
+      ilike(posts.excerpt, `%${q}%`)
     );
     if (search) conditions.push(search);
   }
@@ -116,7 +116,7 @@ export default async function AdminArticlesPage({
               <div key={article.id} className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_110px_120px_90px] md:items-center">
                 <div className="min-w-0">
                   <Link
-                    href={\`/admin/konten/artikel/\${article.id}/edit\`}
+                    href={`/admin/konten/artikel/${article.id}/edit`}
                     className="font-semibold text-charcoal hover:text-emerald-forest"
                   >
                     {article.title}
@@ -127,11 +127,11 @@ export default async function AdminArticlesPage({
                   )}
                 </div>
                 <div>
-                  <span className={\`inline-flex px-2.5 py-1 text-xs font-semibold \${
+                  <span className={`inline-flex px-2.5 py-1 text-xs font-semibold ${
                     article.status === 'published'
                       ? 'bg-emerald-50 text-emerald-700'
                       : 'bg-warm-gray-100 text-warm-gray-600'
-                  }\`}>
+                  }`}>
                     {article.status === 'published' ? 'Terbit' : 'Draft'}
                   </span>
                 </div>
@@ -146,7 +146,7 @@ export default async function AdminArticlesPage({
                 </div>
                 <div className="flex md:justify-end">
                   <Link
-                    href={\`/admin/konten/artikel/\${article.id}/edit\`}
+                    href={`/admin/konten/artikel/${article.id}/edit`}
                     className="text-sm font-semibold text-emerald-forest hover:underline"
                   >
                     Edit
