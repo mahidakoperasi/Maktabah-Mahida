@@ -1,154 +1,177 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { FileText, PenTool, Newspaper, Video, Users, Eye, TrendingUp, Clock } from 'lucide-react';
+import { desc, eq, sql } from 'drizzle-orm';
+import { FileText, Clock, Users, CheckCircle2, Plus } from 'lucide-react';
+import { db } from '@/db';
+import { posts } from '@/db/schema';
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard | Mahida Digital',
 };
 
-const stats = [
-  { label: 'Total Konten', value: '1,247', icon: FileText, change: '+12' },
-  { label: 'Draft', value: '18', icon: Clock, change: '-3' },
-  { label: 'Total Pengguna', value: '342', icon: Users, change: '+28' },
-  { label: 'Views Bulan Ini', value: '45.2K', icon: Eye, change: '+15%' },
-];
+function numberFromRow(value: unknown) {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return Number(value) || 0;
+  return 0;
+}
 
-const recentContent = [
-  { type: 'Artikel', title: 'Tradisi Keilmuan Pesantren di Era Digital', status: 'published', date: '2 jam lalu', author: 'Ahmad F.' },
-  { type: 'Berita', title: 'Kajian Kitab Al-Ajurumiyah Dimulai', status: 'published', date: '5 jam lalu', author: 'Admin' },
-  { type: 'Karya', title: 'Terjemahan Matan Al-Bayquniyyah', status: 'draft', date: '1 hari lalu', author: 'Ust. Ibrahim' },
-  { type: 'Video', title: 'Dokumentasi Kehidupan Santri 2026', status: 'published', date: '3 hari lalu', author: 'Media Team' },
-  { type: 'Esai', title: 'Membaca Antara Garis: Santri dan Dunia Modern', status: 'review', date: '4 hari lalu', author: 'Fatimah A.' },
-];
+export default async function AdminDashboard() {
+  const readiness = await db.execute(sql`
+    select
+      to_regclass('public.users') is not null as users_ready,
+      to_regclass('public.posts') is not null as posts_ready
+  `);
 
-const quickActions = [
-  { label: 'Buat Artikel Baru', href: '/admin/konten/artikel/new', icon: FileText },
-  { label: 'Buat Berita', href: '/admin/konten/berita/new', icon: Newspaper },
-  { label: 'Tambah Video', href: '/admin/media/youtube/new', icon: Video },
-  { label: 'Upload Galeri', href: '/admin/media/galeri/new', icon: PenTool },
-];
+  const readyRow = readiness.rows?.[0] as
+    | { users_ready?: boolean; posts_ready?: boolean }
+    | undefined;
 
-const upcomingEvents = [
-  { title: 'Haflah Akhirussanah Genap', date: '27 Jan 2026', type: 'Akademik' },
-  { title: 'Maulid Nabi 1447 H', date: '01 Feb 2026', type: 'Perayaan' },
-  { title: 'Dauroh Kitab Intensif', date: '15 Feb 2026', type: 'Kajian' },
-];
+  const usersReady = Boolean(readyRow?.users_ready);
+  const postsReady = Boolean(readyRow?.posts_ready);
 
-export default function AdminDashboard() {
+  let totalUsers = 0;
+  let totalArticles = 0;
+  let draftArticles = 0;
+  let publishedArticles = 0;
+
+  if (usersReady) {
+    const result = await db.execute(sql`select count(*)::int as count from users`);
+    totalUsers = numberFromRow((result.rows?.[0] as { count?: unknown } | undefined)?.count);
+  }
+
+  if (postsReady) {
+    const result = await db.execute(sql`
+      select
+        count(*) filter (where type = 'article')::int as total_articles,
+        count(*) filter (where type = 'article' and status = 'draft')::int as draft_articles,
+        count(*) filter (where type = 'article' and status = 'published')::int as published_articles
+      from posts
+    `);
+    const row = result.rows?.[0] as
+      | { total_articles?: unknown; draft_articles?: unknown; published_articles?: unknown }
+      | undefined;
+    totalArticles = numberFromRow(row?.total_articles);
+    draftArticles = numberFromRow(row?.draft_articles);
+    publishedArticles = numberFromRow(row?.published_articles);
+  }
+
+  const recentArticles = postsReady
+    ? await db
+        .select({
+          id: posts.id,
+          title: posts.title,
+          status: posts.status,
+          updatedAt: posts.updatedAt,
+        })
+        .from(posts)
+        .where(eq(posts.type, 'article'))
+        .orderBy(desc(posts.updatedAt))
+        .limit(6)
+    : [];
+
+  const stats = [
+    { label: 'Total Artikel', value: totalArticles, icon: FileText },
+    { label: 'Draft', value: draftArticles, icon: Clock },
+    { label: 'Sudah Terbit', value: publishedArticles, icon: CheckCircle2 },
+    { label: 'Total Pengguna', value: totalUsers, icon: Users },
+  ];
+
   return (
     <div className="space-y-8">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-serif font-bold text-charcoal">Dashboard</h1>
-        <p className="text-sm text-warm-gray-500 mt-1">Ringkasan situasi Mahida Digital</p>
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl font-serif font-bold text-charcoal">Dashboard</h1>
+          <p className="text-sm text-warm-gray-500 mt-1">Data aktual Mahida Digital dari database.</p>
+        </div>
+        <Link href="/admin/konten/artikel/new" className="btn-primary">
+          <Plus size={16} />
+          Artikel Baru
+        </Link>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {stats.map((stat) => (
           <div key={stat.label} className="bg-white p-6 rounded-sm border border-warm-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <stat.icon size={20} className="text-warm-gray-400" />
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-sm ${stat.change.startsWith('+') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                {stat.change}
-              </span>
-            </div>
-            <p className="text-2xl font-serif font-bold text-charcoal">{stat.value}</p>
+            <stat.icon size={20} className="text-warm-gray-400 mb-4" />
+            <p className="text-2xl font-serif font-bold text-charcoal">{stat.value.toLocaleString('id-ID')}</p>
             <p className="text-xs text-warm-gray-500 mt-1">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Recent Content */}
-        <div className="lg:col-span-2 bg-white rounded-sm border border-warm-gray-200">
+      {!postsReady && (
+        <div className="border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+          Database Artikel belum diaktifkan. Setelah migration CMS Artikel dijalankan, statistik artikel akan otomatis memakai data nyata.
+        </div>
+      )}
+
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <section className="bg-white rounded-sm border border-warm-gray-200">
           <div className="p-5 border-b border-warm-gray-200 flex items-center justify-between">
-            <h2 className="font-semibold text-charcoal">Konten Terbaru</h2>
-            <Link href="/admin/konten/artikel" className="text-sm text-emerald-forest hover:underline">Lihat Semua</Link>
-          </div>
-          <div className="divide-y divide-warm-gray-100">
-            {recentContent.map((item, i) => (
-              <div key={i} className="p-4 flex items-start gap-4 hover:bg-mahida-50/30 transition-colors">
-                <span className={`category-pill text-[10px] py-px mt-0.5 flex-shrink-0 ${
-                  item.type === 'Berita' ? 'bg-red-50 text-red-700' :
-                  item.type === 'Video' ? 'bg-purple-50 text-purple-700' :
-                  item.type === 'Karya' || item.type === 'Esai' ? 'bg-emerald-50 text-emerald-800' :
-                  'bg-blue-50 text-blue-700'
-                }`}>
-                  {item.type}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-sm text-charcoal line-clamp-1">{item.title}</h3>
-                  <p className="text-xs text-warm-gray-500 mt-0.5">{item.author} • {item.date}</p>
-                </div>
-                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-sm flex-shrink-0 ${
-                  item.status === 'published' ? 'bg-green-50 text-green-700' :
-                  item.status === 'draft' ? 'bg-warm-gray-100 text-warm-gray-600' :
-                  'bg-yellow-50 text-yellow-700'
-                }`}>
-                  {item.status === 'published' ? 'Terbit' : item.status === 'draft' ? 'Draft' : 'Review'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="bg-white rounded-sm border border-warm-gray-200 p-5">
-            <h2 className="font-semibold text-charcoal mb-4">Cepat</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {quickActions.map((action) => (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="flex items-center gap-2 p-3 bg-mahida-50 hover:bg-mahida-100 rounded-sm transition-colors"
-                >
-                  <action.icon size={16} className="text-emerald-600" />
-                  <span className="text-xs font-medium text-charcoal">{action.label.split(' ').slice(1).join(' ')}</span>
-                </Link>
-              ))}
+            <div>
+              <h2 className="font-semibold text-charcoal">Artikel Terbaru</h2>
+              <p className="text-xs text-warm-gray-400 mt-1">Bukan data contoh — langsung dari database.</p>
             </div>
+            <Link href="/admin/konten/artikel" className="text-sm text-emerald-forest hover:underline">Kelola Artikel</Link>
           </div>
-
-          {/* Upcoming Events */}
-          <div className="bg-white rounded-sm border border-warm-gray-200 p-5">
-            <h2 className="font-semibold text-charcoal mb-4">Agenda Mendatang</h2>
-            <div className="space-y-3">
-              {upcomingEvents.map((event, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="text-right flex-shrink-0 w-14">
-                    <span className="text-lg font-serif font-bold text-emerald-forest">{event.date.split(' ')[0]}</span>
-                    <span className="block text-[10px] text-warm-gray-500 uppercase">{event.date.split(' ')[1]} {event.date.split(' ')[2]}</span>
+          {recentArticles.length === 0 ? (
+            <div className="px-6 py-12 text-center text-sm text-warm-gray-500">
+              Belum ada artikel. Artikel pertama yang Anda buat akan muncul di sini.
+            </div>
+          ) : (
+            <div className="divide-y divide-warm-gray-100">
+              {recentArticles.map((item) => (
+                <div key={item.id} className="p-4 flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/admin/konten/artikel/${item.id}/edit`}
+                      className="font-medium text-sm text-charcoal hover:text-emerald-forest line-clamp-1"
+                    >
+                      {item.title}
+                    </Link>
+                    <p className="text-xs text-warm-gray-400 mt-1">
+                      {item.updatedAt
+                        ? new Date(item.updatedAt).toLocaleString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : '—'}
+                    </p>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-charcoal line-clamp-2">{event.title}</h4>
-                    <span className="tag-pill text-[10px] mt-0.5 inline-block">{event.type}</span>
-                  </div>
+                  <span className={item.status === 'published' ? 'bg-emerald-50 text-emerald-700 px-2.5 py-1 text-xs font-semibold' : 'bg-warm-gray-100 text-warm-gray-600 px-2.5 py-1 text-xs font-semibold'}>
+                    {item.status === 'published' ? 'Terbit' : 'Draft'}
+                  </span>
                 </div>
               ))}
             </div>
-            <Link href="/admin/kegiatan/agenda" className="text-sm text-emerald-400 hover:text-emerald-600 mt-4 inline-block">
-              Kelola Agenda →
-            </Link>
+          )}
+        </section>
+
+        <aside className="space-y-5">
+          <div className="bg-white rounded-sm border border-warm-gray-200 p-5">
+            <h2 className="font-semibold text-charcoal mb-4">Akses Cepat</h2>
+            <div className="space-y-2">
+              <Link href="/admin/konten/artikel/new" className="flex items-center justify-between bg-mahida-50 p-3 text-sm font-medium text-charcoal hover:bg-mahida-100">
+                <span>Buat Artikel Baru</span>
+                <span>→</span>
+              </Link>
+              <Link href="/admin/konten/artikel" className="flex items-center justify-between bg-mahida-50 p-3 text-sm font-medium text-charcoal hover:bg-mahida-100">
+                <span>Kelola Artikel</span>
+                <span>→</span>
+              </Link>
+            </div>
           </div>
 
-          {/* Popular Content */}
           <div className="bg-white rounded-sm border border-warm-gray-200 p-5">
-            <h2 className="font-semibold text-charcoal mb-4 flex items-center gap-2">
-              <TrendingUp size={16} />
-              Populer Minggu Ini
-            </h2>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-warm-gray-600">
-              <li><span className="text-charcoal font-medium">Wisuda Tahfidz Angkatan V</span></li>
-              <li><span className="text-charcoal font-medium">Profil Pondok Mahida</span></li>
-              <li><span className="text-charcoal font-medium">Maulid Nabi 1447 H</span></li>
-              <li><span className="text-charcoal font-medium">Katalog Koperasi</span></li>
-              <li><span className="text-charcoal font-medium">Panduan Kirim Karya</span></li>
-            </ol>
+            <h2 className="font-semibold text-charcoal mb-2">Modul Lain</h2>
+            <p className="text-sm leading-relaxed text-warm-gray-500">
+              Berita, Karya, Maktabah, Media, Agenda, dan Koperasi belum dihitung di dashboard sampai CMS masing-masing diaktifkan.
+            </p>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );
