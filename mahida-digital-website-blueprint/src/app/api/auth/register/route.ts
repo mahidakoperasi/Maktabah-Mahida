@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { users, otpCodes } from '@/db/schema';
 import { hashPassword, generateOTP, generateUUID } from '@/lib/utils';
+import { sendVerificationEmail } from '@/lib/email';
 import { eq } from 'drizzle-orm';
 
 const rateLimitMap = new Map<string, { count: number; lastAttempt: number }>();
@@ -38,6 +39,26 @@ function databaseSetupError(error: unknown): boolean {
   return code === '42P01' || code === '42703' || code === '42804';
 }
 
+async function issueVerificationCode(userId: number, email: string) {
+  await db.update(otpCodes)
+    .set({ used: true })
+    .where(eq(otpCodes.userId, userId));
+
+  const otp = generateOTP();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+  await db.insert(otpCodes).values({
+    userId,
+    code: otp,
+    type: 'verification',
+    expiresAt,
+    used: false,
+    attempts: 0,
+  });
+
+  await sendVerificationEmail(email, otp);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -66,9 +87,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingUser = await db.select().from(users).where(eq(users.email, email));
+    const [existingUser] = await db.select().from(users).where(eq(users.email, email));
 
-    if (existingUser.length > 0) {
+    if (existingUser) {
+      if (!existingUser.emailVerified) {
+        try {
+          await issueVerificationCode(existingUser.id, email);
+        } catch (mailError) {
+          console.error('Verification email error:', mailError);
+          return NextResponse.json(
+            {
+              error: 'Akun sudah ada, tetapi email verifikasi gagal dikirim. Periksa konfigurasi email lalu coba Kirim Ulang.',
+              requiresVerification: true,
+            },
+            { status: 502 }
+          );
+        }
+
+        return NextResponse.json({
+          message: 'Email sudah terdaftar tetapi belum terverifikasi. Kode baru telah dikirim.',
+          userId: existingUser.id,
+          requiresVerification: true,
+        });
+      }
+
       return NextResponse.json(
         { error: 'Email sudah terdaftar' },
         { status: 409 }
@@ -86,30 +128,25 @@ export async function POST(request: NextRequest) {
       emailVerified: false,
     }).returning();
 
-    const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-    await db.update(otpCodes)
-      .set({ used: true })
-      .where(eq(otpCodes.userId, newUser.id));
-
-    await db.insert(otpCodes).values({
-      userId: newUser.id,
-      code: otp,
-      type: 'verification',
-      expiresAt,
-      used: false,
-      attempts: 0,
-    });
-
-    console.log(`[OTP] Verification code for ${email}: ${otp}`);
+    try {
+      await issueVerificationCode(newUser.id, email);
+    } catch (mailError) {
+      console.error('Verification email error:', mailError);
+      return NextResponse.json(
+        {
+          error: 'Akun berhasil dibuat, tetapi email verifikasi gagal dikirim. Silakan coba Kirim Ulang.',
+          requiresVerification: true,
+          userId: newUser.id,
+        },
+        { status: 502 }
+      );
+    }
 
     return NextResponse.json({
-      message: 'Registrasi berhasil. Silakan verifikasi email Anda.',
+      message: 'Registrasi berhasil. Kode verifikasi telah dikirim ke email Anda.',
       userId: newUser.id,
-      devOtp: process.env.NODE_ENV === 'development' ? otp : undefined,
+      requiresVerification: true,
     });
-
   } catch (error) {
     console.error('Registration error:', error);
 
