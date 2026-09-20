@@ -83,25 +83,34 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] overflow-hidden" aria-hidden="true">
-          <div className="absolute bottom-[-5%] left-[18%] h-[120%] w-[52%] opacity-[0.52] mix-blend-screen">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[60%] overflow-hidden" aria-hidden="true">
+          <div
+            className="absolute bottom-[-13%] left-[12%] h-[126%] w-[58%] opacity-[0.24] mix-blend-screen"
+            style={{
+              WebkitMaskImage:
+                'linear-gradient(to top, #000 12%, rgba(0,0,0,.95) 52%, rgba(0,0,0,.48) 78%, transparent 100%)',
+              maskImage:
+                'linear-gradient(to top, #000 12%, rgba(0,0,0,.95) 52%, rgba(0,0,0,.48) 78%, transparent 100%)',
+            }}
+          >
             <Image
               src="/brand/pondok-mahida.png"
               alt=""
               fill
               priority
               unoptimized
-              sizes="52vw"
-              className="object-contain object-bottom grayscale contrast-125 brightness-110"
+              sizes="58vw"
+              className="object-contain object-bottom grayscale contrast-110 brightness-105"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#075b3a]/32 via-transparent to-[#103d2d]/22" />
-          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#08734b]/60 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#042b1e]/90 to-transparent" />
+
+          <div className="absolute inset-0 bg-gradient-to-r from-[#075b3a]/42 via-[#075b3a]/10 to-[#103d2d]/24" />
+          <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#08734b]/72 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#042b1e]/92 to-transparent" />
         </div>
 
-        <div className="relative mx-auto grid min-h-[760px] max-w-[1500px] items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:px-12 lg:pb-14 lg:pt-20 xl:gap-16">
-          <div className="relative z-10 max-w-[700px] lg:-translate-y-2">
+        <div className="relative mx-auto grid min-h-[760px] max-w-[1500px] items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[.98fr_1.02fr] lg:px-12 lg:pb-14 lg:pt-20 xl:gap-16">
+          <div className="relative z-20 max-w-[690px] lg:-translate-y-2">
             <div className="mb-6 flex items-center gap-3">
               <span className="h-[3px] w-9 -skew-x-[30deg] bg-[#e4c72f]" />
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/62 sm:text-xs">
@@ -142,7 +151,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="relative mx-auto min-h-[500px] w-full max-w-[590px] lg:min-h-[570px] lg:translate-x-2">
+          <div className="relative z-10 mx-auto min-h-[500px] w-full max-w-[590px] lg:min-h-[570px] lg:translate-x-2">
             <div className="absolute -right-16 top-12 h-[360px] w-[360px] rounded-full border border-[#e4c72f]/16" />
             <div className="absolute -left-10 bottom-12 h-[240px] w-[240px] rounded-full border border-white/8" />
 
