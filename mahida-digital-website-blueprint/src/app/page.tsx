@@ -493,26 +493,88 @@ export default async function HomePage() {
               Belum ada bacaan pilihan. Admin dapat memilih artikel setelah artikel diterbitkan.
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className={`grid gap-6 ${
+              featured.length === 1
+                ? 'grid-cols-1'
+                : featured.length === 2
+                  ? 'md:grid-cols-2'
+                  : 'md:grid-cols-3'
+            }`}>
               {featured.map((article, index) => (
-                <article key={article.id} className="group relative min-h-[390px] overflow-hidden border border-white/12 bg-white/[0.045] p-7">
-                  <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full border border-[#e4c72f]/20" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#e4c72f]">
-                    Pilihan {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <div className="mt-10 grid h-20 w-20 place-items-center rounded-full bg-white/[0.07] text-[#f1d63d]">
-                    <PenTool size={27} />
-                  </div>
-                  <h3 className="mt-8 font-serif text-2xl font-bold leading-snug text-white group-hover:text-[#f3dc55]">
-                    <Link href={articleHref(article.slug)}>{article.title}</Link>
-                  </h3>
-                  {article.excerpt && (
-                    <p className="mt-4 line-clamp-3 text-sm leading-7 text-white/60">{article.excerpt}</p>
-                  )}
-                  <div className="absolute bottom-6 left-7 right-7 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
-                    <span>{article.readingTime ? `${article.readingTime} menit baca` : 'Artikel'}</span>
-                    <ArrowRight size={15} className="text-[#e4c72f]" />
-                  </div>
+                <article
+                  key={article.id}
+                  className="group overflow-hidden border border-white/14 bg-white/[0.045] transition-all duration-300 hover:-translate-y-1 hover:border-[#e4c72f]/35 hover:shadow-[0_24px_65px_rgba(0,24,16,0.28)]"
+                >
+                  <Link
+                    href={articleHref(article.slug)}
+                    className={featured.length === 1 ? 'grid min-h-[430px] lg:grid-cols-[1.18fr_.82fr]' : 'flex h-full min-h-[520px] flex-col'}
+                  >
+                    <div className={`relative overflow-hidden bg-[#164c38] ${
+                      featured.length === 1 ? 'min-h-[280px] lg:min-h-full' : 'aspect-[16/10]'
+                    }`}>
+                      {article.featuredImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={article.featuredImage}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.035]"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_22%,rgba(228,199,47,.24),transparent_24%),linear-gradient(145deg,#126344_0%,#073e2d_100%)]">
+                          <div className="absolute -right-12 -top-12 h-52 w-52 rounded-full border border-[#e4c72f]/20" />
+                          <Image
+                            src="/brand/mahida-logo.webp"
+                            alt=""
+                            width={190}
+                            height={190}
+                            className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 object-contain opacity-20 grayscale"
+                          />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#061f17]/68 via-transparent to-[#062b20]/20" />
+                      <div className="absolute inset-x-0 top-0 flex items-center justify-between p-5 sm:p-6">
+                        <span className="inline-flex rounded-full border border-white/20 bg-[#092f24]/60 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#f1d640] backdrop-blur-md">
+                          Pilihan {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span className="font-serif text-5xl font-bold text-white/22" aria-hidden="true">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={`flex flex-1 flex-col p-7 ${featured.length === 1 ? 'justify-center lg:p-10' : ''}`}>
+                      <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#e4c72f]">
+                        <span>Artikel pilihan</span>
+                        {article.publishedAt && (
+                          <>
+                            <span className="h-1 w-1 rounded-full bg-white/25" />
+                            <time dateTime={new Date(article.publishedAt).toISOString()} className="font-medium normal-case tracking-normal text-white/45">
+                              {formatPublishedDate(article.publishedAt)}
+                            </time>
+                          </>
+                        )}
+                      </div>
+                      <h3 className={`font-serif font-bold leading-[1.16] text-white transition-colors group-hover:text-[#f3dc55] ${
+                        featured.length === 1 ? 'text-3xl sm:text-4xl' : 'text-2xl'
+                      }`}>
+                        {article.title}
+                      </h3>
+                      {article.excerpt && (
+                        <p className={`mt-4 text-sm leading-7 text-white/58 ${featured.length === 1 ? 'line-clamp-4' : 'line-clamp-3'}`}>
+                          {article.excerpt}
+                        </p>
+                      )}
+                      <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-5 text-xs text-white/45">
+                        <span className="inline-flex items-center gap-2">
+                          <Clock3 size={13} className="text-[#e4c72f]" />
+                          {article.readingTime ? `${article.readingTime} menit baca` : 'Artikel'}
+                        </span>
+                        <span className="grid h-8 w-8 place-items-center rounded-full border border-white/15 text-[#e4c72f] transition-all group-hover:border-[#e4c72f] group-hover:bg-[#e4c72f] group-hover:text-[#082f23]">
+                          <ArrowRight size={14} />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
                 </article>
               ))}
             </div>
