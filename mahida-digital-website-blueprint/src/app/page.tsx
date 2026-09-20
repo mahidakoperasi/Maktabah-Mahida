@@ -3,9 +3,13 @@ import Link from 'next/link';
 import {
   ArrowRight,
   BookOpen,
+  Calendar,
   CalendarDays,
+  Clock3,
   Leaf,
+  Newspaper,
   PenTool,
+  Sparkles,
   ShoppingBag,
   Video,
 } from 'lucide-react';
@@ -20,6 +24,16 @@ function articleHref(slug: string) {
   return `/literasi/artikel/${slug}`;
 }
 
+function formatPublishedDate(value: Date | null) {
+  if (!value) return '';
+
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(value));
+}
+
 export default async function HomePage() {
   const settings = await getHomepageSettings();
 
@@ -30,11 +44,12 @@ export default async function HomePage() {
       slug: posts.slug,
       excerpt: posts.excerpt,
       type: posts.type,
+      featuredImage: posts.featuredImage,
       publishedAt: posts.publishedAt,
       readingTime: posts.readingTime,
     })
     .from(posts)
-    .where(eq(posts.status, 'published'))
+    .where(and(eq(posts.status, 'published'), eq(posts.type, 'article')))
     .orderBy(desc(posts.publishedAt))
     .limit(8);
 
@@ -48,6 +63,7 @@ export default async function HomePage() {
         slug: posts.slug,
         excerpt: posts.excerpt,
         type: posts.type,
+        featuredImage: posts.featuredImage,
         publishedAt: posts.publishedAt,
         readingTime: posts.readingTime,
       })
@@ -203,57 +219,213 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#f6f5ee] py-20">
-        <div className="mx-auto max-w-[1450px] px-5 sm:px-8 lg:px-12">
-          <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#a18725]">Terbaru dari Mahida</p>
-              <h2 className="mt-2 font-serif text-3xl font-bold tracking-[-0.02em] text-[#173d2d] md:text-4xl">
-                Hari Ini di Mahida
-              </h2>
+      <section className="relative overflow-hidden bg-[#f5f3ea] py-20 sm:py-24">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.34]"
+          aria-hidden="true"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(7,91,58,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(7,91,58,.035) 1px, transparent 1px)',
+            backgroundSize: '62px 62px',
+          }}
+        />
+        <div className="pointer-events-none absolute -right-24 top-10 h-72 w-72 rounded-full border border-[#c9ad24]/15" aria-hidden="true" />
+
+        <div className="relative mx-auto max-w-[1450px] px-5 sm:px-8 lg:px-12">
+          <div className="mb-10 grid gap-6 border-b border-[#d8ddd2] pb-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="flex items-start gap-5 sm:gap-7">
+              <span className="hidden font-serif text-6xl font-bold leading-none text-[#075b3a]/10 sm:block" aria-hidden="true">
+                01
+              </span>
+              <div>
+                <div className="flex items-center gap-3">
+                  <span className="h-[2px] w-8 bg-[#d0af27]" />
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#977e20]">
+                    Kabar terbaru dari pondok
+                  </p>
+                </div>
+                <h2 className="mt-3 font-serif text-[clamp(2.35rem,4vw,4.35rem)] font-bold leading-none tracking-[-0.04em] text-[#163d2c]">
+                  Hari Ini di Mahida
+                </h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-[#68746c] sm:text-base">
+                  Catatan terbaru tentang ilmu, kegiatan, karya, dan kehidupan yang tumbuh di lingkungan Mahida.
+                </p>
+              </div>
             </div>
-            <Link href="/literasi/artikel" className="inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
-              Semua Artikel <ArrowRight size={15} />
+
+            <Link
+              href="/literasi/artikel"
+              className="group inline-flex w-fit items-center gap-3 rounded-full border border-[#bac8bd] bg-[#fffef9]/70 px-5 py-3 text-sm font-bold text-[#075b3a] transition-colors hover:border-[#075b3a] hover:bg-[#fffef9]"
+            >
+              Lihat semua kabar
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#075b3a] text-white transition-transform group-hover:translate-x-0.5">
+                <ArrowRight size={14} />
+              </span>
             </Link>
           </div>
 
           {latestPublished.length === 0 ? (
-            <div className="border border-[#dfe4d9] bg-[#fffef9] p-10 text-sm text-[#777f78]">
-              Belum ada konten terbit. Konten terbaru dari Admin Panel akan tampil di sini.
+            <div className="grid min-h-[390px] place-items-center border border-[#d7ddd2] bg-[#fffef9]/80 px-6 text-center">
+              <div className="max-w-md">
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#e9efe7] text-[#075b3a]">
+                  <Newspaper size={24} />
+                </div>
+                <h3 className="mt-5 font-serif text-2xl font-bold text-[#173d2d]">Ruang kabar sedang disiapkan</h3>
+                <p className="mt-3 text-sm leading-7 text-[#707a73]">
+                  Artikel terbaru yang diterbitkan melalui Admin Panel akan tampil otomatis di bagian ini.
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {latestPublished.slice(0, 4).map((item, index) => (
-                <Link
-                  key={item.id}
-                  href={articleHref(item.slug)}
-                  className="group relative min-h-[250px] overflow-hidden border border-[#dde3d8] bg-[#fffef9] p-6 transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
-                >
-                  <span className="absolute right-5 top-4 font-serif text-5xl font-bold text-[#edf1e9]">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span className="inline-flex bg-[#edf2e9] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#50705f]">
-                    {item.type === 'article' ? 'Artikel' : item.type}
-                  </span>
-                  <h3 className="relative mt-12 font-serif text-xl font-bold leading-snug text-[#203d31] transition-colors group-hover:text-[#075b3a]">
-                    {item.title}
-                  </h3>
-                  <div className="absolute bottom-5 left-6 right-6 flex items-center justify-between border-t border-[#e8ebe3] pt-4 text-xs text-[#8a918a]">
-                    <span>
-                      {item.publishedAt
-                        ? new Date(item.publishedAt).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : ''}
-                    </span>
-                    <ArrowRight size={14} className="text-[#075b3a]" />
+            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.48fr)_minmax(390px,.82fr)]">
+              <Link
+                href={articleHref(latestPublished[0].slug)}
+                className="group relative min-h-[520px] overflow-hidden bg-[#0b4933] text-white shadow-[0_25px_70px_rgba(19,61,43,0.13)] sm:min-h-[590px]"
+                style={{ borderRadius: '4px 88px 4px 4px' }}
+              >
+                {latestPublished[0].featuredImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={latestPublished[0].featuredImage}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]"
+                  />
+                ) : (
+                  <div className="absolute inset-0 overflow-hidden bg-[radial-gradient(circle_at_74%_27%,rgba(228,199,47,.22),transparent_22%),linear-gradient(145deg,#0b6845_0%,#06452f_48%,#082f23_100%)]">
+                    <div className="absolute -right-16 top-10 h-80 w-80 rounded-full border border-white/10" />
+                    <div className="absolute right-14 top-28 h-48 w-48 rounded-full border border-[#e4c72f]/25" />
+                    <Image
+                      src="/brand/mahida-logo.webp"
+                      alt=""
+                      width={270}
+                      height={270}
+                      className="absolute right-10 top-1/2 h-56 w-56 -translate-y-1/2 object-contain opacity-[0.16] grayscale sm:right-20 sm:h-72 sm:w-72"
+                    />
                   </div>
-                </Link>
-              ))}
+                )}
+
+                <div className="absolute inset-0 bg-gradient-to-t from-[#061f17]/95 via-[#092d22]/38 to-[#062f22]/10" />
+                <div className="absolute inset-x-0 top-0 flex items-center justify-between p-6 sm:p-8">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#092f24]/45 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-md">
+                    <Sparkles size={12} className="text-[#efd447]" />
+                    Sorotan utama
+                  </span>
+                  <span className="font-serif text-5xl font-bold text-white/18" aria-hidden="true">01</span>
+                </div>
+
+                <div className="absolute inset-x-0 bottom-0 p-6 sm:p-9 lg:p-11">
+                  <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/67">
+                    {latestPublished[0].publishedAt && (
+                      <time dateTime={new Date(latestPublished[0].publishedAt).toISOString()} className="inline-flex items-center gap-2">
+                        <Calendar size={14} className="text-[#efd447]" />
+                        {formatPublishedDate(latestPublished[0].publishedAt)}
+                      </time>
+                    )}
+                    <span className="inline-flex items-center gap-2">
+                      <Clock3 size={14} className="text-[#efd447]" />
+                      {latestPublished[0].readingTime ? `${latestPublished[0].readingTime} menit baca` : 'Artikel Mahida'}
+                    </span>
+                  </div>
+                  <h3 className="max-w-4xl font-serif text-[clamp(2rem,4vw,4.25rem)] font-bold leading-[1.05] tracking-[-0.035em] text-[#fffef8] transition-colors group-hover:text-[#f2da53]">
+                    {latestPublished[0].title}
+                  </h3>
+                  {latestPublished[0].excerpt && (
+                    <p className="mt-5 max-w-2xl text-sm leading-7 text-white/68 sm:text-base sm:leading-8">
+                      {latestPublished[0].excerpt}
+                    </p>
+                  )}
+                  <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#f2d844]">
+                    Baca selengkapnya <ArrowRight size={16} />
+                  </span>
+                </div>
+              </Link>
+
+              <div className="flex min-h-[520px] flex-col border border-[#d8ddd2] bg-[#fffef9] sm:min-h-[590px]">
+                <div className="flex items-center justify-between border-b border-[#e2e6de] px-6 py-5 sm:px-7">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-[#eaf0e7] text-[#075b3a]">
+                      <Newspaper size={17} />
+                    </span>
+                    <div>
+                      <p className="font-serif text-lg font-bold text-[#173d2d]">Pembaruan Lainnya</p>
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-[#929b94]">Dari ruang redaksi</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-[#9a8428]">TERBARU</span>
+                </div>
+
+                <div className="flex flex-1 flex-col divide-y divide-[#e4e7e0]">
+                  {latestPublished.slice(1, 4).map((item, index) => (
+                    <Link
+                      key={item.id}
+                      href={articleHref(item.slug)}
+                      className="group grid flex-1 grid-cols-[44px_1fr_auto] gap-4 px-5 py-6 transition-colors hover:bg-[#f5f6ef] sm:px-7"
+                    >
+                      <span className="font-serif text-3xl font-bold leading-none text-[#075b3a]/16 transition-colors group-hover:text-[#c2a322]">
+                        {String(index + 2).padStart(2, '0')}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#9a8428]">
+                          Artikel
+                          {item.publishedAt && (
+                            <>
+                              <span className="h-1 w-1 rounded-full bg-[#cbd1c8]" />
+                              <time dateTime={new Date(item.publishedAt).toISOString()} className="font-medium normal-case tracking-normal text-[#8b938d]">
+                                {formatPublishedDate(item.publishedAt)}
+                              </time>
+                            </>
+                          )}
+                        </span>
+                        <span className="mt-2 block font-serif text-xl font-bold leading-snug text-[#254536] transition-colors group-hover:text-[#075b3a] sm:text-[1.35rem]">
+                          {item.title}
+                        </span>
+                        {item.excerpt && (
+                          <span className="mt-2 line-clamp-2 block text-xs leading-6 text-[#7a837c]">
+                            {item.excerpt}
+                          </span>
+                        )}
+                      </span>
+                      <span className="mt-1 grid h-8 w-8 place-items-center rounded-full border border-[#d7ddd4] text-[#075b3a] transition-all group-hover:border-[#075b3a] group-hover:bg-[#075b3a] group-hover:text-white">
+                        <ArrowRight size={13} />
+                      </span>
+                    </Link>
+                  ))}
+
+                  {latestPublished.length === 1 && (
+                    <div className="grid flex-1 place-items-center px-7 py-10 text-center">
+                      <div>
+                        <p className="font-serif text-xl font-bold text-[#294b3b]">Kabar berikutnya akan segera hadir.</p>
+                        <p className="mt-2 text-sm leading-6 text-[#7a837d]">Artikel baru akan tersusun otomatis berdasarkan waktu terbit.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
+
+          <div className="mt-5 grid overflow-hidden border border-[#d6dcd1] bg-[#fffef9]/85 md:grid-cols-[1fr_auto] md:items-center">
+            <div className="px-6 py-5 sm:px-8">
+              <p className="font-serif text-lg font-bold text-[#244735]">Ikuti denyut kehidupan Mahida dari dekat.</p>
+              <p className="mt-1 text-xs leading-6 text-[#78827a]">Berita, jadwal kegiatan, dan dokumentasi pondok tersusun dalam ruangnya masing-masing.</p>
+            </div>
+            <nav className="grid grid-cols-3 border-t border-[#e1e5de] md:border-l md:border-t-0" aria-label="Jelajahi kabar Mahida">
+              {[
+                { label: 'Berita', href: '/berita', icon: Newspaper },
+                { label: 'Agenda', href: '/agenda', icon: CalendarDays },
+                { label: 'Media', href: '/media', icon: Video },
+              ].map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="group flex min-w-[108px] flex-col items-center justify-center gap-2 border-l border-[#e1e5de] px-5 py-5 text-xs font-bold text-[#52675b] first:border-l-0 hover:bg-[#075b3a] hover:text-white md:min-w-[126px]"
+                >
+                  <item.icon size={17} className="text-[#a88e25] group-hover:text-[#efd447]" />
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
         </div>
       </section>
 
