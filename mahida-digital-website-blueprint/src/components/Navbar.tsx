@@ -211,7 +211,7 @@ export default function Navbar() {
                     {item.label}
                     {item.children && <ChevronDown size={12} className="opacity-45" />}
                     <span
-                      className={`absolute bottom-[13px] left-1/2 h-[3px] -translate-x-1/2 -skew-x-[32deg] bg-[#e4c72f] transition-all duration-300 ${active ? 'w-7' : 'w-0 group-hover:w-5'}`}
+                      className={`absolute bottom-[14px] left-1/2 h-[2px] -translate-x-1/2 rounded-full bg-[#e4c72f] transition-all duration-300 ${active ? 'w-6' : 'w-0 group-hover:w-4'}`}
                     />
                   </Link>
 
