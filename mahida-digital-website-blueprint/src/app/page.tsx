@@ -84,18 +84,20 @@ export default async function HomePage() {
         />
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] overflow-hidden" aria-hidden="true">
-          <div className="absolute bottom-[-2%] left-[8%] h-[112%] w-[48%] opacity-[0.72]">
+          <div className="absolute bottom-[-5%] left-[18%] h-[120%] w-[52%] opacity-[0.52] mix-blend-screen">
             <Image
-              src="/brand/pondok-mahida-cutout-v3.webp"
+              src="/brand/pondok-mahida.png"
               alt=""
               fill
               priority
-              sizes="48vw"
-              className="object-contain object-bottom"
+              unoptimized
+              sizes="52vw"
+              className="object-contain object-bottom grayscale contrast-125 brightness-110"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#075b3a]/20 via-transparent to-[#103d2d]/18" />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#042b1e]/85 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#075b3a]/32 via-transparent to-[#103d2d]/22" />
+          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#08734b]/60 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#042b1e]/90 to-transparent" />
         </div>
 
         <div className="relative mx-auto grid min-h-[760px] max-w-[1500px] items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:px-12 lg:pb-14 lg:pt-20 xl:gap-16">
