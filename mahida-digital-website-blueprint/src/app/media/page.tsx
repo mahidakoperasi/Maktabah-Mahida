@@ -1,220 +1,164 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Play, Image as ImageIcon } from 'lucide-react';
+import { ArrowRight, ExternalLink, Image as ImageIcon, Play } from 'lucide-react';
+import { and, desc, eq, sql } from 'drizzle-orm';
+import { db } from '@/db';
+import { galleries, galleryImages, socialPosts, videos } from '@/db/schema';
+import { formatShortDate } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Media',
   description: 'Mahida TV, video dokumentasi, galeri foto, dan konten media dari Pondok Pesantren Mahida.',
 };
 
-const videoCategories = [
-  'Kajian', 'Dokumentasi', 'Pendidikan', 'Wawancara', 'Kegiatan', 'Karya', 'Short Video'
-];
+export const dynamic = 'force-dynamic';
 
-const videos = [
-  {
-    id: 1,
-    title: 'Dokumentasi Kehidupan Santri Mahida 2026',
-    description: 'Suasana keseharian santri dalam belajar, beraktivitas, dan beribadah di pondok.',
-    thumbnail: null,
-    duration: '12:34',
-    views: '1.2K',
-    date: '3 hari lalu',
-    category: 'Dokumentasi',
-    featured: true,
-  },
-  {
-    id: 2,
-    title: 'Kajian Kitab Tauhid Bersama Ustadz Pengasuh',
-    description: 'Pengajian rutin kitab tauhid yang dihadiri seluruh santri.',
-    thumbnail: null,
-    duration: '45:21',
-    views: '856',
-    date: '1 minggu lalu',
-    category: 'Kajian',
-    featured: false,
-  },
-  {
-    id: 3,
-    title: 'Wisuda Tahfidz Angkatan Ke-V',
-    description: 'Prosesi wisuda dan penyerahan sertifikat kepada santri hafidz/hafidzah baru.',
-    thumbnail: null,
-    duration: '8:45',
-    views: '2.3K',
-    date: '2 minggu lalu',
-    category: 'Kegiatan',
-    featured: false,
-  },
-  {
-    id: 4,
-    title: 'Wawancara: Kehidupan Santri Baru',
-    description: 'Cerita pengalaman santri baru dalam memulai kehidupan di pesantren.',
-    thumbnail: null,
-    duration: '15:10',
-    views: '567',
-    date: '2 minggu lalu',
-    category: 'Wawancara',
-    featured: false,
-  },
-];
+async function getMediaContent() {
+  const readiness = await db.execute(sql`
+    select
+      to_regclass('public.videos') is not null as videos_ready,
+      to_regclass('public.social_posts') is not null as social_ready,
+      to_regclass('public.galleries') is not null as galleries_ready,
+      to_regclass('public.gallery_images') is not null as images_ready
+  `);
+  const ready = readiness.rows?.[0] as {
+    videos_ready?: boolean;
+    social_ready?: boolean;
+    galleries_ready?: boolean;
+    images_ready?: boolean;
+  } | undefined;
 
-const socialPosts = [
-  { platform: 'facebook', caption: 'Maulid Nabi 1447 H — Semoga kita bisa meneladani akhlak Rasulullah SAW.', time: '3 hari lalu' },
-  { platform: 'facebook', caption: 'Selamat kepada para juara MTQ tingkat kabupaten. Semoga ilmu yang diraih bermanfaat.', time: '1 minggu lalu' },
-];
+  const videoRows = ready?.videos_ready
+    ? await db.select().from(videos).where(eq(videos.status, 'published')).orderBy(desc(videos.featured), desc(videos.publishedAt), desc(videos.createdAt)).limit(4)
+    : [];
+  const socialRows = ready?.social_ready
+    ? await db.select().from(socialPosts).where(and(eq(socialPosts.platform, 'facebook'), eq(socialPosts.status, 'published'))).orderBy(desc(socialPosts.featured), desc(socialPosts.publishedAt), desc(socialPosts.createdAt)).limit(4)
+    : [];
+  const galleryRows = ready?.galleries_ready && ready?.images_ready
+    ? await db.select({
+        id: galleries.id,
+        title: galleries.title,
+        slug: galleries.slug,
+        description: galleries.description,
+        coverImage: galleries.coverImage,
+        createdAt: galleries.createdAt,
+        imageCount: sql<number>`count(${galleryImages.id})::int`,
+      }).from(galleries)
+        .leftJoin(galleryImages, eq(galleryImages.galleryId, galleries.id))
+        .where(and(eq(galleries.type, 'album'), eq(galleries.status, 'published')))
+        .groupBy(galleries.id)
+        .orderBy(desc(galleries.createdAt))
+        .limit(5)
+    : [];
 
-export default function MediaPage() {
+  return { videoRows, socialRows, galleryRows };
+}
+
+export default async function MediaPage() {
+  const { videoRows, socialRows, galleryRows } = await getMediaContent();
+  const featuredVideo = videoRows[0];
+  const otherVideos = videoRows.slice(1);
+
   return (
     <>
-      <section className="bg-charcoal text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="label text-brass-light mb-3">Media</p>
-          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-2">Media & Dokumentasi</h1>
+      <section className="bg-charcoal py-16 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <p className="label mb-3 text-brass-light">Media</p>
+          <h1 className="mb-2 text-3xl font-serif font-bold md:text-4xl">Media & Dokumentasi</h1>
           <p className="text-white/70">Mahida TV, video, galeri foto, dan publikasi media.</p>
         </div>
       </section>
 
-      {/* MAHIDA TV - Main Section */}
-      <section className="py-16 bg-white border-b border-mahida-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-8">
+      <section className="border-b border-mahida-200 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-8 flex items-end justify-between">
             <div>
-              <h2 className="heading-xl text-charcoal flex items-center gap-3">
-                <span>Mahida TV</span>
-                <Play size={20} className="text-emerald-forest" />
-              </h2>
-              <p className="text-sm text-warm-gray-500 mt-1">Video editorial dari Mahida</p>
+              <h2 className="heading-xl flex items-center gap-3 text-charcoal"><span>Mahida TV</span><Play size={20} className="text-emerald-forest" /></h2>
+              <p className="mt-1 text-sm text-warm-gray-500">Video terbaru dari kanal Mahida</p>
             </div>
-            <Link href="/media/tv" className="hidden md:flex items-center gap-2 text-sm font-semibold text-emerald-forest hover:underline">
-              Semua Video
-              <ArrowRight size={15} />
-            </Link>
           </div>
 
-          {/* Category pills */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {videoCategories.map((cat) => (
-              <button key={cat} className="category-pill cursor-pointer hover:bg-emerald-100">{cat}</button>
-            ))}
-          </div>
-
-          {/* Featured Video + Grid */}
-          <div className="grid lg:grid-cols-12 gap-6">
-            {/* Main / Featured Video */}
-            {videos[0] && (
-              <div className="lg:col-span-7 group cursor-pointer">
-                <div className="aspect-video bg-charcoal rounded-sm overflow-hidden relative">
-                  <div className="absolute inset-0 flex items-center justify-center bg-emerald-forest/10">
-                    <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-elevated group-hover:scale-110 transition-transform">
-                      <Play size={24} className="text-emerald-forest ml-1" fill="currentColor" />
-                    </div>
+          {!featuredVideo ? (
+            <MediaEmpty icon={<Play size={28} />} title="Video segera hadir" text="Konten YouTube terbit akan tampil otomatis di bagian ini." />
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-12">
+              <Link href={`https://www.youtube.com/watch?v=${featuredVideo.videoId}`} target="_blank" rel="noreferrer" className="group lg:col-span-7">
+                <div className="relative aspect-video overflow-hidden rounded-sm bg-charcoal bg-cover bg-center" style={featuredVideo.thumbnailUrl ? { backgroundImage: `url(${featuredVideo.thumbnailUrl})` } : undefined}>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 shadow-elevated transition-transform group-hover:scale-110"><Play size={24} className="ml-1 text-emerald-forest" fill="currentColor" /></div>
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/80 to-transparent">
-                    <h3 className="font-semibold text-white text-lg">{videos[0].title}</h3>
-                    <p className="text-white/70 text-sm mt-1">{videos[0].description}</p>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-white/50">
-                      <span>{videos[0].duration}</span>
-                      <span>{videos[0].views} views</span>
-                      <span>{videos[0].date}</span>
-                    </div>
+                  <div className="absolute inset-x-0 bottom-0 p-5">
+                    {featuredVideo.featured && <span className="mb-2 inline-flex bg-brass px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-charcoal">Video unggulan</span>}
+                    <h3 className="text-lg font-semibold text-white">{featuredVideo.title}</h3>
+                    {featuredVideo.description && <p className="mt-1 line-clamp-2 text-sm text-white/70">{featuredVideo.description}</p>}
+                    <span className="mt-2 block text-xs text-white/50">{formatShortDate(featuredVideo.publishedAt ?? featuredVideo.createdAt)}</span>
                   </div>
                 </div>
-              </div>
-            )}
+              </Link>
 
-            {/* Video List */}
-            <div className="lg:col-span-5 space-y-4">
-              {videos.slice(1).map((video) => (
-                <Link key={video.id} href={`/media/video/${video.id}`} className="group flex gap-4 p-3 -mx-3 rounded-sm hover:bg-mahida-50 transition-colors">
-                  <div className="flex-shrink-0 w-36 aspect-video bg-mahida-100 rounded-sm overflow-hidden relative">
-                    <div className="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] px-1 rounded-sm">{video.duration}</div>
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Play size={14} className="text-mahida-400" />
+              <div className="space-y-4 lg:col-span-5">
+                {otherVideos.map((video) => (
+                  <Link key={video.id} href={`https://www.youtube.com/watch?v=${video.videoId}`} target="_blank" rel="noreferrer" className="group -mx-3 flex gap-4 rounded-sm p-3 transition-colors hover:bg-mahida-50">
+                    <div className="relative aspect-video w-36 shrink-0 overflow-hidden rounded-sm bg-mahida-100 bg-cover bg-center" style={video.thumbnailUrl ? { backgroundImage: `url(${video.thumbnailUrl})` } : undefined}>
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/10"><Play size={18} className="text-white drop-shadow" fill="currentColor" /></div>
                     </div>
-                  </div>
-                  <div className="flex-1 min-w-0 py-1">
-                    <span className="tag-pill text-[10px]">{video.category}</span>
-                    <h4 className="font-medium text-sm text-charcoal group-hover:text-emerald-forest transition-colors line-clamp-2 mt-1">
-                      {video.title}
-                    </h4>
-                    <span className="text-xs text-warm-gray-400 mt-1 block">{video.views} • {video.date}</span>
+                    <div className="min-w-0 flex-1 py-1"><h4 className="line-clamp-2 text-sm font-medium text-charcoal transition-colors group-hover:text-emerald-forest">{video.title}</h4><span className="mt-2 block text-xs text-warm-gray-400">{formatShortDate(video.publishedAt ?? video.createdAt)}</span></div>
+                  </Link>
+                ))}
+                {otherVideos.length === 0 && <div className="flex min-h-36 items-center justify-center border border-dashed border-warm-gray-200 p-6 text-center text-sm text-warm-gray-400">Video berikutnya akan tampil di sini.</div>}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="border-b border-mahida-200 bg-cream py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-8 flex items-end justify-between">
+            <div><h2 className="heading-xl flex items-center gap-3 text-charcoal"><ImageIcon size={20} className="text-emerald-forest" /> Galeri Foto</h2><p className="mt-1 text-sm text-warm-gray-500">Dokumentasi visual kehidupan Mahida</p></div>
+            {galleryRows.length > 0 && <Link href="/media/galeri" className="hidden items-center gap-2 text-sm font-semibold text-emerald-forest hover:underline md:flex">Lihat Semua Galeri <ArrowRight size={15} /></Link>}
+          </div>
+          {galleryRows.length === 0 ? (
+            <MediaEmpty icon={<ImageIcon size={28} />} title="Galeri segera hadir" text="Album yang diterbitkan melalui Admin akan tampil otomatis di sini." />
+          ) : (
+            <div className="grid auto-rows-[180px] grid-cols-2 gap-3 md:grid-cols-4">
+              {galleryRows.map((gallery, index) => (
+                <article key={gallery.id} className={`group relative overflow-hidden rounded-sm bg-mahida-200 bg-cover bg-center ${index === 0 ? 'row-span-2 md:col-span-2' : index === 3 ? 'md:col-span-2' : ''}`} style={gallery.coverImage ? { backgroundImage: `url(${gallery.coverImage})` } : undefined}>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent transition-colors group-hover:from-black/90" />
+                  <div className="absolute inset-x-0 bottom-0 p-4 text-white"><h3 className="font-serif font-semibold">{gallery.title}</h3><p className="mt-1 text-xs text-white/65">{gallery.imageCount} foto</p></div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-8"><h2 className="heading-xl flex items-center gap-3 text-charcoal"><span className="text-2xl font-bold text-blue-600">f</span> Postingan Facebook</h2><p className="mt-1 text-sm text-warm-gray-500">Kabar terbaru dari halaman Facebook Mahida</p></div>
+          {socialRows.length === 0 ? (
+            <MediaEmpty icon={<span className="text-2xl font-bold text-blue-600">f</span>} title="Postingan segera hadir" text="Postingan Facebook terbit akan tampil otomatis di bagian ini." />
+          ) : (
+            <div className="grid max-w-5xl gap-5 md:grid-cols-2">
+              {socialRows.map((post) => (
+                <Link key={post.id} href={post.postUrl} target="_blank" rel="noreferrer" className="group overflow-hidden border border-mahida-100 bg-mahida-50 transition-shadow hover:shadow-card">
+                  {post.imageUrl && <div className="aspect-[16/8] bg-cover bg-center" style={{ backgroundImage: `url(${post.imageUrl})` }} />}
+                  <div className="p-5">
+                    <div className="mb-3 flex items-center gap-2"><span className="font-bold text-blue-600">f</span><span className="text-xs font-medium uppercase tracking-wide text-warm-gray-500">Facebook</span><span className="text-xs text-warm-gray-400">• {formatShortDate(post.publishedAt ?? post.createdAt)}</span>{post.featured && <span className="ml-auto bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">Unggulan</span>}</div>
+                    <p className="line-clamp-4 text-sm leading-relaxed text-charcoal">{post.caption}</p>
+                    <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-emerald-forest">Lihat postingan asli <ExternalLink size={12} /></span>
                   </div>
                 </Link>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Galeri Preview */}
-      <section className="py-16 bg-cream border-b border-mahida-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <h2 className="heading-xl text-charcoal flex items-center gap-3">
-                <ImageIcon size={20} className="text-emerald-forest" />
-                Galeri Foto
-              </h2>
-              <p className="text-sm text-warm-gray-500 mt-1">Dokumentasi visual kehidupan Mahida</p>
-            </div>
-            <Link href="/media/galeri" className="hidden md:flex items-center gap-2 text-sm font-semibold text-emerald-forest hover:underline">
-              Lihat Semua Galeri
-              <ArrowRight size={15} />
-            </Link>
-          </div>
-
-          {/* Asymmetric Grid */}
-          <div className="grid grid-cols-4 grid-rows-2 gap-2 auto-rows-[180px] max-w-4xl">
-            <div className="col-span-2 row-span-2 bg-mahida-200 rounded-sm overflow-hidden group cursor-pointer relative">
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-mahida-200 to-mahida-300">
-                <p className="text-mahida-700 font-serif text-base text-center px-4">Kehidupan<br/>Sehari-hari</p>
-              </div>
-            </div>
-            <div className="bg-mahida-150 rounded-sm overflow-hidden group cursor-pointer">
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-forest/15 to-emerald-forest/5">
-                <p className="text-emerald-forest/60 text-xs text-center px-2">Kajian</p>
-              </div>
-            </div>
-            <div className="bg-mahida-180 rounded-sm overflow-hidden group cursor-pointer">
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brass/20 to-brass/5">
-                <p className="text-brass-muted text-xs text-center px-2">Upacara</p>
-              </div>
-            </div>
-            <div className="col-span-2 bg-mahida-160 rounded-sm overflow-hidden group cursor-pointer">
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-warm-gray-300 to-warm-gray-200">
-                <p className="text-warm-gray-600 text-xs text-center">Santri Belajar</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Social Posts */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <h2 className="heading-xl text-charcoal flex items-center gap-3">
-                <span className="text-2xl">f</span>
-                Postingan Sosial
-              </h2>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-5 max-w-3xl">
-            {socialPosts.map((post, i) => (
-              <div key={i} className="p-5 bg-mahida-50 rounded-sm border-l-2 border-blue-500">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-blue-600 font-bold">f</span>
-                  <span className="text-xs font-medium text-warm-gray-500 uppercase tracking-wide">Facebook</span>
-                  <span className="text-xs text-warm-gray-400">• {post.time}</span>
-                </div>
-                <p className="text-sm text-charcoal leading-relaxed">{post.caption}</p>
-              </div>
-            ))}
-          </div>
+          )}
         </div>
       </section>
     </>
   );
+}
+
+function MediaEmpty({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+  return <div className="border border-dashed border-warm-gray-300 bg-white/60 px-6 py-12 text-center"><div className="mx-auto mb-3 flex justify-center text-warm-gray-300">{icon}</div><h3 className="font-semibold text-charcoal">{title}</h3><p className="mt-1 text-sm text-warm-gray-500">{text}</p></div>;
 }
