@@ -103,9 +103,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform overflow-y-auto bg-charcoal text-white transition-transform duration-300 lg:sticky lg:bottom-auto lg:top-[88px] lg:h-[calc(100vh-88px)] lg:self-start lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex w-64 transform flex-col overflow-hidden bg-charcoal text-white transition-transform duration-300 lg:sticky lg:bottom-auto lg:top-[88px] lg:h-[calc(100vh-88px)] lg:self-start lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Header */}
-        <div className="p-5 border-b border-white/10 flex items-center justify-between">
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-5">
           <Link href="/admin" className="flex items-center gap-2">
             <span className="font-serif font-bold text-lg">MAHIDA</span>
             <span className="text-[10px] uppercase tracking-wider text-warm-gray-500">Admin</span>
@@ -116,7 +116,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </div>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
           {navItems.map((item) => (
             item.href ? (
               <Link
@@ -168,7 +168,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </nav>
 
         {/* Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
+        <div className="shrink-0 border-t border-white/10 bg-charcoal p-4">
           <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm text-warm-gray-400 hover:text-white hover:bg-white/5 transition-colors">
             <LogOut size={18} />
             Kembali ke Website
