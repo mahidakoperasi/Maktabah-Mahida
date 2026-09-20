@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BookOpen,
   CalendarDays,
+  Leaf,
   PenTool,
   ShoppingBag,
   Video,
@@ -70,6 +71,11 @@ export default async function HomePage() {
     [settings.stat3Value, settings.stat3Label],
   ].filter(([value]) => Boolean(value));
 
+  const heroEyebrowParts = settings.heroEyebrow
+    .split('•')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
   return (
     <>
       <section className="relative -mt-[88px] overflow-hidden bg-[#075b3a] pt-[88px] text-white">
@@ -83,14 +89,14 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[60%] overflow-hidden" aria-hidden="true">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[78%] overflow-hidden" aria-hidden="true">
           <div
-            className="absolute bottom-[-13%] left-[12%] h-[126%] w-[58%] opacity-[0.24] mix-blend-screen"
+            className="absolute bottom-[-7%] left-[-4%] h-[112%] w-[70%] opacity-[0.56] mix-blend-screen"
             style={{
               WebkitMaskImage:
-                'linear-gradient(to top, #000 12%, rgba(0,0,0,.95) 52%, rgba(0,0,0,.48) 78%, transparent 100%)',
+                'linear-gradient(to top, #000 14%, #000 72%, rgba(0,0,0,.72) 88%, transparent 100%)',
               maskImage:
-                'linear-gradient(to top, #000 12%, rgba(0,0,0,.95) 52%, rgba(0,0,0,.48) 78%, transparent 100%)',
+                'linear-gradient(to top, #000 14%, #000 72%, rgba(0,0,0,.72) 88%, transparent 100%)',
             }}
           >
             <Image
@@ -99,23 +105,35 @@ export default async function HomePage() {
               fill
               priority
               unoptimized
-              sizes="58vw"
-              className="object-contain object-bottom grayscale contrast-110 brightness-105"
+              sizes="70vw"
+              className="object-contain object-bottom grayscale contrast-125 brightness-125"
             />
           </div>
 
-          <div className="absolute inset-0 bg-gradient-to-r from-[#075b3a]/42 via-[#075b3a]/10 to-[#103d2d]/24" />
-          <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#08734b]/72 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#042b1e]/92 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#063f2d]/56 via-[#075b3a]/12 to-[#103d2d]/20" />
+          <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#08734b]/46 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#042b1e]/76 to-transparent" />
         </div>
 
         <div className="relative mx-auto grid min-h-[760px] max-w-[1500px] items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[.98fr_1.02fr] lg:px-12 lg:pb-14 lg:pt-20 xl:gap-16">
           <div className="relative z-20 max-w-[690px] lg:-translate-y-2">
             <div className="mb-6 flex items-center gap-3">
-              <span className="h-[3px] w-9 -skew-x-[30deg] bg-[#e4c72f]" />
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/62 sm:text-xs">
-                {settings.heroEyebrow}
-              </p>
+              <span className="h-[2px] w-8 bg-[#e4c72f]" />
+              <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.20em] text-white/64 sm:text-xs">
+                {heroEyebrowParts.map((part, index) => (
+                  <span key={part} className="inline-flex items-center gap-2.5">
+                    {index > 0 && (
+                      <Leaf
+                        size={10}
+                        strokeWidth={1.8}
+                        className="-rotate-[18deg] text-[#d9bd37]"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span>{part}</span>
+                  </span>
+                ))}
+              </div>
             </div>
 
             <h1 className="font-serif text-[clamp(3rem,5.15vw,5.35rem)] font-bold leading-[0.98] tracking-[-0.042em] text-[#fffef9]">
@@ -152,32 +170,27 @@ export default async function HomePage() {
           </div>
 
           <div className="relative z-10 mx-auto min-h-[500px] w-full max-w-[590px] lg:min-h-[570px] lg:translate-x-2">
-            <div className="absolute -right-16 top-12 h-[360px] w-[360px] rounded-full border border-[#e4c72f]/16" />
-            <div className="absolute -left-10 bottom-12 h-[240px] w-[240px] rounded-full border border-white/8" />
+            <div className="absolute -right-10 top-10 h-[410px] w-[410px] rounded-full border border-[#d4b13f]/28" />
 
             <div
-              className="absolute inset-x-3 inset-y-0 overflow-hidden border border-white/12 bg-[#f8f6ed] shadow-[0_28px_80px_rgba(1,35,23,0.22)]"
+              className="absolute inset-x-3 inset-y-0 overflow-hidden border border-white/12 bg-[#fbfaf2] shadow-[0_28px_80px_rgba(1,35,23,0.20)]"
               style={{
                 borderRadius: '168px 168px 42px 168px',
                 clipPath: 'polygon(0 0, 100% 0, 100% 88%, 88% 100%, 0 100%)',
               }}
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(7,91,58,0.055),transparent_34%),linear-gradient(145deg,#fbfaf4_0%,#edf1e7_100%)]" />
-              <div className="absolute inset-x-14 top-14 h-px bg-[#dfe5d8]" />
-              <div className="absolute left-14 top-10 text-[10px] font-bold uppercase tracking-[0.22em] text-[#a18725]">
-                Mahida Digital Pesantren
-              </div>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(7,91,58,0.035),transparent_38%),linear-gradient(145deg,#fffef8_0%,#f1f3eb_100%)]" />
 
-              <div className="absolute inset-0 flex items-center justify-center px-10 pb-14 pt-20">
+              <div className="absolute inset-0 flex items-center justify-center px-10 py-12">
                 <div className="relative text-center">
-                  <div className="absolute inset-0 scale-[1.5] rounded-full border border-[#075b3a]/7" />
+                  <div className="absolute left-1/2 top-1/2 h-[390px] w-[285px] -translate-x-1/2 -translate-y-1/2 rounded-[48%] border border-[#b99a3c]/40" />
                   <Image
                     src="/brand/mahida-logo.webp"
                     alt="Logo Pondok Pesantren Mahida"
                     width={280}
                     height={280}
                     priority
-                    className="relative mx-auto h-[245px] w-[245px] object-contain drop-shadow-[0_24px_38px_rgba(4,62,39,0.14)]"
+                    className="relative mx-auto h-[245px] w-[245px] object-contain drop-shadow-[0_22px_34px_rgba(4,62,39,0.12)]"
                   />
                   <p className="mt-4 font-arabic text-4xl text-[#075b3a]">مَنْبَعُ الْهِدَايَةِ</p>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.27em] text-[#7d867e]">
@@ -185,19 +198,6 @@ export default async function HomePage() {
                   </p>
                 </div>
               </div>
-
-              <div className="absolute -right-14 bottom-16 h-8 w-[360px] -rotate-[12deg] bg-[#e4c72f]" />
-              <div className="absolute bottom-5 left-14 text-[9px] font-bold uppercase tracking-[0.24em] text-[#758077]">
-                Mahida Digital Pesantren
-              </div>
-            </div>
-
-            <div className="absolute -right-1 top-1/2 hidden -translate-y-1/2 rotate-90 items-center gap-3 text-[9px] font-semibold uppercase tracking-[0.28em] text-white/38 sm:flex">
-              <span>Salam</span>
-              <span className="h-px w-8 bg-[#e4c72f]/70" />
-              <span>Kedawung</span>
-              <span className="h-px w-8 bg-[#e4c72f]/70" />
-              <span>Blitar</span>
             </div>
           </div>
         </div>
