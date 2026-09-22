@@ -1,0 +1,73 @@
+name: Production Check
+
+on:
+  pull_request:
+    paths:
+      - "mahida-digital-website-blueprint/**"
+      - ".github/workflows/production-check.yml"
+  push:
+    branches:
+      - main
+      - "chore/production-readiness"
+    paths:
+      - "mahida-digital-website-blueprint/**"
+      - ".github/workflows/production-check.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mahida_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mahida_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: mahida-digital-website-blueprint
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mahida_ci
+      JWT_SECRET: ci-only-secret-not-used-in-production-please-replace
+      SMTP_HOST: localhost
+      SMTP_PORT: "1025"
+      SMTP_USER: ci@example.invalid
+      SMTP_PASS: ci-placeholder
+      SMTP_FROM: Mahida Digital <ci@example.invalid>
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mahida-digital-website-blueprint/package-lock.json
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run database migrations
+        run: npm run db:migrate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
