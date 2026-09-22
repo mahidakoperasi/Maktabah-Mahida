@@ -3,10 +3,9 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 function RegisterContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const prefillEmail = searchParams.get('email') || '';
   const verifyMode = searchParams.get('verify') === '1';
