@@ -1,33 +1,27 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function RegisterContent() {
-  const [step, setStep] = useState<'register' | 'verify' | 'success'>('register');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [userId, setUserId] = useState<number | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const prefillEmail = searchParams.get('email') || '';
   const verifyMode = searchParams.get('verify') === '1';
 
-  useEffect(() => {
-    if (prefillEmail) {
-      setEmail(prefillEmail);
-    }
-    if (verifyMode) {
-      setStep('verify');
-    }
-  }, [prefillEmail, verifyMode]);
+  const [step, setStep] = useState<'register' | 'verify' | 'success'>(() =>
+    verifyMode ? 'verify' : 'register'
+  );
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState(prefillEmail);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [, setUserId] = useState<number | null>(null);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
