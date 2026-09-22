@@ -40,8 +40,18 @@ export async function GET(request: NextRequest) {
       createdAt: users.createdAt,
     }).from(users).where(eq(users.id, payload.userId));
 
-    if (!user) {
-      return NextResponse.json({ authenticated: false }, { status: 401 });
+    if (!user || !user.emailVerified) {
+      const response = NextResponse.json({ authenticated: false }, { status: 401 });
+      response.cookies.set({
+        name: SESSION_COOKIE_NAME,
+        value: '',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 0,
+      });
+      return response;
     }
 
     return NextResponse.json({
