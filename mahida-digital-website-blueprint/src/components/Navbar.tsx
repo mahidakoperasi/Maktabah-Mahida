@@ -153,12 +153,6 @@ export default function Navbar() {
     };
   }, []);
 
-  useEffect(() => {
-    setMobileMenuOpen(false);
-    setMegaMenuOpen(false);
-    setDropdownOpen(null);
-  }, [pathname]);
-
   return (
     <>
       <nav className="site-nav fixed inset-x-0 top-0 z-50 px-3 pt-3 lg:px-6">
@@ -417,22 +411,34 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => document.getElementById('global-search')?.focus(), 100);
+      const focusTimer = window.setTimeout(
+        () => document.getElementById('global-search')?.focus(),
+        100
+      );
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-      setQuery('');
+
+      return () => {
+        window.clearTimeout(focusTimer);
+        document.body.style.overflow = '';
+      };
     }
+
+    document.body.style.overflow = '';
 
     return () => {
       document.body.style.overflow = '';
     };
   }, [isOpen]);
 
+  function closeSearch() {
+    setQuery('');
+    onClose();
+  }
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#10251d]/90 backdrop-blur-md" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] bg-[#10251d]/90 backdrop-blur-md" onClick={closeSearch}>
       <div className="mx-auto mt-[18vh] max-w-2xl p-4" onClick={(event) => event.stopPropagation()}>
         <div className="relative">
           <Search size={22} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8c938d]" />
@@ -444,7 +450,7 @@ function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
             onChange={(event) => setQuery(event.target.value)}
             className="w-full border-0 bg-[#fffef9] py-4 pl-12 pr-12 text-lg text-[#24342c] outline-none shadow-2xl focus:ring-2 focus:ring-[#e4c72f]/40"
           />
-          <button onClick={onClose} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#68716b]">
+          <button onClick={closeSearch} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#68716b]">
             <X size={20} />
           </button>
         </div>
