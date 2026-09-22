@@ -13,7 +13,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const email = String(body.email ?? '').trim().toLowerCase();
     const code = String(body.code ?? '').trim();
-    const type = String(body.type ?? 'verification');
 
     if (!email || !code) {
       return NextResponse.json(
@@ -45,7 +44,7 @@ export async function POST(request: NextRequest) {
       .where(
         and(
           eq(otpCodes.userId, user.id),
-          eq(otpCodes.type, type),
+          eq(otpCodes.type, 'verification'),
           eq(otpCodes.used, false),
           gt(otpCodes.expiresAt, now)
         )
@@ -90,11 +89,9 @@ export async function POST(request: NextRequest) {
       .set({ used: true })
       .where(eq(otpCodes.id, validOtp.id));
 
-    if (type === 'verification') {
-      await db.update(users)
-        .set({ emailVerified: true, updatedAt: new Date() })
-        .where(eq(users.id, user.id));
-    }
+    await db.update(users)
+      .set({ emailVerified: true, updatedAt: new Date() })
+      .where(eq(users.id, user.id));
 
     const token = generateToken({
       userId: user.id,
