@@ -32,6 +32,7 @@ export default async function HomePage() {
       type: posts.type,
       publishedAt: posts.publishedAt,
       readingTime: posts.readingTime,
+      featuredImage: posts.featuredImage,
     })
     .from(posts)
     .where(eq(posts.status, 'published'))
@@ -50,6 +51,7 @@ export default async function HomePage() {
         type: posts.type,
         publishedAt: posts.publishedAt,
         readingTime: posts.readingTime,
+        featuredImage: posts.featuredImage,
       })
       .from(posts)
       .where(
@@ -227,28 +229,44 @@ export default async function HomePage() {
                 <Link
                   key={item.id}
                   href={articleHref(item.slug)}
-                  className="group relative min-h-[250px] overflow-hidden border border-[#dde3d8] bg-[#fffef9] p-6 transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
+                  className="group overflow-hidden border border-[#dde3d8] bg-[#fffef9] transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
                 >
-                  <span className="absolute right-5 top-4 font-serif text-5xl font-bold text-[#edf1e9]">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span className="inline-flex bg-[#edf2e9] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#50705f]">
-                    {item.type === 'article' ? 'Artikel' : item.type}
-                  </span>
-                  <h3 className="relative mt-12 font-serif text-xl font-bold leading-snug text-[#203d31] transition-colors group-hover:text-[#075b3a]">
-                    {item.title}
-                  </h3>
-                  <div className="absolute bottom-5 left-6 right-6 flex items-center justify-between border-t border-[#e8ebe3] pt-4 text-xs text-[#8a918a]">
-                    <span>
-                      {item.publishedAt
-                        ? new Date(item.publishedAt).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : ''}
+                  <div className="relative aspect-[16/9] overflow-hidden bg-[#edf2e9]">
+                    {item.featuredImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.featuredImage}
+                        alt=""
+                        className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 grid place-items-center text-[#759081]">
+                        <PenTool size={28} strokeWidth={1.5} />
+                      </div>
+                    )}
+                    <span className="absolute right-4 top-3 font-serif text-4xl font-bold text-white/80 drop-shadow">
+                      {String(index + 1).padStart(2, '0')}
                     </span>
-                    <ArrowRight size={14} className="text-[#075b3a]" />
+                  </div>
+                  <div className="relative min-h-[210px] p-6">
+                    <span className="inline-flex bg-[#edf2e9] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#50705f]">
+                      {item.type === 'article' ? 'Artikel' : item.type}
+                    </span>
+                    <h3 className="mt-5 font-serif text-xl font-bold leading-snug text-[#203d31] transition-colors group-hover:text-[#075b3a]">
+                      {item.title}
+                    </h3>
+                    <div className="absolute bottom-5 left-6 right-6 flex items-center justify-between border-t border-[#e8ebe3] pt-4 text-xs text-[#8a918a]">
+                      <span>
+                        {item.publishedAt
+                          ? new Date(item.publishedAt).toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })
+                          : ''}
+                      </span>
+                      <ArrowRight size={14} className="text-[#075b3a]" />
+                    </div>
                   </div>
                 </Link>
               ))}
@@ -323,24 +341,39 @@ export default async function HomePage() {
           ) : (
             <div className="grid gap-6 md:grid-cols-3">
               {featured.map((article, index) => (
-                <article key={article.id} className="group relative min-h-[390px] overflow-hidden border border-white/12 bg-white/[0.045] p-7">
-                  <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full border border-[#e4c72f]/20" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#e4c72f]">
-                    Pilihan {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <div className="mt-10 grid h-20 w-20 place-items-center rounded-full bg-white/[0.07] text-[#f1d63d]">
-                    <PenTool size={27} />
-                  </div>
-                  <h3 className="mt-8 font-serif text-2xl font-bold leading-snug text-white group-hover:text-[#f3dc55]">
-                    <Link href={articleHref(article.slug)}>{article.title}</Link>
-                  </h3>
-                  {article.excerpt && (
-                    <p className="mt-4 line-clamp-3 text-sm leading-7 text-white/60">{article.excerpt}</p>
-                  )}
-                  <div className="absolute bottom-6 left-7 right-7 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
-                    <span>{article.readingTime ? `${article.readingTime} menit baca` : 'Artikel'}</span>
-                    <ArrowRight size={15} className="text-[#e4c72f]" />
-                  </div>
+                <article key={article.id} className="group overflow-hidden border border-white/12 bg-white/[0.045]">
+                  <Link href={articleHref(article.slug)} className="block">
+                    <div className="relative aspect-[16/9] overflow-hidden bg-white/[0.06]">
+                      {article.featuredImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={article.featuredImage}
+                          alt=""
+                          className="h-full w-full object-cover object-center opacity-90 transition-all duration-500 group-hover:scale-[1.03] group-hover:opacity-100"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 grid place-items-center text-[#f1d63d]">
+                          <PenTool size={32} strokeWidth={1.5} />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0c3b2b]/55 via-transparent to-transparent" />
+                      <span className="absolute left-5 top-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#f3dc55]">
+                        Pilihan {String(index + 1).padStart(2, '0')}
+                      </span>
+                    </div>
+                    <div className="relative min-h-[260px] p-7">
+                      <h3 className="font-serif text-2xl font-bold leading-snug text-white transition-colors group-hover:text-[#f3dc55]">
+                        {article.title}
+                      </h3>
+                      {article.excerpt && (
+                        <p className="mt-4 line-clamp-3 text-sm leading-7 text-white/60">{article.excerpt}</p>
+                      )}
+                      <div className="absolute bottom-6 left-7 right-7 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
+                        <span>{article.readingTime ? `${article.readingTime} menit baca` : 'Artikel'}</span>
+                        <ArrowRight size={15} className="text-[#e4c72f]" />
+                      </div>
+                    </div>
+                  </Link>
                 </article>
               ))}
             </div>
