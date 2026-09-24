@@ -4,6 +4,19 @@ import { users } from '@/db/schema';
 import { SESSION_COOKIE_NAME, verifyToken } from '@/lib/utils';
 import { eq } from 'drizzle-orm';
 
+function clearSession(response: NextResponse) {
+  response.cookies.set({
+    name: SESSION_COOKIE_NAME,
+    value: '',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+  return response;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -15,43 +28,29 @@ export async function GET(request: NextRequest) {
     const payload = verifyToken(token);
 
     if (!payload) {
-      const response = NextResponse.json({ authenticated: false }, { status: 401 });
-      response.cookies.set({
-        name: SESSION_COOKIE_NAME,
-        value: '',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 0,
-      });
-      return response;
+      return clearSession(
+        NextResponse.json({ authenticated: false }, { status: 401 })
+      );
     }
 
-    const [user] = await db.select({
-      id: users.id,
-      uuid: users.uuid,
-      email: users.email,
-      name: users.name,
-      avatar: users.avatar,
-      bio: users.bio,
-      role: users.role,
-      emailVerified: users.emailVerified,
-      createdAt: users.createdAt,
-    }).from(users).where(eq(users.id, payload.userId));
+    const [user] = await db
+      .select({
+        id: users.id,
+        uuid: users.uuid,
+        email: users.email,
+        name: users.name,
+        avatar: users.avatar,
+        bio: users.bio,
+        role: users.role,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.id, payload.userId));
 
-    if (!user || !user.emailVerified) {
-      const response = NextResponse.json({ authenticated: false }, { status: 401 });
-      response.cookies.set({
-        name: SESSION_COOKIE_NAME,
-        value: '',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 0,
-      });
-      return response;
+    if (!user || user.role !== 'admin') {
+      return clearSession(
+        NextResponse.json({ authenticated: false }, { status: 401 })
+      );
     }
 
     return NextResponse.json({
