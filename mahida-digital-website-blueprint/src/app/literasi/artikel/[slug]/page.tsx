@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
+import YouTubeArticleBlock from '@/components/YouTubeArticleBlock';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 
@@ -31,15 +32,7 @@ function getYouTubeId(url: string) {
   return null;
 }
 
-function YouTubeTeaser({
-  url,
-  label,
-  autoplay = false,
-}: {
-  url: string;
-  label?: string;
-  autoplay?: boolean;
-}) {
+function YouTubeTeaser({ url, label }: { url: string; label?: string }) {
   const videoId = getYouTubeId(url);
 
   if (!videoId) {
@@ -56,42 +49,7 @@ function YouTubeTeaser({
     );
   }
 
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? '1' : '0'}&mute=1&playsinline=1&rel=0&modestbranding=1`;
-
-  return (
-    <section className="my-10 overflow-hidden border border-mahida-200 bg-white shadow-sm">
-      <div className="aspect-video bg-black">
-        <iframe
-          src={embedUrl}
-          title={label || 'Video Mahida'}
-          className="h-full w-full"
-          loading={autoplay ? 'eager' : 'lazy'}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        />
-      </div>
-      <div className="flex items-center justify-between gap-5 p-5 sm:p-6">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#a18725]">Video Mahida</p>
-          <h2 className="mt-2 font-serif text-xl font-bold text-[#173d2d] sm:text-2xl">
-            {label || 'Saksikan momen lengkapnya'}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-warm-gray-500">
-            Video diputar tanpa suara. Aktifkan suara melalui kontrol YouTube jika ingin mendengarkan.
-          </p>
-        </div>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Buka video di YouTube"
-          className="shrink-0 text-[#075b3a] hover:text-[#0b7b52]"
-        >
-          <ArrowUpRight size={20} />
-        </a>
-      </div>
-    </section>
-  );
+  return <YouTubeArticleBlock videoId={videoId} url={url} label={label} />;
 }
 
 function renderArticleContent(content: string) {
@@ -100,7 +58,6 @@ function renderArticleContent(content: string) {
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let key = 0;
-  let videoIndex = 0;
 
   while ((match = markerPattern.exec(content)) !== null) {
     const before = content.slice(lastIndex, match.index);
@@ -122,11 +79,9 @@ function renderArticleContent(content: string) {
         key={`video-${key++}`}
         url={match[1]}
         label={match[2]?.trim()}
-        autoplay={videoIndex === 0}
       />
     );
 
-    videoIndex++;
     lastIndex = markerPattern.lastIndex;
   }
 
