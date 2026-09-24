@@ -392,6 +392,14 @@ body {
 
 .prose-article p {
   margin-bottom: 1.35rem;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+@media (max-width: 640px) {
+  .prose-article p {
+    text-align: left;
+  }
 }
 
 .prose-article a {
