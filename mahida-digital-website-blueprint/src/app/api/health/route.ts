@@ -4,16 +4,28 @@ import { sql } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!process.env.DATABASE_URL) {
+    return Response.json(
+      {
+        ok: false,
+        database: "not_configured",
+        authSchemaReady: false,
+        articleCmsReady: false,
+      },
+      { status: 503 }
+    );
+  }
+
   try {
     const connection = await db.execute(sql`select 1 as ok`);
-    const authSchema = await db.execute(sql`
+    const schema = await db.execute(sql`
       select
         to_regclass('public.users') is not null as users_table,
         to_regclass('public.otp_codes') is not null as otp_codes_table,
         to_regclass('public.posts') is not null as posts_table
     `);
 
-    const row = authSchema.rows?.[0] as
+    const row = schema.rows?.[0] as
       | { users_table?: boolean; otp_codes_table?: boolean; posts_table?: boolean }
       | undefined;
 
@@ -37,11 +49,11 @@ export async function GET() {
     return Response.json(
       {
         ok: false,
-        database: "error",
+        database: "unreachable",
         authSchemaReady: false,
         articleCmsReady: false,
       },
-      { status: 500 }
+      { status: 503 }
     );
   }
 }
