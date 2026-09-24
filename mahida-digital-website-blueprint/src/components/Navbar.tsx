@@ -13,7 +13,7 @@ import {
   Menu,
   PenTool,
   Search,
-  User,
+  ShieldCheck,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -243,11 +243,11 @@ export default function Navbar() {
 
             {isLoggedIn ? (
               <Link
-                href="/profil"
-                className="grid h-10 w-10 place-items-center text-[#465049] transition-colors hover:bg-[#f0f3eb] hover:text-[#075b3a]"
-                aria-label="Profil"
+                href="/admin"
+                className="hidden items-center gap-1.5 border border-[#b8c7b9] px-3 py-2 text-xs font-semibold text-[#075b3a] transition-colors hover:border-[#075b3a] hover:bg-[#075b3a] hover:text-white sm:flex"
               >
-                <User size={19} />
+                <ShieldCheck size={14} />
+                Admin
               </Link>
             ) : (
               <Link
@@ -255,7 +255,7 @@ export default function Navbar() {
                 className="hidden items-center gap-1.5 border border-[#b8c7b9] px-3 py-2 text-xs font-semibold text-[#075b3a] transition-colors hover:border-[#075b3a] hover:bg-[#075b3a] hover:text-white sm:flex"
               >
                 <LogIn size={14} />
-                Masuk
+                Admin
               </Link>
             )}
 
