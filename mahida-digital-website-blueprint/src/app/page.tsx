@@ -237,7 +237,7 @@ export default async function HomePage() {
                       <img
                         src={item.featuredImage}
                         alt=""
-                        className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
+                        className="h-full w-full object-contain object-center p-2 transition-transform duration-500 group-hover:scale-[1.02]"
                       />
                     ) : (
                       <div className="absolute inset-0 grid place-items-center text-[#759081]">
@@ -349,7 +349,7 @@ export default async function HomePage() {
                         <img
                           src={article.featuredImage}
                           alt=""
-                          className="h-full w-full object-cover object-center opacity-90 transition-all duration-500 group-hover:scale-[1.03] group-hover:opacity-100"
+                          className="h-full w-full object-contain object-center p-2 opacity-95 transition-all duration-500 group-hover:scale-[1.02] group-hover:opacity-100"
                         />
                       ) : (
                         <div className="absolute inset-0 grid place-items-center text-[#f1d63d]">
