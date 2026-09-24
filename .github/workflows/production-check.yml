@@ -15,7 +15,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     services:
       postgres:
@@ -39,11 +39,8 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mahida_ci
       JWT_SECRET: ci-only-secret-not-used-in-production-please-replace
-      SMTP_HOST: localhost
-      SMTP_PORT: "1025"
-      SMTP_USER: ci@example.invalid
-      SMTP_PASS: ci-placeholder
-      SMTP_FROM: Mahida Digital <ci@example.invalid>
+      RESEND_API_KEY: re_ci-placeholder
+      EMAIL_FROM: Mahida Digital <ci@example.invalid>
 
     steps:
       - name: Checkout
@@ -68,3 +65,6 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Docker build
+        run: docker build -t mahida-digital-ci .
