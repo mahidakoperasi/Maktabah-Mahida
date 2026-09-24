@@ -85,8 +85,16 @@ export default async function PublicArticlePage({
             </div>
           </figure>
         )}
-        <div className="prose-article whitespace-pre-wrap">
-          {article.contentRaw || article.content}
+        <div className="prose-article">
+          {(article.contentRaw || article.content || '')
+            .split(/\n\s*\n/)
+            .map((paragraph) => paragraph.trim())
+            .filter(Boolean)
+            .map((paragraph, index) => (
+              <p key={index}>
+                {paragraph.replace(/\s*\n\s*/g, ' ')}
+              </p>
+            ))}
         </div>
       </div>
     </article>
