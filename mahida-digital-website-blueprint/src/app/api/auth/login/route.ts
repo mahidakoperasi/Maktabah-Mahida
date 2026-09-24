@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { users, otpCodes } from '@/db/schema';
+import { users } from '@/db/schema';
 import {
   verifyPassword,
   generateToken,
-  generateOTP,
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE,
 } from '@/lib/utils';
-import { sendVerificationEmail } from '@/lib/email';
 import { eq } from 'drizzle-orm';
 
 const loginRateLimit = new Map<string, { count: number; lastAttempt: number }>();
@@ -22,9 +20,7 @@ function checkLoginRateLimit(email: string): boolean {
     return true;
   }
 
-  if (record.count >= 10) {
-    return false;
-  }
+  if (record.count >= 10) return false;
 
   record.count++;
   record.lastAttempt = now;
@@ -53,9 +49,9 @@ export async function POST(request: NextRequest) {
 
     const [user] = await db.select().from(users).where(eq(users.email, email));
 
-    if (!user) {
+    if (!user || user.role !== 'admin') {
       return NextResponse.json(
-        { error: 'Email atau password salah' },
+        { error: 'Email atau password admin salah' },
         { status: 401 }
       );
     }
@@ -64,57 +60,21 @@ export async function POST(request: NextRequest) {
 
     if (!isValid) {
       return NextResponse.json(
-        { error: 'Email atau password salah' },
+        { error: 'Email atau password admin salah' },
         { status: 401 }
       );
-    }
-
-    if (!user.emailVerified) {
-      await db.update(otpCodes)
-        .set({ used: true })
-        .where(eq(otpCodes.userId, user.id));
-
-      const otp = generateOTP();
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-      await db.insert(otpCodes).values({
-        userId: user.id,
-        code: otp,
-        type: 'verification',
-        expiresAt,
-        used: false,
-        attempts: 0,
-      });
-
-      try {
-        await sendVerificationEmail(email, otp);
-      } catch (mailError) {
-        console.error('Verification email error:', mailError);
-        return NextResponse.json(
-          {
-            error: 'Kode verifikasi dibuat, tetapi email gagal dikirim. Silakan coba lagi beberapa saat.',
-            requiresVerification: true,
-          },
-          { status: 502 }
-        );
-      }
-
-      return NextResponse.json({
-        requiresVerification: true,
-        message: 'Kode verifikasi baru telah dikirim ke email Anda.',
-      });
     }
 
     const token = generateToken({
       userId: user.id,
       email: user.email,
-      role: user.role as 'user' | 'admin',
+      role: 'admin',
     });
 
     const { password: _password, ...userData } = user;
 
     const response = NextResponse.json({
-      message: 'Login berhasil',
+      message: 'Login admin berhasil',
       user: userData,
     });
 
@@ -130,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Admin login error:', error);
     return NextResponse.json(
       { error: 'Terjadi kesalahan server' },
       { status: 500 }
