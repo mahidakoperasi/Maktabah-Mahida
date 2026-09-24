@@ -273,9 +273,20 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
               rows={22}
               className="w-full resize-y border border-warm-gray-300 px-4 py-4 font-serif text-[16px] leading-8 outline-none focus:border-emerald-forest"
             />
-            <p className="mt-2 text-xs text-warm-gray-400">
-              Untuk tahap pertama editor menyimpan teks secara aman. Editor visual/format kaya akan kita tingkatkan setelah alur CMS inti stabil.
-            </p>
+            <div className="mt-3 space-y-2 border border-[#dfe4d9] bg-[#f7f8f3] p-4 text-xs text-warm-gray-500">
+              <p>
+                Pisahkan paragraf dengan satu baris kosong. Untuk menyisipkan teaser video YouTube di posisi mana pun, tulis marker pada baris tersendiri:
+              </p>
+              <code className="block overflow-x-auto bg-white px-3 py-2 font-mono text-[11px] text-emerald-800">
+                [[youtube:https://youtu.be/VIDEO_ID]]
+              </code>
+              <p>
+                Judul teaser juga bisa ditentukan:
+              </p>
+              <code className="block overflow-x-auto bg-white px-3 py-2 font-mono text-[11px] text-emerald-800">
+                [[youtube:https://youtu.be/VIDEO_ID|Saksikan momen setoran lengkap]]
+              </code>
+            </div>
           </div>
         </div>
 
