@@ -74,8 +74,16 @@ export default async function PublicArticlePage({
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {article.featuredImage && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={article.featuredImage} alt="" className="mb-10 w-full max-h-[520px] object-cover" />
+          <figure className="mb-10 overflow-hidden border border-mahida-200 bg-white">
+            <div className="flex min-h-[280px] max-h-[680px] items-center justify-center bg-[#f7f5ed]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={article.featuredImage}
+                alt={article.title}
+                className="max-h-[680px] w-full object-contain"
+              />
+            </div>
+          </figure>
         )}
         <div className="prose-article whitespace-pre-wrap">
           {article.contentRaw || article.content}
