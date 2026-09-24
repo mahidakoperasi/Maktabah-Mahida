@@ -69,13 +69,18 @@ const navItems: NavItem[] = [
   { label: 'Arsip', icon: Archive, href: '/admin/arsip' },
   { label: 'Kategori & Tag', icon: Tag, href: '/admin/taxonomy' },
   { label: 'Penulis', icon: Users, href: '/admin/authors' },
-  { label: 'Pengguna', icon: Users, href: '/admin/users' },
   { label: 'Komentar', icon: MessageCircle, href: '/admin/comments' },
   { label: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
   { label: 'Pengaturan', icon: Settings, href: '/admin/settings' },
 ];
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+export default function AdminShell({
+  children,
+  isPrimaryAdmin = false,
+}: {
+  children: React.ReactNode;
+  isPrimaryAdmin?: boolean;
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>(['Konten', 'Tampilan Website']);
   const pathname = usePathname();
@@ -117,7 +122,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
         {/* Navigation */}
         <nav className="p-3 space-y-1">
-          {navItems.map((item) => (
+          {[
+            ...navItems,
+            ...(isPrimaryAdmin
+              ? [{ label: 'Kelola Admin', icon: Users, href: '/admin/admins' } as NavItem]
+              : []),
+          ].map((item) => (
             item.href ? (
               <Link
                 key={item.label}
