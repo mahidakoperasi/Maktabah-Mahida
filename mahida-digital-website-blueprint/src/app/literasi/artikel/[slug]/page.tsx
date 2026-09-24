@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
-import { ArrowLeft, ArrowUpRight, Play } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 
@@ -31,8 +31,17 @@ function getYouTubeId(url: string) {
   return null;
 }
 
-function YouTubeTeaser({ url, label }: { url: string; label?: string }) {
+function YouTubeTeaser({
+  url,
+  label,
+  autoplay = false,
+}: {
+  url: string;
+  label?: string;
+  autoplay?: boolean;
+}) {
   const videoId = getYouTubeId(url);
+
   if (!videoId) {
     return (
       <a
@@ -47,26 +56,19 @@ function YouTubeTeaser({ url, label }: { url: string; label?: string }) {
     );
   }
 
+  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? '1' : '0'}&mute=1&playsinline=1&rel=0&modestbranding=1`;
+
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group my-10 block overflow-hidden border border-mahida-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-    >
-      <div className="relative aspect-video overflow-hidden bg-black">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
-          alt=""
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+    <section className="my-10 overflow-hidden border border-mahida-200 bg-white shadow-sm">
+      <div className="aspect-video bg-black">
+        <iframe
+          src={embedUrl}
+          title={label || 'Video Mahida'}
+          className="h-full w-full"
+          loading={autoplay ? 'eager' : 'lazy'}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
         />
-        <div className="absolute inset-0 bg-black/20 transition group-hover:bg-black/10" />
-        <div className="absolute inset-0 grid place-items-center">
-          <span className="grid h-16 w-16 place-items-center rounded-full bg-white/95 text-[#075b3a] shadow-xl transition-transform group-hover:scale-105">
-            <Play size={26} fill="currentColor" className="ml-1" />
-          </span>
-        </div>
       </div>
       <div className="flex items-center justify-between gap-5 p-5 sm:p-6">
         <div>
@@ -75,12 +77,20 @@ function YouTubeTeaser({ url, label }: { url: string; label?: string }) {
             {label || 'Saksikan momen lengkapnya'}
           </h2>
           <p className="mt-2 text-sm leading-6 text-warm-gray-500">
-            Cuplikan visual dari kisah ini tersedia di YouTube.
+            Video diputar tanpa suara. Aktifkan suara melalui kontrol YouTube jika ingin mendengarkan.
           </p>
         </div>
-        <ArrowUpRight className="shrink-0 text-[#075b3a]" size={20} />
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Buka video di YouTube"
+          className="shrink-0 text-[#075b3a] hover:text-[#0b7b52]"
+        >
+          <ArrowUpRight size={20} />
+        </a>
       </div>
-    </a>
+    </section>
   );
 }
 
@@ -90,6 +100,7 @@ function renderArticleContent(content: string) {
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let key = 0;
+  let videoIndex = 0;
 
   while ((match = markerPattern.exec(content)) !== null) {
     const before = content.slice(lastIndex, match.index);
@@ -111,9 +122,11 @@ function renderArticleContent(content: string) {
         key={`video-${key++}`}
         url={match[1]}
         label={match[2]?.trim()}
+        autoplay={videoIndex === 0}
       />
     );
 
+    videoIndex++;
     lastIndex = markerPattern.lastIndex;
   }
 
