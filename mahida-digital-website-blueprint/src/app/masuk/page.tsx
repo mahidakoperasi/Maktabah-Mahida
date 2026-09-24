@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -11,7 +11,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [requiresVerification, setRequiresVerification] = useState(false);
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -30,28 +29,15 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Login gagal');
-        return;
-      }
-
-      if (data.requiresVerification) {
-        setRequiresVerification(true);
+        setError(data.error || 'Login admin gagal');
         return;
       }
 
       window.dispatchEvent(new Event('mahida-auth-changed'));
 
       const next = new URLSearchParams(window.location.search).get('next');
-      const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : null;
-
-      if (safeNext) {
-        router.replace(safeNext);
-      } else if (data.user?.role === 'admin') {
-        router.replace('/admin');
-      } else {
-        router.replace('/');
-      }
-
+      const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/admin';
+      router.replace(safeNext);
       router.refresh();
     } catch {
       setError('Terjadi kesalahan. Silakan coba lagi.');
@@ -68,107 +54,72 @@ export default function LoginPage() {
           Kembali ke Beranda
         </Link>
 
-        <div className="mb-10">
-          <h1 className="text-3xl font-serif font-bold text-charcoal mb-2">Masuk</h1>
-          <p className="text-warm-gray-500">Masuk ke akun Mahida Digital Anda</p>
+        <div className="mb-8">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-forest">
+            <ShieldCheck size={22} />
+          </div>
+          <h1 className="text-3xl font-serif font-bold text-charcoal mb-2">Masuk Admin</h1>
+          <p className="text-warm-gray-500">Akses ini khusus pengelola Mahida Digital.</p>
         </div>
 
-        {requiresVerification ? (
-          <div className="bg-blue-50 border border-blue-200 rounded-sm p-6 text-center">
-            <Mail size={32} className="mx-auto mb-3 text-blue-600" />
-            <h2 className="font-semibold text-charcoal mb-2">Verifikasi Diperlukan</h2>
-            <p className="text-sm text-warm-gray-600 mb-4">
-              Kami telah membuat kode verifikasi baru untuk email Anda.
-            </p>
-            <Link
-              href={`/daftar?email=${encodeURIComponent(email)}&verify=1`}
-              className="btn-primary w-full justify-center"
-            >
-              Verifikasi Email
-            </Link>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm text-sm mb-6">
+            {error}
           </div>
-        ) : (
-          <>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm text-sm mb-6">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-charcoal mb-1.5">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-warm-gray-400" />
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="nama@email.com"
-                    required
-                    autoComplete="email"
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-warm-gray-300 rounded-sm focus:border-emerald-forest focus:ring-1 focus:ring-emerald-forest outline-none transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-charcoal mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-warm-gray-400" />
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Masukkan password"
-                    required
-                    minLength={8}
-                    autoComplete="current-password"
-                    className="w-full pl-11 pr-11 py-3 bg-white border border-warm-gray-300 rounded-sm focus:border-emerald-forest focus:ring-1 focus:ring-emerald-forest outline-none transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-warm-gray-400 hover:text-warm-gray-600"
-                    aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full btn-primary justify-center py-3.5 disabled:opacity-60"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Memproses...
-                  </>
-                ) : (
-                  'Masuk'
-                )}
-              </button>
-            </form>
-
-            <div className="mt-8 text-center space-y-3">
-              <p className="text-sm text-warm-gray-500">
-                Belum punya akun?{' '}
-                <Link href="/daftar" className="font-semibold text-emerald-forest hover:underline">
-                  Daftar Sekarang
-                </Link>
-              </p>
-            </div>
-          </>
         )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-charcoal mb-1.5">Email Admin</label>
+            <div className="relative">
+              <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-warm-gray-400" />
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@mahida..."
+                required
+                autoComplete="email"
+                className="w-full pl-11 pr-4 py-3 bg-white border border-warm-gray-300 rounded-sm focus:border-emerald-forest focus:ring-1 focus:ring-emerald-forest outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-charcoal mb-1.5">Password</label>
+            <div className="relative">
+              <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-warm-gray-400" />
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Masukkan password"
+                required
+                minLength={8}
+                autoComplete="current-password"
+                className="w-full pl-11 pr-11 py-3 bg-white border border-warm-gray-300 rounded-sm focus:border-emerald-forest focus:ring-1 focus:ring-emerald-forest outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-warm-gray-400 hover:text-warm-gray-600"
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" disabled={isLoading} className="w-full btn-primary justify-center py-3.5 disabled:opacity-60">
+            {isLoading ? <><Loader2 size={18} className="animate-spin" />Memproses...</> : 'Masuk ke Admin'}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-xs leading-relaxed text-warm-gray-400">
+          Tidak ada pendaftaran akun publik. Admin baru ditambahkan oleh admin utama.
+        </p>
       </div>
     </div>
   );
