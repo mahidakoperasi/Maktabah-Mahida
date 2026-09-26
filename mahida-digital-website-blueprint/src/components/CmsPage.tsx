@@ -18,7 +18,7 @@ export default async function CmsPage({ path }: { path: string }) {
             {paragraphs(page.body).map((paragraph, index) => <p key={index} dir="auto">{paragraph}</p>)}
           </div>
         ) : (
-          <div className="border border-mahida-200 bg-white p-8 text-warm-gray-600">
+          <div className="empty-state">
             Informasi resmi akan tersedia setelah diisi melalui pengelolaan Mahida.
           </div>
         )}

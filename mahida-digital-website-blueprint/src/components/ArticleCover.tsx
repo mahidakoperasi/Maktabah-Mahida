@@ -22,13 +22,13 @@ export default function ArticleCover({
         alt=""
         loading="lazy"
         onError={() => setFailedUrl(src)}
-        className="block h-auto w-full"
+        className="block aspect-[4/3] w-full bg-mahida-50 object-contain"
       />
     );
   }
 
   return (
-    <div className={`grid place-items-center px-6 py-12 ${dark ? 'text-[#f1d63d]' : 'text-[#759081]'}`}>
+    <div className={`grid aspect-[4/3] place-items-center px-6 ${dark ? 'text-[#f1d63d]' : 'text-[#759081]'}`}>
       <PenTool size={30} strokeWidth={1.5} aria-hidden="true" />
     </div>
   );

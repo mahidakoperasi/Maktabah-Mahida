@@ -8,6 +8,7 @@ import { rupiah } from '@/lib/rupiah';
 import { getPublicPage } from '@/lib/cms';
 import ProductPurchase from '@/components/ProductPurchase';
 import DrivePreview from '@/components/DrivePreview';
+import ArticleCover from '@/components/ArticleCover';
 import CmsPage from '@/components/CmsPage';
 
 export const dynamic = 'force-dynamic';
@@ -20,9 +21,9 @@ export default async function KoperasiSection({ params }: { params: Promise<{ sl
   const page = await getPublicPage(path);
   if (!page) notFound();
   if (slug.length === 1) {
-    const rows = await db.select({ id: products.id, slug: products.slug, name: products.name, description: products.description, price: products.price })
+    const rows = await db.select({ id: products.id, slug: products.slug, name: products.name, description: products.description, price: products.price, imageUrl: products.imageUrl })
       .from(products).where(and(eq(products.productType,type),eq(products.status,'published'))).orderBy(desc(products.createdAt));
-    return <div className="min-h-screen bg-cream"><header className="bg-emerald-forest py-14 text-white"><div className="mx-auto max-w-5xl px-4"><h1 className="display-md text-white">{page.title}</h1>{page.intro && <p className="mt-3 text-white/80">{page.intro}</p>}</div></header><div className="mx-auto grid max-w-5xl gap-5 px-4 py-12 sm:grid-cols-2">{rows.length ? rows.map((item) => <Link key={item.id} href={`${path}/${item.slug}`} className="border bg-white p-6"><h2 className="font-serif text-xl font-bold">{item.name}</h2>{item.description && <p className="mt-3 line-clamp-3 text-sm text-warm-gray-600">{item.description}</p>}<p className="mt-5 font-semibold text-emerald-forest">{rupiah(item.price)} →</p></Link>) : <p className="border bg-white p-8">Belum ada produk terbit pada kategori ini.</p>}</div></div>;
+    return <div className="min-h-screen bg-cream"><header className="bg-emerald-forest py-14 text-white"><div className="mx-auto max-w-5xl px-4"><h1 className="display-md text-white">{page.title}</h1>{page.intro && <p className="mt-3 text-white/80">{page.intro}</p>}</div></header><div className="mx-auto grid max-w-5xl gap-5 px-4 py-12 sm:grid-cols-2">{rows.length ? rows.map((item) => <Link key={item.id} href={`${path}/${item.slug}`} className="group flex min-w-0 flex-col overflow-hidden border bg-white"><ArticleCover url={item.imageUrl} /><div className="flex flex-1 flex-col p-5"><h2 className="font-serif text-xl font-bold">{item.name}</h2>{item.description && <p className="mt-3 line-clamp-3 text-sm text-warm-gray-600">{item.description}</p>}<p className="mt-auto pt-5 font-semibold text-emerald-forest">{rupiah(item.price)} →</p></div></Link>) : <p className="empty-state">Belum ada produk terbit pada kategori ini.</p>}</div></div>;
   }
   const [product] = await db.select({ id: products.id, name: products.name, description: products.description, price: products.price, productType: products.productType, inStock: products.inStock, imageUrl: products.imageUrl })
     .from(products).where(and(eq(products.slug,slug[1]),eq(products.productType,type),eq(products.status,'published'))).limit(1);

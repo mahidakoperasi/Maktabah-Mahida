@@ -4,6 +4,8 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: {
     default: "Mahida Digital — Belajar. Berkarya. Berkhidmah.",
@@ -31,7 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="bg-cream text-charcoal antialiased min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 pt-[88px]">
+        <main className="min-w-0 flex-1 pt-[76px]">
           {children}
         </main>
         <Footer />
