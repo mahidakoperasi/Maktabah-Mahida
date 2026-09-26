@@ -1,4 +1,4 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 import HomepageSettingsForm from '@/components/admin/HomepageSettingsForm';
@@ -17,7 +17,7 @@ export default async function HomepageAdminPage() {
           status: posts.status,
         })
         .from(posts)
-        .where(eq(posts.status, 'published'))
+        .where(and(eq(posts.type, 'article'), eq(posts.status, 'published')))
         .orderBy(desc(posts.publishedAt))
     : [];
 

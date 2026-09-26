@@ -4,9 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, FileText, PenTool, Newspaper, BookOpen,
-  Video, Image, Calendar, Building2, Archive, Tag,
-  Users, MessageCircle, BarChart3, Settings, ChevronLeft,
+  LayoutDashboard, FileText, Users, ChevronLeft,
   ChevronDown, Menu, X, LogOut, LucideIcon
 } from 'lucide-react';
 
@@ -33,45 +31,8 @@ const navItems: NavItem[] = [
     label: 'Konten',
     children: [
       { label: 'Artikel', icon: FileText, href: '/admin/konten/artikel' },
-      { label: 'Karya', icon: PenTool, href: '/admin/konten/karya' },
-      { label: 'Terjemahan', icon: FileText, href: '/admin/konten/terjemahan' },
-      { label: 'Berita', icon: Newspaper, href: '/admin/konten/berita' },
-      { label: 'Stories', icon: BookOpen, href: '/admin/konten/stories' },
     ],
   },
-  {
-    label: 'Maktabah',
-    children: [
-      { label: 'Kitab', icon: BookOpen, href: '/admin/maktabah/kitab' },
-      { label: 'Buku', icon: BookOpen, href: '/admin/maktabah/buku' },
-      { label: 'Kajian', icon: BookOpen, href: '/admin/maktabah/kajian' },
-    ],
-  },
-  {
-    label: 'Media',
-    children: [
-      { label: 'YouTube', icon: Video, href: '/admin/media/youtube' },
-      { label: 'Facebook', icon: FileText, href: '/admin/media/facebook' },
-      { label: 'Galeri', icon: Image, href: '/admin/media/galeri' },
-      { label: 'Photo Story', icon: Image, href: '/admin/media/photo-story' },
-    ],
-  },
-  {
-    label: 'Kegiatan',
-    children: [
-      { label: 'Agenda', icon: Calendar, href: '/admin/kegiatan/agenda' },
-      { label: 'Pengumuman', icon: FileText, href: '/admin/kegiatan/pengumuman' },
-      { label: 'Prestasi', icon: FileText, href: '/admin/kegiatan/prestasi' },
-    ],
-  },
-  { label: 'Profil Pondok', icon: Building2, href: '/admin/profil' },
-  { label: 'Koperasi', icon: Building2, href: '/admin/koperasi' },
-  { label: 'Arsip', icon: Archive, href: '/admin/arsip' },
-  { label: 'Kategori & Tag', icon: Tag, href: '/admin/taxonomy' },
-  { label: 'Penulis', icon: Users, href: '/admin/authors' },
-  { label: 'Komentar', icon: MessageCircle, href: '/admin/comments' },
-  { label: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
-  { label: 'Pengaturan', icon: Settings, href: '/admin/settings' },
 ];
 
 export default function AdminShell({
