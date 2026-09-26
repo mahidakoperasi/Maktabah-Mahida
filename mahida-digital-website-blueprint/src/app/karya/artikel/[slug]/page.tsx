@@ -4,8 +4,11 @@ import { notFound } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import YouTubeArticleBlock from '@/components/YouTubeArticleBlock';
+import DrivePreview from '@/components/DrivePreview';
+import { driveIdFromUrl } from '@/lib/media-links';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
+import { getPublicPage } from '@/lib/cms';
 
 function getYouTubeId(url: string) {
   try {
@@ -102,6 +105,7 @@ function renderArticleContent(content: string) {
 }
 
 async function getArticle(slug: string) {
+  if (!await getPublicPage('/karya/artikel')) return null;
   const [article] = await db
     .select()
     .from(posts)
@@ -141,7 +145,7 @@ export default async function PublicArticlePage({
     <article className="bg-cream min-h-screen">
       <header className="border-b border-mahida-200 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-          <Link href="/literasi/artikel" className="mb-6 inline-flex items-center gap-2 text-sm text-warm-gray-500 hover:text-emerald-forest">
+          <Link href="/karya/artikel" className="mb-6 inline-flex items-center gap-2 text-sm text-warm-gray-500 hover:text-emerald-forest">
             <ArrowLeft size={15} />
             Semua Artikel
           </Link>
@@ -168,7 +172,8 @@ export default async function PublicArticlePage({
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {article.featuredImage && (
+        {article.featuredImage && driveIdFromUrl(article.featuredImage) && <div className="mb-10"><DrivePreview url={article.featuredImage} title={article.title} /></div>}
+        {article.featuredImage && !driveIdFromUrl(article.featuredImage) && (
           <figure className="mb-10 overflow-hidden border border-mahida-200 bg-white">
             <div className="flex min-h-[280px] max-h-[680px] items-center justify-center bg-[#f7f5ed]">
               {/* eslint-disable-next-line @next/next/no-img-element */}

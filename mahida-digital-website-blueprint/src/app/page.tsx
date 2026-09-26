@@ -3,7 +3,6 @@ import Link from 'next/link';
 import {
   ArrowRight,
   BookOpen,
-  CalendarDays,
   Leaf,
   PenTool,
   ShoppingBag,
@@ -13,17 +12,27 @@ import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { getHomepageSettings } from '@/lib/homepage-settings';
+import { getPublicMenu, getPublicPage } from '@/lib/cms';
+import { driveIdFromUrl } from '@/lib/media-links';
 
 export const dynamic = 'force-dynamic';
 
 function articleHref(slug: string) {
-  return `/literasi/artikel/${slug}`;
+  return `/karya/artikel/${slug}`;
 }
 
 export default async function HomePage() {
   const settings = await getHomepageSettings();
+  const menu = await getPublicMenu();
+  const menuPaths = new Set(menu.flatMap((item) => [item.path, ...item.children.map((child) => child.path)]));
+  const articlesEnabled = Boolean(await getPublicPage('/karya/artikel'));
+  const explore = await Promise.all(menu.filter((item) => item.path !== '/').slice(0, 4).map(async (item) => ({
+    ...item,
+    intro: (await getPublicPage(item.path))?.intro,
+    icon: item.path === '/karya' ? PenTool : item.path === '/media' ? Video : item.path === '/koperasi' ? ShoppingBag : BookOpen,
+  })));
 
-  const latestPublished = await db
+  const latestPublished = articlesEnabled ? await db
     .select({
       id: posts.id,
       title: posts.title,
@@ -37,11 +46,11 @@ export default async function HomePage() {
     .from(posts)
     .where(and(eq(posts.type, 'article'), eq(posts.status, 'published')))
     .orderBy(desc(posts.publishedAt))
-    .limit(8);
+    .limit(8) : [];
 
   let featured = latestPublished.slice(0, 3);
 
-  if (settings.featuredArticleIds.length > 0) {
+  if (articlesEnabled && settings.featuredArticleIds.length > 0) {
     const selected = await db
       .select({
         id: posts.id,
@@ -144,20 +153,20 @@ export default async function HomePage() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
+              {menuPaths.has(settings.heroPrimaryHref) && <Link
                 href={settings.heroPrimaryHref}
                 className="inline-flex items-center gap-2 rounded-full bg-[#f3d43a] px-6 py-3.5 text-sm font-bold text-[#073c29] transition-all hover:-translate-y-0.5 hover:bg-[#f6dc55]"
               >
                 {settings.heroPrimaryLabel}
                 <ArrowRight size={16} />
-              </Link>
-              <Link
+              </Link>}
+              {menuPaths.has(settings.heroSecondaryHref) && <Link
                 href={settings.heroSecondaryHref}
                 className="inline-flex items-center gap-2 rounded-full border border-white/35 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:border-[#e4c72f] hover:text-[#f3dc55]"
               >
                 {settings.heroSecondaryLabel}
                 <ArrowRight size={15} />
-              </Link>
+              </Link>}
             </div>
 
             <div className="mt-10 flex items-center gap-3 text-sm italic text-white/52">
@@ -209,9 +218,9 @@ export default async function HomePage() {
                 Hari Ini di Mahida
               </h2>
             </div>
-            <Link href="/literasi/artikel" className="inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
+            {menuPaths.has('/karya/artikel') && <Link href="/karya/artikel" className="inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
               Semua Artikel <ArrowRight size={15} />
-            </Link>
+            </Link>}
           </div>
 
           {latestPublished.length === 0 ? (
@@ -227,7 +236,7 @@ export default async function HomePage() {
                   className="group overflow-hidden border border-[#dde3d8] bg-[#fffef9] transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
                 >
                   <div className="relative aspect-[16/9] overflow-hidden bg-[#edf2e9]">
-                    {item.featuredImage ? (
+                    {item.featuredImage && !driveIdFromUrl(item.featuredImage) ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={item.featuredImage}
@@ -273,7 +282,7 @@ export default async function HomePage() {
       <section className="bg-[#fffef9] py-24">
         <div className="mx-auto grid max-w-[1450px] items-center gap-12 px-5 sm:px-8 lg:grid-cols-[.92fr_1.08fr] lg:px-12 xl:gap-20">
           <div className="relative min-h-[560px] overflow-hidden bg-[#edf2e8]" style={{ borderRadius: '140px 24px 140px 24px' }}>
-            {settings.aboutImageUrl ? (
+            {settings.aboutImageUrl && !driveIdFromUrl(settings.aboutImageUrl) ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={settings.aboutImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
             ) : (
@@ -297,10 +306,10 @@ export default async function HomePage() {
               {settings.aboutDescription}
             </p>
 
-            <Link href="/tentang/profil" className="mt-10 inline-flex items-center gap-2 rounded-full bg-[#075b3a] px-6 py-3.5 text-sm font-bold text-white">
+            {menuPaths.has('/tentang/profil') && <Link href="/tentang/profil" className="mt-10 inline-flex items-center gap-2 rounded-full bg-[#075b3a] px-6 py-3.5 text-sm font-bold text-white">
               Mengenal Mahida
               <ArrowRight size={16} />
-            </Link>
+            </Link>}
           </div>
         </div>
       </section>
@@ -313,9 +322,9 @@ export default async function HomePage() {
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#e4c72f]">Literasi Mahida</p>
               <h2 className="mt-2 font-serif text-4xl font-bold tracking-[-0.03em] md:text-5xl">Bacaan Pilihan</h2>
             </div>
-            <Link href="/literasi/artikel" className="inline-flex items-center gap-2 text-sm font-semibold text-white/75 hover:text-[#f3dc55]">
+            {menuPaths.has('/karya/artikel') && <Link href="/karya/artikel" className="inline-flex items-center gap-2 text-sm font-semibold text-white/75 hover:text-[#f3dc55]">
               Jelajahi Artikel <ArrowRight size={15} />
-            </Link>
+            </Link>}
           </div>
 
           {featured.length === 0 ? (
@@ -328,7 +337,7 @@ export default async function HomePage() {
                 <article key={article.id} className="group overflow-hidden border border-white/12 bg-white/[0.045]">
                   <Link href={articleHref(article.slug)} className="block">
                     <div className="relative aspect-[16/9] overflow-hidden bg-white/[0.06]">
-                      {article.featuredImage ? (
+                      {article.featuredImage && !driveIdFromUrl(article.featuredImage) ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={article.featuredImage}
@@ -375,15 +384,10 @@ export default async function HomePage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: 'Karya', href: '/karya', icon: PenTool, desc: 'Tulisan, terjemahan, sastra, dan karya santri.' },
-              { label: 'Maktabah', href: '/maktabah', icon: BookOpen, desc: 'Kitab, buku, kajian, dan ruang ilmu.' },
-              { label: 'Media', href: '/media', icon: Video, desc: 'Video, galeri, dokumentasi, dan cerita visual.' },
-              { label: 'Kegiatan', href: '/agenda', icon: CalendarDays, desc: 'Agenda, berita, prestasi, dan perjalanan Mahida.' },
-            ].map((item, index) => (
+            {explore.map((item, index) => (
               <Link
-                key={item.label}
-                href={item.href}
+                key={item.id}
+                href={item.path}
                 className="group relative min-h-[275px] overflow-hidden border border-[#dfe4d9] bg-[#fffef9] p-7 transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.1)]"
               >
                 <span className="absolute right-5 top-4 font-serif text-5xl font-bold text-[#edf1e9]">
@@ -393,7 +397,7 @@ export default async function HomePage() {
                   <item.icon size={22} />
                 </div>
                 <h3 className="mt-8 font-serif text-2xl font-bold text-[#173d2d]">{item.label}</h3>
-                <p className="mt-3 text-sm leading-7 text-[#6f7871]">{item.desc}</p>
+                <p className="mt-3 text-sm leading-7 text-[#6f7871]">{item.intro || 'Informasi resmi akan tersedia setelah diisi admin.'}</p>
                 <span className="absolute bottom-6 left-7 inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
                   Jelajahi <ArrowRight size={14} />
                 </span>
@@ -401,7 +405,7 @@ export default async function HomePage() {
             ))}
           </div>
 
-          <div className="mt-12 overflow-hidden bg-[#075b3a] text-white" style={{ borderRadius: '34px 110px 34px 34px' }}>
+          {menuPaths.has('/koperasi') && <div className="mt-12 overflow-hidden bg-[#075b3a] text-white" style={{ borderRadius: '34px 110px 34px 34px' }}>
             <div className="grid items-center gap-8 px-8 py-10 md:grid-cols-[1fr_auto] lg:px-12">
               <div>
                 <div className="mb-3 flex items-center gap-2 text-[#e4c72f]">
@@ -414,7 +418,7 @@ export default async function HomePage() {
                 Kunjungi Koperasi <ArrowRight size={15} />
               </Link>
             </div>
-          </div>
+          </div>}
         </div>
       </section>
     </>
