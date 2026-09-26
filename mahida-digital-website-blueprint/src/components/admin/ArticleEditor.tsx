@@ -314,10 +314,10 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
             <input
               value={featuredImage}
               onChange={(e) => setFeaturedImage(e.target.value)}
-              placeholder="https://..."
+              placeholder="https://drive.google.com/file/d/.../view"
               className="w-full border border-warm-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-forest"
             />
-            <p className="mt-2 text-xs text-warm-gray-400">Masukkan URL gambar. Upload media akan dibuat di modul Media.</p>
+            <p className="mt-2 text-xs text-warm-gray-400">Tempel tautan foto Google Drive yang dapat dilihat siapa pun yang memiliki tautan. Foto akan tampil di beranda, daftar artikel, dan halaman artikel.</p>
           </div>
 
           <div className="bg-white border border-warm-gray-200 p-5">

@@ -19,3 +19,8 @@ export function driveIdFromUrl(input: string): string | null {
     return id && /^[\w-]{10,}$/.test(id) ? id : null;
   } catch { return null; }
 }
+
+export function driveThumbnailUrl(input: string): string | null {
+  const id = driveIdFromUrl(input);
+  return id ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200` : null;
+}

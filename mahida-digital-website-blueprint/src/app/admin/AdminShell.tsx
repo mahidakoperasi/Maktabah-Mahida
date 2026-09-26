@@ -71,7 +71,7 @@ export default function AdminShell({
   }
 
   return (
-    <div className="min-h-screen bg-warm-gray-100 flex">
+    <div data-admin-shell className="min-h-screen bg-warm-gray-100 flex">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
@@ -81,7 +81,7 @@ export default function AdminShell({
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-charcoal text-white transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} overflow-y-auto`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 flex-col overflow-hidden bg-charcoal text-white transform transition-transform duration-300 lg:sticky lg:top-0 lg:bottom-auto lg:shrink-0 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Header */}
         <div className="p-5 border-b border-white/10 flex items-center justify-between">
           <Link href="/admin" className="flex items-center gap-2">
@@ -94,7 +94,7 @@ export default function AdminShell({
         </div>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1">
+        <nav className="min-h-0 flex-1 overflow-y-auto p-3 space-y-1" aria-label="Navigasi admin">
           {[
             ...navItems,
             ...(isPrimaryAdmin
@@ -151,7 +151,7 @@ export default function AdminShell({
         </nav>
 
         {/* Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
+        <div className="shrink-0 border-t border-white/10 p-4">
           <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm text-warm-gray-400 hover:text-white hover:bg-white/5 transition-colors">
             <LogOut size={18} />
             Kembali ke Website
@@ -162,7 +162,7 @@ export default function AdminShell({
       {/* Main Content */}
       <main className="flex-1 min-w-0">
         {/* Top bar */}
-        <header className="bg-white border-b border-warm-gray-200 px-6 py-4 flex items-center justify-between sticky top-16 lg:top-0 z-30">
+        <header className="bg-white border-b border-warm-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 text-warm-gray-600 hover:bg-mahida-50 rounded-sm"

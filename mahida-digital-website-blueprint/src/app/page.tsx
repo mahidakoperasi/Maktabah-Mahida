@@ -14,6 +14,7 @@ import { posts } from '@/db/schema';
 import { getHomepageSettings } from '@/lib/homepage-settings';
 import { getPublicMenu, getPublicPage } from '@/lib/cms';
 import { driveIdFromUrl } from '@/lib/media-links';
+import ArticleCover from '@/components/ArticleCover';
 
 export const dynamic = 'force-dynamic';
 
@@ -236,18 +237,7 @@ export default async function HomePage() {
                   className="group overflow-hidden border border-[#dde3d8] bg-[#fffef9] transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
                 >
                   <div className="relative aspect-[16/9] overflow-hidden bg-[#edf2e9]">
-                    {item.featuredImage && !driveIdFromUrl(item.featuredImage) ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.featuredImage}
-                        alt=""
-                        className="h-full w-full object-contain object-center p-2 transition-transform duration-500 group-hover:scale-[1.02]"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 grid place-items-center text-[#759081]">
-                        <PenTool size={28} strokeWidth={1.5} />
-                      </div>
-                    )}
+                    <ArticleCover url={item.featuredImage} />
                     <span className="absolute right-4 top-3 font-serif text-4xl font-bold text-white/80 drop-shadow">
                       {String(index + 1).padStart(2, '0')}
                     </span>
@@ -337,18 +327,7 @@ export default async function HomePage() {
                 <article key={article.id} className="group overflow-hidden border border-white/12 bg-white/[0.045]">
                   <Link href={articleHref(article.slug)} className="block">
                     <div className="relative aspect-[16/9] overflow-hidden bg-white/[0.06]">
-                      {article.featuredImage && !driveIdFromUrl(article.featuredImage) ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={article.featuredImage}
-                          alt=""
-                          className="h-full w-full object-contain object-center p-2 opacity-95 transition-all duration-500 group-hover:scale-[1.02] group-hover:opacity-100"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 grid place-items-center text-[#f1d63d]">
-                          <PenTool size={32} strokeWidth={1.5} />
-                        </div>
-                      )}
+                      <ArticleCover url={article.featuredImage} dark />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0c3b2b]/55 via-transparent to-transparent" />
                       <span className="absolute left-5 top-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#f3dc55]">
                         Pilihan {String(index + 1).padStart(2, '0')}

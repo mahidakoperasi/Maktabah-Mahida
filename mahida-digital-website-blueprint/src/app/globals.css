@@ -82,6 +82,15 @@ body {
   line-height: 1.7;
 }
 
+body:has([data-admin-shell]) > .site-nav,
+body:has([data-admin-shell]) > .site-footer {
+  display: none;
+}
+
+body:has([data-admin-shell]) > main {
+  padding-top: 0;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .dark body,
