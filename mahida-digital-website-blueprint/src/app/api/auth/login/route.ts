@@ -8,51 +8,42 @@ import {
   SESSION_MAX_AGE,
 } from '@/lib/utils';
 import { eq } from 'drizzle-orm';
+import { z } from 'zod';
+import { allowAdminLogin } from '@/lib/admin-login-limit';
 
-const loginRateLimit = new Map<string, { count: number; lastAttempt: number }>();
-
-function checkLoginRateLimit(email: string): boolean {
-  const now = Date.now();
-  const record = loginRateLimit.get(email);
-
-  if (!record || now - record.lastAttempt > 15 * 60 * 1000) {
-    loginRateLimit.set(email, { count: 1, lastAttempt: now });
-    return true;
-  }
-
-  if (record.count >= 10) return false;
-
-  record.count++;
-  record.lastAttempt = now;
-  return true;
-}
+const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email().max(255)),
+  password: z.string().min(1).max(1024),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const email = String(body.email ?? '').trim().toLowerCase();
-    const password = String(body.password ?? '');
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email dan password wajib diisi' },
-        { status: 400 }
-      );
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Format JSON tidak valid' }, { status: 400 });
     }
 
-    if (!checkLoginRateLimit(email)) {
-      return NextResponse.json(
-        { error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' },
-        { status: 429 }
-      );
+    const parsed = loginSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Email atau password tidak valid' }, { status: 400 });
     }
+    const { email, password } = parsed.data;
 
     const [user] = await db.select().from(users).where(eq(users.email, email));
 
-    if (!user || user.role !== 'admin') {
+    if (!user || user.role !== 'admin' || !user.emailVerified) {
       return NextResponse.json(
         { error: 'Email atau password admin salah' },
         { status: 401 }
+      );
+    }
+
+    if (!(await allowAdminLogin(user.id))) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' },
+        { status: 429 }
       );
     }
 

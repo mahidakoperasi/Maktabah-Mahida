@@ -3,6 +3,7 @@ import { and, desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { getAdminUser } from '@/lib/admin-auth';
+import { createArticleInput } from '@/lib/article-input';
 import { calculateReadingTime, slugify } from '@/lib/utils';
 
 async function uniqueSlug(title: string, currentId?: number) {
@@ -74,7 +75,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    let input: unknown;
+    try {
+      input = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Format JSON tidak valid' }, { status: 400 });
+    }
+
+    const parsed = createArticleInput.safeParse(input);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Data artikel tidak valid' }, { status: 400 });
+    }
+    const body = parsed.data;
     const title = String(body.title ?? '').trim();
     const excerpt = String(body.excerpt ?? '').trim();
     const contentRaw = String(body.content ?? '').trim();

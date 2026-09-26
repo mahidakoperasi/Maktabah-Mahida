@@ -345,3 +345,10 @@ export const analyticsEvents = pgTable('analytics_events', {
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+// Login attempt counters for admin accounts
+export const loginRateLimits = pgTable('login_rate_limits', {
+  userId: integer('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  attempts: integer('attempts').notNull().default(0),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull().defaultNow(),
+});

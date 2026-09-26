@@ -23,8 +23,6 @@ export default function AdminManager() {
   const [notice, setNotice] = useState('');
 
   async function loadAdmins() {
-    setLoading(true);
-    setError('');
     try {
       const response = await fetch('/api/admin/admins', { cache: 'no-store' });
       const data = await response.json();
@@ -38,7 +36,27 @@ export default function AdminManager() {
   }
 
   useEffect(() => {
-    loadAdmins();
+    let cancelled = false;
+
+    void fetch('/api/admin/admins', { cache: 'no-store' })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Gagal memuat admin.');
+        return data.admins || [];
+      })
+      .then((items) => {
+        if (!cancelled) setAdmins(items);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Gagal memuat admin.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function addAdmin(event: FormEvent) {

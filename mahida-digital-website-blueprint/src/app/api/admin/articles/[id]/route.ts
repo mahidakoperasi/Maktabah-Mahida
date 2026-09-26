@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { getAdminUser } from '@/lib/admin-auth';
+import { updateArticleInput } from '@/lib/article-input';
 import { calculateReadingTime, slugify } from '@/lib/utils';
 
 async function uniqueSlug(title: string, currentId: number) {
@@ -72,7 +73,18 @@ export async function PATCH(
   }
 
   try {
-    const body = await request.json();
+    let input: unknown;
+    try {
+      input = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Format JSON tidak valid' }, { status: 400 });
+    }
+
+    const parsed = updateArticleInput.safeParse(input);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Data artikel tidak valid' }, { status: 400 });
+    }
+    const body = parsed.data;
     const title = String(body.title ?? existing.title).trim();
     const excerpt = String(body.excerpt ?? existing.excerpt ?? '').trim();
     const contentRaw = String(body.content ?? existing.contentRaw ?? existing.content ?? '').trim();
@@ -116,8 +128,12 @@ export async function PATCH(
           String(body.featuredImage ?? existing.featuredImage ?? '').trim() || null,
         updatedAt: now,
       })
-      .where(eq(posts.id, articleId))
+      .where(and(eq(posts.id, articleId), eq(posts.type, 'article')))
       .returning();
+
+    if (!article) {
+      return NextResponse.json({ error: 'Artikel tidak ditemukan' }, { status: 404 });
+    }
 
     return NextResponse.json({ article });
   } catch (error) {
@@ -141,7 +157,7 @@ export async function DELETE(
 
   const deleted = await db
     .delete(posts)
-    .where(eq(posts.id, articleId))
+    .where(and(eq(posts.id, articleId), eq(posts.type, 'article')))
     .returning({ id: posts.id });
 
   if (!deleted.length) {
