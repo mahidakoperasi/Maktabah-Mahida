@@ -14,19 +14,22 @@ export default function ArticleCover({
   const src = url ? driveThumbnailUrl(url) ?? url : null;
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
 
+  if (src && failedUrl !== src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        onError={() => setFailedUrl(src)}
+        className="block h-auto w-full"
+      />
+    );
+  }
+
   return (
-    <div className={`absolute inset-0 grid place-items-center ${dark ? 'text-[#f1d63d]' : 'text-[#759081]'}`}>
+    <div className={`grid place-items-center px-6 py-12 ${dark ? 'text-[#f1d63d]' : 'text-[#759081]'}`}>
       <PenTool size={30} strokeWidth={1.5} aria-hidden="true" />
-      {src && failedUrl !== src && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
-          alt=""
-          loading="lazy"
-          onError={() => setFailedUrl(src)}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      )}
     </div>
   );
 }
