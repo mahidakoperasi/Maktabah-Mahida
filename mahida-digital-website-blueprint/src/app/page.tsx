@@ -229,38 +229,33 @@ export default async function HomePage() {
               Belum ada konten terbit. Konten terbaru dari Admin Panel akan tampil di sini.
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="columns-1 gap-6 md:columns-2 lg:columns-3">
               {latestPublished.slice(0, 4).map((item, index) => (
                 <Link
                   key={item.id}
                   href={articleHref(item.slug)}
-                  className="group overflow-hidden border border-[#dde3d8] bg-[#fffef9] transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
+                  className="group mb-6 inline-block w-full break-inside-avoid overflow-hidden border border-[#dde3d8] bg-[#fffef9] align-top transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
                 >
-                  <div className="relative aspect-[16/9] overflow-hidden bg-[#edf2e9]">
+                  <div className="bg-[#edf2e9]">
                     <ArticleCover url={item.featuredImage} />
-                    <span className="absolute right-4 top-3 font-serif text-4xl font-bold text-white/80 drop-shadow">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
                   </div>
-                  <div className="relative min-h-[210px] p-6">
-                    <span className="inline-flex bg-[#edf2e9] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#50705f]">
-                      {item.type === 'article' ? 'Artikel' : item.type}
-                    </span>
-                    <h3 className="mt-5 font-serif text-xl font-bold leading-snug text-[#203d31] transition-colors group-hover:text-[#075b3a]">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex bg-[#edf2e9] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#50705f]">
+                        {item.type === 'article' ? 'Artikel' : item.type}
+                      </span>
+                      <span className="font-serif text-2xl font-bold text-[#9cae9f]">{String(index + 1).padStart(2, '0')}</span>
+                    </div>
+                    <h3 className="mt-4 font-serif text-xl font-bold leading-snug text-[#203d31] transition-colors group-hover:text-[#075b3a]">
                       {item.title}
                     </h3>
-                    <div className="absolute bottom-5 left-6 right-6 flex items-center justify-between border-t border-[#e8ebe3] pt-4 text-xs text-[#8a918a]">
-                      <span>
-                        {item.publishedAt
-                          ? new Date(item.publishedAt).toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })
-                          : ''}
-                      </span>
-                      <ArrowRight size={14} className="text-[#075b3a]" />
-                    </div>
+                    {item.publishedAt && <p className="mt-2 text-xs text-[#8a918a]">
+                      {new Date(item.publishedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>}
+                    {item.excerpt && <p className="mt-4 line-clamp-3 text-sm leading-6 text-[#657168]">{item.excerpt}</p>}
+                    <span className="mt-5 flex justify-end border-t border-[#e8ebe3] pt-3 text-[#075b3a]">
+                      <ArrowRight size={14} />
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -322,25 +317,27 @@ export default async function HomePage() {
               Belum ada bacaan pilihan. Admin dapat memilih artikel setelah artikel diterbitkan.
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="columns-1 gap-6 md:columns-2 lg:columns-3">
               {featured.map((article, index) => (
-                <article key={article.id} className="group overflow-hidden border border-white/12 bg-white/[0.045]">
+                <article key={article.id} className="group mb-6 inline-block w-full break-inside-avoid overflow-hidden border border-white/12 bg-white/[0.045] align-top">
                   <Link href={articleHref(article.slug)} className="block">
-                    <div className="relative aspect-[16/9] overflow-hidden bg-white/[0.06]">
+                    <div className="bg-white/[0.06]">
                       <ArticleCover url={article.featuredImage} dark />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0c3b2b]/55 via-transparent to-transparent" />
-                      <span className="absolute left-5 top-5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#f3dc55]">
+                    </div>
+                    <div className="p-7">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#f3dc55]">
                         Pilihan {String(index + 1).padStart(2, '0')}
                       </span>
-                    </div>
-                    <div className="relative min-h-[260px] p-7">
-                      <h3 className="font-serif text-2xl font-bold leading-snug text-white transition-colors group-hover:text-[#f3dc55]">
+                      <h3 className="mt-3 font-serif text-2xl font-bold leading-snug text-white transition-colors group-hover:text-[#f3dc55]">
                         {article.title}
                       </h3>
+                      {article.publishedAt && <p className="mt-2 text-xs text-white/45">
+                        {new Date(article.publishedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>}
                       {article.excerpt && (
                         <p className="mt-4 line-clamp-3 text-sm leading-7 text-white/60">{article.excerpt}</p>
                       )}
-                      <div className="absolute bottom-6 left-7 right-7 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
+                      <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
                         <span>{article.readingTime ? `${article.readingTime} menit baca` : 'Artikel'}</span>
                         <ArrowRight size={15} className="text-[#e4c72f]" />
                       </div>
