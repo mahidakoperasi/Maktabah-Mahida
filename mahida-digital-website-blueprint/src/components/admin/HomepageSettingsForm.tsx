@@ -166,7 +166,7 @@ export default function HomepageSettingsForm({ articles }: { articles: ArticleOp
                 value={settings[valueKey as keyof HomepageSettings] as string}
                 onChange={(e) => update(valueKey as keyof HomepageSettings, e.target.value as never)}
                 className="w-full border p-2.5 mb-2"
-                placeholder="Nilai, mis. 15+"
+                placeholder="Isi setelah data diverifikasi"
               />
               <input
                 value={settings[labelKey as keyof HomepageSettings] as string}

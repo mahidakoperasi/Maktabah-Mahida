@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { ArrowRight, FileText } from 'lucide-react';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
@@ -23,7 +23,7 @@ export default async function ArticleListingPage() {
           readingTime: posts.readingTime,
         })
         .from(posts)
-        .where(eq(posts.status, 'published'))
+        .where(and(eq(posts.type, 'article'), eq(posts.status, 'published')))
         .orderBy(desc(posts.publishedAt))
     : [];
 
@@ -47,7 +47,7 @@ export default async function ArticleListingPage() {
             <FileText size={36} className="mx-auto mb-3 text-mahida-300" />
             <h2 className="font-serif text-xl font-bold text-charcoal">Belum ada artikel terbit</h2>
             <p className="mt-2 text-sm text-warm-gray-500">
-              Artikel yang diterbitkan dari Admin Panel akan muncul di sini.
+              Artikel resmi akan muncul di sini setelah diterbitkan.
             </p>
           </div>
         ) : (

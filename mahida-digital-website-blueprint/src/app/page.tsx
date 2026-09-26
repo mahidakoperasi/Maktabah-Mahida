@@ -35,7 +35,7 @@ export default async function HomePage() {
       featuredImage: posts.featuredImage,
     })
     .from(posts)
-    .where(eq(posts.status, 'published'))
+    .where(and(eq(posts.type, 'article'), eq(posts.status, 'published')))
     .orderBy(desc(posts.publishedAt))
     .limit(8);
 
@@ -56,6 +56,7 @@ export default async function HomePage() {
       .from(posts)
       .where(
         and(
+          eq(posts.type, 'article'),
           eq(posts.status, 'published'),
           inArray(posts.id, settings.featuredArticleIds)
         )
@@ -66,12 +67,6 @@ export default async function HomePage() {
       (a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99)
     );
   }
-
-  const stats = [
-    [settings.stat1Value, settings.stat1Label],
-    [settings.stat2Value, settings.stat2Label],
-    [settings.stat3Value, settings.stat3Label],
-  ].filter(([value]) => Boolean(value));
 
   const heroEyebrowParts = settings.heroEyebrow
     .split('•')
@@ -301,17 +296,6 @@ export default async function HomePage() {
             <p className="mt-7 max-w-2xl text-base leading-8 text-[#657168] sm:text-lg">
               {settings.aboutDescription}
             </p>
-
-            {stats.length > 0 && (
-              <div className="mt-9 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
-                {stats.map(([value, label]) => (
-                  <div key={label} className="border-t-2 border-[#e4c72f] pt-4">
-                    <span className="font-serif text-3xl font-bold text-[#075b3a]">{value}</span>
-                    <p className="mt-1 text-sm text-[#778079]">{label}</p>
-                  </div>
-                ))}
-              </div>
-            )}
 
             <Link href="/tentang/profil" className="mt-10 inline-flex items-center gap-2 rounded-full bg-[#075b3a] px-6 py-3.5 text-sm font-bold text-white">
               Mengenal Mahida

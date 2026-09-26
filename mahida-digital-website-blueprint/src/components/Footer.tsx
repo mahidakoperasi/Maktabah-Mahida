@@ -16,7 +16,7 @@ const columns = [
     title: 'Ilmu & Karya',
     links: [
       { label: 'Artikel', href: '/literasi/artikel' },
-      { label: 'Esai & Gagasan', href: '/karya/esai' },
+      { label: 'Esai & Opini', href: '/karya/esai' },
       { label: 'Terjemahan', href: '/karya/terjemahan' },
       { label: 'Maktabah', href: '/maktabah' },
     ],
@@ -56,18 +56,6 @@ export default function Footer() {
             <p className="mt-5 max-w-xl text-sm leading-7 text-white/58">
               Ruang untuk mengenal, membaca, menjaga arsip, dan mengikuti perjalanan Mahida dalam ilmu, karya, dokumentasi, dan khidmah.
             </p>
-
-            <div className="mt-8 flex items-center gap-3">
-              <a href="#" aria-label="Facebook" className="grid h-10 w-10 place-items-center rounded-full border border-white/14 text-[10px] font-bold tracking-wide text-white/70 transition-colors hover:border-[#e4c72f] hover:text-[#e4c72f]">
-                FB
-              </a>
-              <a href="#" aria-label="Instagram" className="grid h-10 w-10 place-items-center rounded-full border border-white/14 text-[10px] font-bold tracking-wide text-white/70 transition-colors hover:border-[#e4c72f] hover:text-[#e4c72f]">
-                IG
-              </a>
-              <a href="#" aria-label="YouTube" className="grid h-10 w-10 place-items-center rounded-full border border-white/14 text-[10px] font-bold tracking-wide text-white/70 transition-colors hover:border-[#e4c72f] hover:text-[#e4c72f]">
-                YT
-              </a>
-            </div>
           </div>
 
           <div className="grid gap-8 sm:grid-cols-3">
@@ -88,8 +76,6 @@ export default function Footer() {
 
         <div className="mt-14 grid gap-5 border-t border-white/10 pt-7 md:grid-cols-[1fr_auto] md:items-center">
           <div className="flex flex-wrap items-center gap-4 text-xs text-white/42">
-            <span>Salam · Kedawung · Nglegok · Blitar</span>
-            <span className="hidden h-px w-8 bg-[#e4c72f]/55 sm:block" />
             <span>© {new Date().getFullYear()} Mahida Digital</span>
           </div>
           <Link href="/tentang/profil" className="inline-flex items-center gap-2 text-sm font-bold text-[#f0d43b]">

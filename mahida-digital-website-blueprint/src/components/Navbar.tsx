@@ -12,7 +12,6 @@ import {
   MapPin,
   Menu,
   PenTool,
-  Search,
   ShieldCheck,
   UsersRound,
   X,
@@ -35,7 +34,6 @@ const navItems = [
     href: '/literasi',
     children: [
       { label: 'Artikel', href: '/literasi/artikel' },
-      { label: 'Esai & Opini', href: '/literasi/esai' },
       { label: 'Resensi', href: '/literasi/resensi' },
     ],
   },
@@ -43,7 +41,7 @@ const navItems = [
     label: 'Karya',
     href: '/karya',
     children: [
-      { label: 'Esai & Gagasan', href: '/karya/esai' },
+      { label: 'Esai & Opini', href: '/karya/esai' },
       { label: 'Terjemahan', href: '/karya/terjemahan' },
       { label: 'Sastra', href: '/karya/sastra' },
       { label: 'Falak & Sains', href: '/karya/falak' },
@@ -101,7 +99,7 @@ const megaColumns = [
   {
     title: 'Karya',
     items: [
-      { label: 'Esai & Gagasan', href: '/karya/esai' },
+      { label: 'Esai & Opini', href: '/karya/esai' },
       { label: 'Terjemahan', href: '/karya/terjemahan' },
       { label: 'Sastra', href: '/karya/sastra' },
     ],
@@ -120,7 +118,6 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -233,14 +230,6 @@ export default function Navbar() {
           </div>
 
           <div className="ml-auto flex h-full items-center gap-1.5 pr-3 sm:gap-2 lg:pr-4">
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="grid h-10 w-10 place-items-center text-[#465049] transition-colors hover:bg-[#f0f3eb] hover:text-[#075b3a]"
-              aria-label="Cari"
-            >
-              <Search size={19} />
-            </button>
-
             {isLoggedIn ? (
               <Link
                 href="/admin"
@@ -376,7 +365,7 @@ export default function Navbar() {
                 </Link>
                 {item.children && (
                   <div className="mb-3 ml-10 grid grid-cols-2 gap-x-4 gap-y-2">
-                    {item.children.slice(0, 6).map((child) => (
+                    {item.children.map((child) => (
                       <Link
                         key={child.href}
                         href={child.href}
@@ -401,70 +390,6 @@ export default function Navbar() {
         </div>
       </aside>
 
-      <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
-  );
-}
-
-function SearchOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [query, setQuery] = useState('');
-
-  useEffect(() => {
-    if (isOpen) {
-      const focusTimer = window.setTimeout(
-        () => document.getElementById('global-search')?.focus(),
-        100
-      );
-      document.body.style.overflow = 'hidden';
-
-      return () => {
-        window.clearTimeout(focusTimer);
-        document.body.style.overflow = '';
-      };
-    }
-
-    document.body.style.overflow = '';
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  function closeSearch() {
-    setQuery('');
-    onClose();
-  }
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-[#10251d]/90 backdrop-blur-md" onClick={closeSearch}>
-      <div className="mx-auto mt-[18vh] max-w-2xl p-4" onClick={(event) => event.stopPropagation()}>
-        <div className="relative">
-          <Search size={22} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8c938d]" />
-          <input
-            id="global-search"
-            type="text"
-            placeholder="Cari artikel, karya, kitab, video..."
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className="w-full border-0 bg-[#fffef9] py-4 pl-12 pr-12 text-lg text-[#24342c] outline-none shadow-2xl focus:ring-2 focus:ring-[#e4c72f]/40"
-          />
-          <button onClick={closeSearch} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#68716b]">
-            <X size={20} />
-          </button>
-        </div>
-
-        {query.length > 2 && (
-          <div className="mt-3 border border-white/10 bg-[#fffef9] p-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#a18725]">Pencarian Mahida</p>
-            <p className="mt-2 font-serif text-xl font-bold text-[#24342c]">&quot;{query}&quot;</p>
-            <p className="mt-3 text-sm text-[#747b75]">
-              Mesin pencarian penuh akan dihubungkan ke database pada tahap berikutnya.
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
