@@ -54,7 +54,7 @@ export default function PublicDirectoryManager() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? 'Gagal menyimpan pengaturan');
       setForm(result.directory);
-      setMessage('Pengaturan tersimpan. Tautan baru akan tampil setelah Langkah 2 dirilis.');
+      setMessage('Pengaturan tersimpan. Tautan aktif ditampilkan di footer dan halaman Kontak.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Gagal menyimpan pengaturan');
     } finally {
