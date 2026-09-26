@@ -131,7 +131,7 @@ export default function PublicDirectoryManager() {
           <label className="text-sm">Urutan
             <input type="number" min={0} max={100000} required value={form.coopWhatsapp.sortOrder} onChange={(event) => setForm((current) => ({ ...current, coopWhatsapp: { ...current.coopWhatsapp, sortOrder: Number(event.target.value) } }))} className="mt-1 w-full border p-3" />
           </label>
-          <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" disabled={!commerceWhatsapp} checked={form.coopWhatsapp.isVisible} onChange={(event) => setForm((current) => ({ ...current, coopWhatsapp: { ...current.coopWhatsapp, isVisible: event.target.checked } }))} /> Tampilkan WhatsApp Koperasi</label>
+          <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" disabled={!commerceWhatsapp && !form.coopWhatsapp.isVisible} checked={form.coopWhatsapp.isVisible} onChange={(event) => setForm((current) => ({ ...current, coopWhatsapp: { ...current.coopWhatsapp, isVisible: event.target.checked } }))} /> Tampilkan WhatsApp Koperasi</label>
         </fieldset>
 
         {form.contacts.length === 0 && <p className="border bg-white p-5 text-sm text-warm-gray-500">Belum ada kontak tambahan.</p>}
