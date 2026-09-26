@@ -17,8 +17,8 @@ export default async function Footer() {
         <nav aria-label="Tautan footer" className="mt-10 grid gap-8 border-t border-white/15 pt-8 sm:grid-cols-2 lg:grid-cols-3">
           {items.filter((item) => item.path !== '/').map((item) => (
             <div key={item.id}>
-              <Link href={item.path} className="font-semibold text-[#f0d43b]">{item.label}</Link>
-              <div className="mt-3 space-y-2">{item.children.map((child) => <Link key={child.id} href={child.path} className="block text-sm text-white/70 hover:text-white">{child.label}</Link>)}</div>
+              <Link href={item.path} className="inline-flex min-h-11 items-center font-semibold text-[#f0d43b]">{item.label}</Link>
+              <div className="mt-2 space-y-1">{item.children.map((child) => <Link key={child.id} href={child.path} className="flex min-h-11 items-center text-sm text-white/70 hover:text-white">{child.label}</Link>)}</div>
             </div>
           ))}
         </nav>

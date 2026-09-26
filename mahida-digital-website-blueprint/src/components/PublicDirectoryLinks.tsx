@@ -28,8 +28,8 @@ export default function PublicDirectoryLinks({
 }) {
   const footer = variant === 'footer';
   const linkClass = footer
-    ? 'flex items-center gap-2 text-sm text-white/75 hover:text-white'
-    : 'flex min-w-0 items-center gap-3 rounded border border-mahida-200 bg-white px-4 py-3 text-emerald-forest hover:border-emerald-forest';
+    ? 'flex min-h-11 items-center gap-2 text-sm text-white/75 hover:text-white'
+    : 'flex min-h-11 min-w-0 items-center gap-3 rounded border border-mahida-200 bg-white px-4 py-3 text-emerald-forest hover:border-emerald-forest';
   const groups = [
     { title: 'Kontak', entries: contacts.map((item) => ({ ...item, Icon: contactIcons[item.channel] })) },
     { title: 'Media sosial', entries: socials.map((item) => ({

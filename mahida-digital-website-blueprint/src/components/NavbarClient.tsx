@@ -56,14 +56,14 @@ export default function NavbarClient({ items }: { items: PublicMenuItem[] }) {
               </Link>
               {item.children.length > 0 && (
                 <div className="invisible absolute left-0 top-full min-w-52 border border-mahida-200 bg-white p-2 opacity-0 shadow-lg group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                  {item.children.map((child) => <Link key={child.id} href={child.path} className="block px-3 py-2.5 text-sm hover:bg-mahida-50">{child.label}</Link>)}
+                  {item.children.map((child) => <Link key={child.id} href={child.path} className="flex min-h-11 items-center px-3 py-2.5 text-sm hover:bg-mahida-50">{child.label}</Link>)}
                 </div>
               )}
             </div>
           ))}
         </nav>
         <div className="flex shrink-0 items-center gap-2">
-          <Link href="/admin" className="hidden px-3 py-2 text-sm font-semibold text-emerald-forest sm:inline-flex">Admin</Link>
+          <Link href="/admin" className="hidden min-h-11 items-center px-3 py-2 text-sm font-semibold text-emerald-forest sm:inline-flex">Admin</Link>
           <button ref={menuButton} type="button" className="grid h-11 w-11 place-items-center rounded bg-emerald-forest text-white xl:hidden" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="mobile-site-menu" aria-label={open ? 'Tutup menu' : 'Buka menu'}>
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>

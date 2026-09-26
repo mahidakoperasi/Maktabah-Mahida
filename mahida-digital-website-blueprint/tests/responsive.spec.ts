@@ -78,7 +78,7 @@ for (const width of widths) {
 
     for (const path of publicPaths) {
       await check(path);
-      await expect(page.getByRole('link', { name: 'Kontak Pendaftaran Santri' })).toBeVisible();
+      await expect(page.getByRole('contentinfo').getByRole('link', { name: 'Kontak Pendaftaran Santri' })).toBeVisible();
     }
 
     if (width < 1280) {
