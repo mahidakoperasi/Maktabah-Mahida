@@ -302,7 +302,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-warm-gray-500">Slug</dt>
-                <dd className="max-w-[180px] truncate text-right text-warm-gray-700">
+                <dd className="max-w-[180px] break-all text-right text-warm-gray-700">
                   {slug || 'dibuat otomatis'}
                 </dd>
               </div>

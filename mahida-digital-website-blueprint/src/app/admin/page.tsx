@@ -89,7 +89,7 @@ export default async function AdminDashboard() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
         {stats.map((stat) => (
           <div key={stat.label} className="bg-white p-6 rounded-sm border border-warm-gray-200">
             <stat.icon size={20} className="text-warm-gray-400 mb-4" />

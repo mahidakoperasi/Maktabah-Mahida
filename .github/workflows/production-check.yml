@@ -66,5 +66,11 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: Install browser for responsive checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Check 320–1440px layouts and keyboard navigation
+        run: npm run test:responsive
+
       - name: Docker build
         run: docker build -t mahida-digital-ci .

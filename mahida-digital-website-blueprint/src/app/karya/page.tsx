@@ -22,7 +22,7 @@ export default async function KaryaPage() {
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         {page.body && <div className="mb-8 space-y-4 text-warm-gray-600">{paragraphs(page.body).map((part, index) => <p key={index}>{part}</p>)}</div>}
         <nav aria-label="Jenis karya" className="mb-8 flex flex-wrap gap-3">{sections.map((item) => <Link key={item.id} href={item.path} className="border border-mahida-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-forest">{item.label}</Link>)}</nav>
-        {works.length === 0 ? <div className="border border-mahida-200 bg-white p-8">Belum ada karya terbit. Karya akan muncul setelah diterbitkan oleh admin.</div>
+        {works.length === 0 ? <div className="empty-state">Belum ada karya terbit. Karya akan muncul setelah diterbitkan oleh admin.</div>
           : <div className="grid gap-5 sm:grid-cols-2">{works.map((work) => <article key={work.id} className="border border-mahida-200 bg-white p-6"><p className="label mb-2">{pathOf(work.type, work.category).split('/').at(-1)}</p><h2 className="font-serif text-xl font-bold"><Link href={`${pathOf(work.type, work.category)}/${work.slug}`}>{work.title}</Link></h2>{work.excerpt && <p className="mt-3 text-sm text-warm-gray-600">{work.excerpt}</p>}</article>)}</div>}
       </div>
     </div>

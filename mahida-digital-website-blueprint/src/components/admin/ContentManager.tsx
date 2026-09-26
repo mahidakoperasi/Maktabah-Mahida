@@ -45,7 +45,7 @@ export default function ContentManager({ section, label, publicPath }: { section
     <div className="grid gap-8 xl:grid-cols-[1fr_1.1fr]">
       <section className="space-y-4">
         <div><h1 className="font-serif text-3xl font-bold">{label}</h1><p className="mt-1 text-sm text-warm-gray-600">{items.length} konten dalam modul ini.</p></div>
-        {items.length === 0 && <p className="bg-white p-5 text-sm">Belum ada konten. Tulis dan terbitkan dari formulir ini.</p>}
+        {items.length === 0 && <p className="empty-state text-sm">Belum ada konten. Tulis dan terbitkan dari formulir ini.</p>}
         {items.map((item) => <button key={item.id} onClick={() => setForm({ id: item.id, title: item.title, excerpt: item.excerpt ?? '', content: item.content ?? '', featuredImage: item.featuredImage ?? '', status: item.status === 'published' ? 'published' : 'draft' })} className="block w-full border border-mahida-200 bg-white p-4 text-left hover:bg-mahida-50"><span className="font-semibold">{item.title}</span><span className="ml-2 text-xs text-warm-gray-500">{item.status}</span></button>)}
       </section>
       <form onSubmit={(event) => { event.preventDefault(); submit(form.id ? 'PATCH' : 'POST', form); }} className="space-y-4 border border-mahida-200 bg-white p-5">

@@ -82,7 +82,7 @@ export default function PublicDirectoryManager() {
             }],
           }))}>Tambah media sosial</button>
         </div>
-        {form.socials.length === 0 && <p className="border bg-white p-5 text-sm text-warm-gray-500">Belum ada akun media sosial.</p>}
+        {form.socials.length === 0 && <p className="empty-state text-sm">Belum ada akun media sosial.</p>}
         {form.socials.map((item) => (
           <fieldset key={item.id} className="grid gap-4 border border-mahida-200 bg-white p-5 sm:grid-cols-2">
             <legend className="sr-only">Pengaturan akun {item.label || 'baru'}</legend>
@@ -134,7 +134,7 @@ export default function PublicDirectoryManager() {
           <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" disabled={!commerceWhatsapp && !form.coopWhatsapp.isVisible} checked={form.coopWhatsapp.isVisible} onChange={(event) => setForm((current) => ({ ...current, coopWhatsapp: { ...current.coopWhatsapp, isVisible: event.target.checked } }))} /> Tampilkan WhatsApp Koperasi</label>
         </fieldset>
 
-        {form.contacts.length === 0 && <p className="border bg-white p-5 text-sm text-warm-gray-500">Belum ada kontak tambahan.</p>}
+        {form.contacts.length === 0 && <p className="empty-state text-sm">Belum ada kontak tambahan.</p>}
         {form.contacts.map((item) => (
           <fieldset key={item.id} className="grid gap-4 border border-mahida-200 bg-white p-5 sm:grid-cols-2">
             <legend className="sr-only">Pengaturan kontak {item.label || 'baru'}</legend>

@@ -49,7 +49,7 @@ export default async function ArticleListingPage() {
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {page.body && <div className="mb-8 space-y-4 text-warm-gray-600">{paragraphs(page.body).map((part, index) => <p key={index}>{part}</p>)}</div>}
         {publishedArticles.length === 0 ? (
-          <div className="border border-mahida-200 bg-white p-10 text-center">
+          <div className="empty-state">
             <FileText size={36} className="mx-auto mb-3 text-mahida-300" />
             <h2 className="font-serif text-xl font-bold text-charcoal">Belum ada artikel terbit</h2>
             <p className="mt-2 text-sm text-warm-gray-500">
