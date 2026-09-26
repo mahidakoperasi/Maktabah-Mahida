@@ -18,6 +18,9 @@ export async function PUT(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Data kontak tidak valid' }, { status: 400 });
   }
+  if (parsed.data.coopWhatsapp.isVisible && !(await getCommerceSettings()).whatsappNumber) {
+    return NextResponse.json({ error: 'Isi nomor WhatsApp di Pengaturan Koperasi sebelum ditampilkan' }, { status: 400 });
+  }
 
   const value = JSON.stringify(parsed.data);
   await db.insert(settings).values({
