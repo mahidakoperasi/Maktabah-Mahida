@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { getPublicPage, paragraphs } from '@/lib/cms';
+import ArticleCover from '@/components/ArticleCover';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,7 @@ export default async function ArticleListingPage() {
           title: posts.title,
           slug: posts.slug,
           excerpt: posts.excerpt,
+          featuredImage: posts.featuredImage,
           publishedAt: posts.publishedAt,
           readingTime: posts.readingTime,
         })
@@ -55,35 +57,36 @@ export default async function ArticleListingPage() {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-warm-gray-200 border-y border-warm-gray-200">
+          <div className="columns-1 gap-6 md:columns-2 lg:columns-3">
             {publishedArticles.map((article) => (
-              <article key={article.id} className="py-7">
-                <div className="mb-2 flex flex-wrap gap-3 text-xs text-warm-gray-400">
-                  <span>
-                    {article.publishedAt
-                      ? new Date(article.publishedAt).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })
-                      : ''}
-                  </span>
-                  {article.readingTime ? <span>{article.readingTime} menit baca</span> : null}
-                </div>
-                <h2 className="font-serif text-2xl font-bold text-charcoal">
-                  <Link href={`/karya/artikel/${article.slug}`} className="hover:text-emerald-forest">
-                    {article.title}
-                  </Link>
-                </h2>
-                {article.excerpt && (
-                  <p className="mt-3 max-w-3xl text-warm-gray-600">{article.excerpt}</p>
-                )}
-                <Link
-                  href={`/karya/artikel/${article.slug}`}
-                  className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-emerald-forest"
-                >
-                  Baca artikel <ArrowRight size={15} />
+              <article key={article.id} className="mb-6 inline-block w-full break-inside-avoid overflow-hidden border border-mahida-200 bg-white align-top">
+                <Link href={`/karya/artikel/${article.slug}`} className="block bg-mahida-100">
+                  <ArticleCover url={article.featuredImage} />
                 </Link>
+                <div className="p-6">
+                  <h2 className="font-serif text-2xl font-bold text-charcoal">
+                    <Link href={`/karya/artikel/${article.slug}`} className="hover:text-emerald-forest">
+                      {article.title}
+                    </Link>
+                  </h2>
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-warm-gray-400">
+                    {article.publishedAt && <span>
+                      {new Date(article.publishedAt).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>}
+                    {article.readingTime ? <span>{article.readingTime} menit baca</span> : null}
+                  </div>
+                  {article.excerpt && <p className="mt-4 line-clamp-3 text-sm leading-6 text-warm-gray-600">{article.excerpt}</p>}
+                  <Link
+                    href={`/karya/artikel/${article.slug}`}
+                    className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-emerald-forest"
+                  >
+                    Baca artikel <ArrowRight size={15} />
+                  </Link>
+                </div>
               </article>
             ))}
           </div>

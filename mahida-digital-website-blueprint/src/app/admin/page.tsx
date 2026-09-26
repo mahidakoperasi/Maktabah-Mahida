@@ -166,9 +166,9 @@ export default async function AdminDashboard() {
           </div>
 
           <div className="bg-white rounded-sm border border-warm-gray-200 p-5">
-            <h2 className="font-semibold text-charcoal mb-2">Modul Lain</h2>
+            <h2 className="font-semibold text-charcoal mb-2">Modul CMS</h2>
             <p className="text-sm leading-relaxed text-warm-gray-500">
-              Berita, Karya, Maktabah, Media, Agenda, dan Koperasi belum dihitung di dashboard sampai CMS masing-masing diaktifkan.
+              Karya, Media, dan Koperasi tersedia melalui menu Konten di sidebar. Angka di atas khusus untuk artikel dan pengguna.
             </p>
           </div>
         </aside>
