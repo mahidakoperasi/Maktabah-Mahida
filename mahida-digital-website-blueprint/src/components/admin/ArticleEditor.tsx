@@ -184,7 +184,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
         <div className="flex flex-wrap gap-2">
           {articleId && slug && status === 'published' && (
             <Link
-              href={`/literasi/artikel/${slug}`}
+              href={`/karya/artikel/${slug}`}
               target="_blank"
               className="btn-secondary"
             >

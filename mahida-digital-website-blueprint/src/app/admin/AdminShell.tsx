@@ -25,12 +25,24 @@ const navItems: NavItem[] = [
     label: 'Tampilan Website',
     children: [
       { label: 'Beranda', icon: LayoutDashboard, href: '/admin/tampilan/beranda' },
+      { label: 'Halaman & Menu', icon: FileText, href: '/admin/tampilan/halaman' },
     ],
   },
   {
     label: 'Konten',
     children: [
       { label: 'Artikel', icon: FileText, href: '/admin/konten/artikel' },
+      { label: 'Esai & Opini', icon: FileText, href: '/admin/konten/esai' },
+      { label: 'Terjemahan', icon: FileText, href: '/admin/konten/terjemahan' },
+      { label: 'Manuskrip', icon: FileText, href: '/admin/konten/manuskrip' },
+      { label: 'Berita', icon: FileText, href: '/admin/konten/berita' },
+      { label: 'Kegiatan', icon: FileText, href: '/admin/konten/kegiatan' },
+      { label: 'Pengumuman', icon: FileText, href: '/admin/konten/pengumuman' },
+      { label: 'Video YouTube', icon: FileText, href: '/admin/media/video' },
+      { label: 'Galeri Foto', icon: FileText, href: '/admin/media/galeri' },
+      { label: 'Produk Koperasi', icon: FileText, href: '/admin/koperasi/produk' },
+      { label: 'Pengaturan Koperasi', icon: FileText, href: '/admin/koperasi/pengaturan' },
+      { label: 'Pesanan E-Book', icon: FileText, href: '/admin/koperasi/pesanan' },
     ],
   },
 ];

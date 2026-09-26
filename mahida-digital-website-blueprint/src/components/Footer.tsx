@@ -1,87 +1,26 @@
-import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import Image from 'next/image';
+import { getPublicMenu } from '@/lib/cms';
 
-const columns = [
-  {
-    title: 'Tentang',
-    links: [
-      { label: 'Profil Pondok', href: '/tentang/profil' },
-      { label: 'Sejarah', href: '/tentang/sejarah' },
-      { label: 'Pengasuh', href: '/tentang/pengasuh' },
-      { label: 'Pendidikan', href: '/tentang/pendidikan' },
-    ],
-  },
-  {
-    title: 'Ilmu & Karya',
-    links: [
-      { label: 'Artikel', href: '/literasi/artikel' },
-      { label: 'Esai & Opini', href: '/karya/esai' },
-      { label: 'Terjemahan', href: '/karya/terjemahan' },
-      { label: 'Maktabah', href: '/maktabah' },
-    ],
-  },
-  {
-    title: 'Ruang Mahida',
-    links: [
-      { label: 'Kegiatan', href: '/kegiatan' },
-      { label: 'Media', href: '/media' },
-      { label: 'Koperasi', href: '/koperasi' },
-      { label: 'Arsip', href: '/arsip' },
-    ],
-  },
-];
-
-export default function Footer() {
+export default async function Footer() {
+  const items = await getPublicMenu();
   return (
-    <footer className="site-footer relative overflow-hidden bg-[#062d20] text-white">
-      <div className="absolute inset-0 opacity-[0.045]" style={{ backgroundImage: 'radial-gradient(circle,#fff 1px,transparent 1px)', backgroundSize: '28px 28px' }} />
-      <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full border border-[#e4c72f]/12" />
-      <div className="absolute right-24 top-14 h-44 w-44 rounded-full border border-white/6" />
-
-      <div className="relative mx-auto max-w-[1450px] px-5 py-16 sm:px-8 lg:px-12 lg:py-20">
-        <div className="grid gap-12 lg:grid-cols-[1.15fr_.85fr]">
-          <div>
-            <div className="flex items-center gap-4">
-              <Image src="/brand/mahida-logo.webp" alt="Logo Mahida" width={72} height={72} className="h-16 w-16 object-contain" />
-              <div>
-                <p className="font-serif text-3xl font-bold">MAHIDA</p>
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-white/45">Digital Pesantren</p>
-              </div>
+    <footer className="site-footer bg-[#062d20] text-white">
+      <div className="mx-auto max-w-[1450px] px-5 py-14 sm:px-8 lg:px-12">
+        <div className="flex items-center gap-3">
+          <Image src="/brand/mahida-logo.webp" alt="Logo Mahida" width={56} height={56} className="h-14 w-14 object-contain" />
+          <div><p className="font-serif text-2xl font-bold">MAHIDA</p><p className="text-xs text-white/65">Digital Pesantren</p></div>
+        </div>
+        <p className="mt-5 max-w-xl text-sm text-white/70">Ruang untuk ilmu, karya, dokumentasi, dan khidmah Mahida.</p>
+        <nav aria-label="Tautan footer" className="mt-10 grid gap-8 border-t border-white/15 pt-8 sm:grid-cols-2 lg:grid-cols-3">
+          {items.filter((item) => item.path !== '/').map((item) => (
+            <div key={item.id}>
+              <Link href={item.path} className="font-semibold text-[#f0d43b]">{item.label}</Link>
+              <div className="mt-3 space-y-2">{item.children.map((child) => <Link key={child.id} href={child.path} className="block text-sm text-white/70 hover:text-white">{child.label}</Link>)}</div>
             </div>
-
-            <h2 className="mt-8 max-w-2xl font-serif text-3xl font-bold leading-tight md:text-4xl">
-              Belajar, berkarya, dan berkhidmah dalam satu rumah digital.
-            </h2>
-            <p className="mt-5 max-w-xl text-sm leading-7 text-white/58">
-              Ruang untuk mengenal, membaca, menjaga arsip, dan mengikuti perjalanan Mahida dalam ilmu, karya, dokumentasi, dan khidmah.
-            </p>
-          </div>
-
-          <div className="grid gap-8 sm:grid-cols-3">
-            {columns.map((column) => (
-              <div key={column.title}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#e4c72f]">{column.title}</p>
-                <div className="mt-5 space-y-3">
-                  {column.links.map((link) => (
-                    <Link key={link.href} href={link.href} className="block text-sm text-white/62 transition-colors hover:text-white">
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-14 grid gap-5 border-t border-white/10 pt-7 md:grid-cols-[1fr_auto] md:items-center">
-          <div className="flex flex-wrap items-center gap-4 text-xs text-white/42">
-            <span>© {new Date().getFullYear()} Mahida Digital</span>
-          </div>
-          <Link href="/tentang/profil" className="inline-flex items-center gap-2 text-sm font-bold text-[#f0d43b]">
-            Mengenal Mahida <ArrowRight size={14} />
-          </Link>
-        </div>
+          ))}
+        </nav>
+        <p className="mt-12 border-t border-white/15 pt-6 text-xs text-white/55">© {new Date().getFullYear()} Mahida Digital</p>
       </div>
     </footer>
   );

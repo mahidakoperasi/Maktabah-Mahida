@@ -1,16 +1,6 @@
-import type { Metadata } from 'next';
-import ContentPending from '@/components/ContentPending';
+import CmsPage from '@/components/CmsPage';
 
-export const metadata: Metadata = { title: 'Maktabah' };
-
+export const dynamic = 'force-dynamic';
 export default function Page() {
-  return (
-    <ContentPending
-      eyebrow={'Maktabah'}
-      title={'Ruang Ilmu'}
-      description={'Ruang untuk bahan bacaan dan kajian Mahida.'}
-      emptyTitle={'Belum ada bahan terbit'}
-      emptyDescription={'Bahan bacaan resmi akan tampil setelah tersedia.'}
-    />
-  );
+  return <CmsPage path="/maktabah" />;
 }
