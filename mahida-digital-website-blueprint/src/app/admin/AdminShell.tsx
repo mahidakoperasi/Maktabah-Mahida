@@ -26,6 +26,7 @@ const navItems: NavItem[] = [
     children: [
       { label: 'Beranda', icon: LayoutDashboard, href: '/admin/tampilan/beranda' },
       { label: 'Halaman & Menu', icon: FileText, href: '/admin/tampilan/halaman' },
+      { label: 'Media Sosial & Kontak', icon: FileText, href: '/admin/tampilan/kontak' },
     ],
   },
   {

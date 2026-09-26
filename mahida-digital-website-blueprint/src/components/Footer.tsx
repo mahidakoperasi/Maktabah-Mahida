@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { getPublicMenu } from '@/lib/cms';
+import { getVisibleDirectory } from '@/lib/public-directory-store';
+import PublicDirectoryLinks from '@/components/PublicDirectoryLinks';
 
 export default async function Footer() {
-  const items = await getPublicMenu();
+  const [items, directory] = await Promise.all([getPublicMenu(), getVisibleDirectory()]);
   return (
     <footer className="site-footer bg-[#062d20] text-white">
       <div className="mx-auto max-w-[1450px] px-5 py-14 sm:px-8 lg:px-12">
@@ -20,6 +22,8 @@ export default async function Footer() {
             </div>
           ))}
         </nav>
+        {(directory.socials.length > 0 || directory.contacts.length > 0) &&
+          <PublicDirectoryLinks {...directory} variant="footer" />}
         <p className="mt-12 border-t border-white/15 pt-6 text-xs text-white/55">© {new Date().getFullYear()} Mahida Digital</p>
       </div>
     </footer>
