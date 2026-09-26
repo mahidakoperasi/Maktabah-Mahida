@@ -1,139 +1,30 @@
-import { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { notFound } from 'next/navigation';
+import { and, desc, eq, inArray, or } from 'drizzle-orm';
+import { db } from '@/db';
+import { posts } from '@/db/schema';
+import { getPublicMenu, getPublicPage, paragraphs } from '@/lib/cms';
 
-export const metadata: Metadata = {
-  title: 'Karya Mahida',
-  description: 'Ruang yang menghimpun gagasan, tulisan, penerjemahan, penelitian, sastra, kreativitas visual, budaya, dan produksi media dari lingkungan Mahida.',
-};
-
-const karyaCategories = [
-  {
-    name: 'Esai & Gagasan',
-    slug: '/karya/esai',
-    description: 'Pemikiran, opini, dan gagasan orisinal dari santri, ustadz, dan keluarga Mahida.',
-    subcategories: ['Pendidikan', 'Sosial', 'Pesantren', 'Refleksi', 'Budaya', 'Opini'],
-    count: 24,
-  },
-  {
-    name: 'Terjemahan & Khazanah',
-    slug: '/karya/terjemahan',
-    description: 'Terjemahan kitab, syarah, ta\'liq, taqrir, catatan, ringkasan, dan pembahasan kitab.',
-    subcategories: ['Terjemahan Kitab', 'Syarah', 'Ta\'liq', 'Ringkasan'],
-    count: 12,
-  },
-  {
-    name: 'Sastra',
-    slug: '/karya/sastra',
-    description: 'Puisi, cerpen, prosa, nadhom, sastra pesantren, Pegon, dan sastra Jawa.',
-    subcategories: ['Puisi', 'Cerpen', 'Prosa', 'Nadhom', 'Sastra Pegon'],
-    count: 18,
-  },
-  {
-    name: 'Falak & Sains',
-    slug: '/karya/falak',
-    description: 'Rukyat, hilal, gerhana, kalender Hijriah, astronomi, arah kiblat, dan sains populer.',
-    subcategories: ['Rukyat & Hilal', 'Astronomi', 'Kalender Hijriah'],
-    count: 7,
-  },
-  {
-    name: 'Riset & Kajian',
-    slug: '/karya/riset',
-    description: 'Hasil penelitian, makalah, resume kajian, hasil diskusi, bahtsul masa\'il, laporan observasi.',
-    subcategories: ['Penelitian', 'Makalah', 'Bahtsul Masa\'il', 'Resume Kajian'],
-    count: 9,
-  },
-  {
-    name: 'Budaya & Tradisi',
-    slug: '/karya/budaya',
-    description: 'Tradisi pesantren, budaya Jawa, Serat, Pegon, macapat, shalawat, kegiatan tradisional.',
-    subcategories: ['Tradisi Pesantren', 'Budaya Jawa', 'Macapat', 'Shalawat'],
-    count: 15,
-  },
-  {
-    name: 'Fotografi',
-    slug: '/karya/fotografi',
-    description: 'Photo story, dokumentasi, fotografi santri, kehidupan pondok, lingkungan, human interest.',
-    subcategories: ['Photo Story', 'Dokumentasi', 'Human Interest'],
-    count: 42,
-  },
-  {
-    name: 'Media Kreatif',
-    slug: '/karya/media-kreatif',
-    description: 'Film pendek, dokumenter, video, wawancara, podcast, broadcast, motion graphic, desain, visual storytelling.',
-    subcategories: ['Film Pendek', 'Dokumenter', 'Podcast', 'Motion Graphic'],
-    count: 31,
-  },
-];
-
-export default function KaryaPage() {
+export const dynamic = 'force-dynamic';
+export default async function KaryaPage() {
+  const page = await getPublicPage('/karya');
+  if (!page) notFound();
+  const sections = (await getPublicMenu()).find((item) => item.path === '/karya')?.children ?? [];
+  const works = await db.select({ id: posts.id, title: posts.title, slug: posts.slug, type: posts.type, category: posts.karyaCategory, excerpt: posts.excerpt })
+    .from(posts).where(and(or(inArray(posts.type, ['article','essay']), and(eq(posts.type,'work'), inArray(posts.karyaCategory,['terjemahan','manuskrip']))), eq(posts.status, 'published')))
+    .orderBy(desc(posts.publishedAt)).limit(20);
+  function pathOf(type: string, category: string | null) {
+    return type === 'article' ? '/karya/artikel' : type === 'essay' ? '/karya/esai' : category === 'terjemahan' ? '/karya/terjemahan' : '/karya/manuskrip';
+  }
   return (
-    <>
-      {/* Hero */}
-      <section className="bg-charcoal text-white py-20 lg:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="label text-brass-light mb-4">Karya Mahida</p>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 max-w-3xl leading-[1.08]">
-            Lahir dari Mahida
-          </h1>
-          <p className="text-lg md:text-xl text-warm-gray-400 max-w-2xl leading-relaxed mb-8">
-            Gagasan yang ditulis, ilmu yang diterjemahkan, tradisi yang dirawat, 
-            dan kreativitas yang tumbuh dari Mahida.
-          </p>
-          
-          <div className="flex items-center gap-3 text-sm text-warm-gray-500">
-            <span>{158} karya diterbitkan</span>
-            <span>•</span>
-            <span>8 kategori</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories Grid */}
-      <section className="py-16 bg-cream -mt-1 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-6">
-            {karyaCategories.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={cat.slug}
-                className="group bg-white p-8 border border-mahida-150 hover:border-emerald-300 hover:shadow-card transition-all duration-300"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <h2 className="text-xl font-serif font-bold text-charcoal group-hover:text-emerald-forest transition-colors">
-                    {cat.name}
-                  </h2>
-                  <span className="text-sm font-medium text-warm-gray-400 group-hover:text-emerald-forest transition-colors flex-shrink-0 ml-4">
-                    {cat.count}
-                  </span>
-                </div>
-                <p className="text-sm text-warm-gray-600 leading-relaxed mb-4">{cat.description}</p>
-                <div className="flex flex-wrap gap-2 pt-4 border-t border-mahida-100">
-                  {cat.subcategories.map((sub) => (
-                    <span key={sub} className="tag-pill text-xs">{sub}</span>
-                  ))}
-                </div>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-forest opacity-0 group-hover:opacity-100 transition-opacity mt-4">
-                  Jelajahi
-                  <ArrowRight size={14} />
-                </span>
-              </Link>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <div className="mt-16 text-center bg-parchment rounded-sm p-10 border border-mahida-200">
-            <h2 className="text-2xl font-serif font-bold text-charcoal mb-3">Punya Karya untuk Diterbitkan?</h2>
-            <p className="text-warm-gray-600 max-w-lg mx-auto mb-6">
-              Kirimkan esai, terjemahan, sastra, atau karya kreatifmu untuk menjadi bagian dari Mahida Digital.
-            </p>
-            <Link href="/kirim-karya" className="btn-primary">
-              Lihat Panduan Kirim Karya
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
-    </>
+    <div className="min-h-screen bg-cream">
+      <header className="bg-emerald-forest py-14 text-white"><div className="mx-auto max-w-5xl px-4 sm:px-6"><h1 className="display-md text-white">{page.title}</h1>{page.intro && <p className="mt-4 text-white/80">{page.intro}</p>}</div></header>
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+        {page.body && <div className="mb-8 space-y-4 text-warm-gray-600">{paragraphs(page.body).map((part, index) => <p key={index}>{part}</p>)}</div>}
+        <nav aria-label="Jenis karya" className="mb-8 flex flex-wrap gap-3">{sections.map((item) => <Link key={item.id} href={item.path} className="border border-mahida-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-forest">{item.label}</Link>)}</nav>
+        {works.length === 0 ? <div className="empty-state">Belum ada karya terbit. Karya akan muncul setelah diterbitkan oleh admin.</div>
+          : <div className="grid gap-5 sm:grid-cols-2">{works.map((work) => <article key={work.id} className="border border-mahida-200 bg-white p-6"><p className="label mb-2">{pathOf(work.type, work.category).split('/').at(-1)}</p><h2 className="font-serif text-xl font-bold"><Link href={`${pathOf(work.type, work.category)}/${work.slug}`}>{work.title}</Link></h2>{work.excerpt && <p className="mt-3 text-sm text-warm-gray-600">{work.excerpt}</p>}</article>)}</div>}
+      </div>
+    </div>
   );
 }

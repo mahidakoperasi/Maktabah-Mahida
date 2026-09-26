@@ -1,62 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { users, otpCodes } from '@/db/schema';
+import { users } from '@/db/schema';
 import {
   verifyPassword,
   generateToken,
-  generateOTP,
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE,
 } from '@/lib/utils';
-import { sendVerificationEmail } from '@/lib/email';
 import { eq } from 'drizzle-orm';
+import { z } from 'zod';
+import { allowAdminLogin } from '@/lib/admin-login-limit';
 
-const loginRateLimit = new Map<string, { count: number; lastAttempt: number }>();
-
-function checkLoginRateLimit(email: string): boolean {
-  const now = Date.now();
-  const record = loginRateLimit.get(email);
-
-  if (!record || now - record.lastAttempt > 15 * 60 * 1000) {
-    loginRateLimit.set(email, { count: 1, lastAttempt: now });
-    return true;
-  }
-
-  if (record.count >= 10) {
-    return false;
-  }
-
-  record.count++;
-  record.lastAttempt = now;
-  return true;
-}
+const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email().max(255)),
+  password: z.string().min(1).max(1024),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const email = String(body.email ?? '').trim().toLowerCase();
-    const password = String(body.password ?? '');
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email dan password wajib diisi' },
-        { status: 400 }
-      );
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Format JSON tidak valid' }, { status: 400 });
     }
 
-    if (!checkLoginRateLimit(email)) {
-      return NextResponse.json(
-        { error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' },
-        { status: 429 }
-      );
+    const parsed = loginSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Email atau password tidak valid' }, { status: 400 });
     }
+    const { email, password } = parsed.data;
 
     const [user] = await db.select().from(users).where(eq(users.email, email));
 
-    if (!user) {
+    if (!user || user.role !== 'admin' || !user.emailVerified) {
       return NextResponse.json(
-        { error: 'Email atau password salah' },
+        { error: 'Email atau password admin salah' },
         { status: 401 }
+      );
+    }
+
+    if (!(await allowAdminLogin(user.id))) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' },
+        { status: 429 }
       );
     }
 
@@ -64,57 +51,21 @@ export async function POST(request: NextRequest) {
 
     if (!isValid) {
       return NextResponse.json(
-        { error: 'Email atau password salah' },
+        { error: 'Email atau password admin salah' },
         { status: 401 }
       );
-    }
-
-    if (!user.emailVerified) {
-      await db.update(otpCodes)
-        .set({ used: true })
-        .where(eq(otpCodes.userId, user.id));
-
-      const otp = generateOTP();
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-      await db.insert(otpCodes).values({
-        userId: user.id,
-        code: otp,
-        type: 'verification',
-        expiresAt,
-        used: false,
-        attempts: 0,
-      });
-
-      try {
-        await sendVerificationEmail(email, otp);
-      } catch (mailError) {
-        console.error('Verification email error:', mailError);
-        return NextResponse.json(
-          {
-            error: 'Kode verifikasi dibuat, tetapi email gagal dikirim. Silakan coba lagi beberapa saat.',
-            requiresVerification: true,
-          },
-          { status: 502 }
-        );
-      }
-
-      return NextResponse.json({
-        requiresVerification: true,
-        message: 'Kode verifikasi baru telah dikirim ke email Anda.',
-      });
     }
 
     const token = generateToken({
       userId: user.id,
       email: user.email,
-      role: user.role as 'user' | 'admin',
+      role: 'admin',
     });
 
     const { password: _password, ...userData } = user;
 
     const response = NextResponse.json({
-      message: 'Login berhasil',
+      message: 'Login admin berhasil',
       user: userData,
     });
 
@@ -130,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Admin login error:', error);
     return NextResponse.json(
       { error: 'Terjadi kesalahan server' },
       { status: 500 }

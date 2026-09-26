@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, FileText, PenTool, Newspaper, BookOpen,
-  Video, Image, Calendar, Building2, Archive, Tag,
-  Users, MessageCircle, BarChart3, Settings, ChevronLeft,
+  LayoutDashboard, FileText, Users, ChevronLeft,
   ChevronDown, Menu, X, LogOut, LucideIcon
 } from 'lucide-react';
 
@@ -27,58 +25,77 @@ const navItems: NavItem[] = [
     label: 'Tampilan Website',
     children: [
       { label: 'Beranda', icon: LayoutDashboard, href: '/admin/tampilan/beranda' },
+      { label: 'Halaman & Menu', icon: FileText, href: '/admin/tampilan/halaman' },
+      { label: 'Media Sosial & Kontak', icon: FileText, href: '/admin/tampilan/kontak' },
     ],
   },
   {
     label: 'Konten',
     children: [
       { label: 'Artikel', icon: FileText, href: '/admin/konten/artikel' },
-      { label: 'Karya', icon: PenTool, href: '/admin/konten/karya' },
+      { label: 'Esai & Opini', icon: FileText, href: '/admin/konten/esai' },
       { label: 'Terjemahan', icon: FileText, href: '/admin/konten/terjemahan' },
-      { label: 'Berita', icon: Newspaper, href: '/admin/konten/berita' },
-      { label: 'Stories', icon: BookOpen, href: '/admin/konten/stories' },
+      { label: 'Manuskrip', icon: FileText, href: '/admin/konten/manuskrip' },
+      { label: 'Berita', icon: FileText, href: '/admin/konten/berita' },
+      { label: 'Kegiatan', icon: FileText, href: '/admin/konten/kegiatan' },
+      { label: 'Pengumuman', icon: FileText, href: '/admin/konten/pengumuman' },
+      { label: 'Video YouTube', icon: FileText, href: '/admin/media/video' },
+      { label: 'Galeri Foto', icon: FileText, href: '/admin/media/galeri' },
+      { label: 'Produk Koperasi', icon: FileText, href: '/admin/koperasi/produk' },
+      { label: 'Pengaturan Koperasi', icon: FileText, href: '/admin/koperasi/pengaturan' },
+      { label: 'Pesanan E-Book', icon: FileText, href: '/admin/koperasi/pesanan' },
     ],
   },
-  {
-    label: 'Maktabah',
-    children: [
-      { label: 'Kitab', icon: BookOpen, href: '/admin/maktabah/kitab' },
-      { label: 'Buku', icon: BookOpen, href: '/admin/maktabah/buku' },
-      { label: 'Kajian', icon: BookOpen, href: '/admin/maktabah/kajian' },
-    ],
-  },
-  {
-    label: 'Media',
-    children: [
-      { label: 'YouTube', icon: Video, href: '/admin/media/youtube' },
-      { label: 'Facebook', icon: FileText, href: '/admin/media/facebook' },
-      { label: 'Galeri', icon: Image, href: '/admin/media/galeri' },
-      { label: 'Photo Story', icon: Image, href: '/admin/media/photo-story' },
-    ],
-  },
-  {
-    label: 'Kegiatan',
-    children: [
-      { label: 'Agenda', icon: Calendar, href: '/admin/kegiatan/agenda' },
-      { label: 'Pengumuman', icon: FileText, href: '/admin/kegiatan/pengumuman' },
-      { label: 'Prestasi', icon: FileText, href: '/admin/kegiatan/prestasi' },
-    ],
-  },
-  { label: 'Profil Pondok', icon: Building2, href: '/admin/profil' },
-  { label: 'Koperasi', icon: Building2, href: '/admin/koperasi' },
-  { label: 'Arsip', icon: Archive, href: '/admin/arsip' },
-  { label: 'Kategori & Tag', icon: Tag, href: '/admin/taxonomy' },
-  { label: 'Penulis', icon: Users, href: '/admin/authors' },
-  { label: 'Pengguna', icon: Users, href: '/admin/users' },
-  { label: 'Komentar', icon: MessageCircle, href: '/admin/comments' },
-  { label: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
-  { label: 'Pengaturan', icon: Settings, href: '/admin/settings' },
 ];
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+function subscribeDesktop(callback: () => void) {
+  const media = window.matchMedia('(min-width: 1024px)');
+  media.addEventListener('change', callback);
+  return () => media.removeEventListener('change', callback);
+}
+
+function getDesktop() { return window.matchMedia('(min-width: 1024px)').matches; }
+
+export default function AdminShell({
+  children,
+  isPrimaryAdmin = false,
+}: {
+  children: React.ReactNode;
+  isPrimaryAdmin?: boolean;
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isDesktop = useSyncExternalStore(subscribeDesktop, getDesktop, () => false);
   const [expandedItems, setExpandedItems] = useState<string[]>(['Konten', 'Tampilan Website']);
   const pathname = usePathname();
+  const sidebar = useRef<HTMLElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    sidebar.current?.querySelector<HTMLElement>('a, button')?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setSidebarOpen(false);
+        menuButton.current?.focus();
+      } else if (event.key === 'Tab') {
+        const focusable = [...(sidebar.current?.querySelectorAll<HTMLElement>('a, button') ?? [])];
+        const first = focusable[0];
+        const last = focusable.at(-1);
+        if (event.shiftKey && document.activeElement === first && last) {
+          event.preventDefault(); last.focus();
+        } else if (!event.shiftKey && document.activeElement === last && first) {
+          event.preventDefault(); first.focus();
+        }
+      }
+    }
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const onDesktop = () => { if (desktop.matches) setSidebarOpen(false); };
+    desktop.addEventListener('change', onDesktop);
+    document.addEventListener('keydown', onKeyDown);
+    return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', onKeyDown); desktop.removeEventListener('change', onDesktop); };
+  }, [sidebarOpen]);
 
   function toggleExpand(label: string) {
     setExpandedItems(prev =>
@@ -93,35 +110,41 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="min-h-screen bg-warm-gray-100 flex">
+    <div data-admin-shell className="flex min-h-screen min-w-0 bg-warm-gray-100">
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+        <button type="button" aria-label="Tutup navigasi admin" tabIndex={-1}
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-charcoal text-white transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} overflow-y-auto`}>
+      <aside ref={sidebar} id="admin-navigation" tabIndex={-1} inert={!sidebarOpen && !isDesktop} aria-hidden={!sidebarOpen && !isDesktop} className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(18rem,88vw)] flex-col overflow-hidden bg-charcoal text-white transition-transform duration-300 lg:sticky lg:top-0 lg:bottom-auto lg:w-64 lg:shrink-0 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Header */}
         <div className="p-5 border-b border-white/10 flex items-center justify-between">
           <Link href="/admin" className="flex items-center gap-2">
             <span className="font-serif font-bold text-lg">MAHIDA</span>
             <span className="text-[10px] uppercase tracking-wider text-warm-gray-500">Admin</span>
           </Link>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1 text-warm-gray-400 hover:text-white">
+          <button type="button" onClick={() => { setSidebarOpen(false); menuButton.current?.focus(); }} aria-label="Tutup navigasi admin" className="grid h-11 w-11 place-items-center text-warm-gray-400 hover:text-white lg:hidden">
             <X size={20} />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1">
-          {navItems.map((item) => (
+        <nav className="min-h-0 flex-1 overflow-y-auto p-3 space-y-1" aria-label="Navigasi admin">
+          {[
+            ...navItems,
+            ...(isPrimaryAdmin
+              ? [{ label: 'Kelola Admin', icon: Users, href: '/admin/admins' } as NavItem]
+              : []),
+          ].map((item) => (
             item.href ? (
               <Link
                 key={item.label}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm transition-colors ${
                   pathname === item.href
                     ? 'bg-emerald-forest text-white'
@@ -134,7 +157,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             ) : (
               <div key={item.label}>
                 <button
+                  type="button"
                   onClick={() => toggleExpand(item.label)}
+                  aria-expanded={expandedItems.includes(item.label)}
                   className="w-full flex items-center justify-between px-3 py-2.5 rounded-sm text-sm text-warm-gray-400 hover:text-white hover:bg-white/5 transition-colors"
                 >
                   <span className="font-medium">{item.label}</span>
@@ -150,6 +175,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                       <Link
                         key={child.href}
                         href={child.href}
+                        onClick={() => setSidebarOpen(false)}
                         className={`flex items-center gap-3 px-3 py-2 rounded-sm text-sm transition-colors ${
                           pathname === child.href
                             ? 'bg-white/10 text-white'
@@ -168,8 +194,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </nav>
 
         {/* Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
-          <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm text-warm-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+        <div className="shrink-0 border-t border-white/10 p-4">
+          <Link href="/" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm text-warm-gray-400 hover:text-white hover:bg-white/5 transition-colors">
             <LogOut size={18} />
             Kembali ke Website
           </Link>
@@ -179,10 +205,15 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       {/* Main Content */}
       <main className="flex-1 min-w-0">
         {/* Top bar */}
-        <header className="bg-white border-b border-warm-gray-200 px-6 py-4 flex items-center justify-between sticky top-16 lg:top-0 z-30">
+        <header className="sticky top-0 z-30 flex min-h-[72px] items-center justify-between gap-3 border-b border-warm-gray-200 bg-white px-4 py-3 sm:px-6">
           <button
+            ref={menuButton}
+            type="button"
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 text-warm-gray-600 hover:bg-mahida-50 rounded-sm"
+            aria-label="Buka navigasi admin"
+            aria-expanded={sidebarOpen}
+            aria-controls="admin-navigation"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-sm text-warm-gray-600 hover:bg-mahida-50 lg:hidden"
           >
             <Menu size={20} />
           </button>
@@ -191,7 +222,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             <span>Admin Panel</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <Link href="/" target="_blank" className="text-xs text-emerald-forest font-medium hover:underline">Lihat Website →</Link>
             <div className="w-8 h-8 bg-mahida-200 rounded-full flex items-center justify-center">
               <span className="text-xs font-semibold text-mahida-700">A</span>
@@ -200,7 +231,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </header>
 
         {/* Page content */}
-        <div className="p-6 lg:p-8">
+        <div className="min-w-0 p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

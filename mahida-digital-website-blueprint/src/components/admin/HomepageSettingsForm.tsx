@@ -133,11 +133,11 @@ export default function HomepageSettingsForm({ articles }: { articles: ArticleOp
         </div>
         <textarea value={settings.heroDescription} onChange={(e) => update('heroDescription', e.target.value)} rows={4} className="w-full border p-3" placeholder="Deskripsi hero" />
         <div className="grid gap-3 md:grid-cols-2">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <input value={settings.heroPrimaryLabel} onChange={(e) => update('heroPrimaryLabel', e.target.value)} className="border p-3" placeholder="Label tombol utama" />
             <input value={settings.heroPrimaryHref} onChange={(e) => update('heroPrimaryHref', e.target.value)} className="border p-3" placeholder="/literasi" />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <input value={settings.heroSecondaryLabel} onChange={(e) => update('heroSecondaryLabel', e.target.value)} className="border p-3" placeholder="Label tombol kedua" />
             <input value={settings.heroSecondaryHref} onChange={(e) => update('heroSecondaryHref', e.target.value)} className="border p-3" placeholder="/tentang/profil" />
           </div>
@@ -166,7 +166,7 @@ export default function HomepageSettingsForm({ articles }: { articles: ArticleOp
                 value={settings[valueKey as keyof HomepageSettings] as string}
                 onChange={(e) => update(valueKey as keyof HomepageSettings, e.target.value as never)}
                 className="w-full border p-2.5 mb-2"
-                placeholder="Nilai, mis. 15+"
+                placeholder="Isi setelah data diverifikasi"
               />
               <input
                 value={settings[labelKey as keyof HomepageSettings] as string}

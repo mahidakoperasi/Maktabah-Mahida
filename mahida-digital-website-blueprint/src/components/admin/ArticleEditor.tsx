@@ -184,7 +184,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
         <div className="flex flex-wrap gap-2">
           {articleId && slug && status === 'published' && (
             <Link
-              href={`/literasi/artikel/${slug}`}
+              href={`/karya/artikel/${slug}`}
               target="_blank"
               className="btn-secondary"
             >
@@ -273,9 +273,20 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
               rows={22}
               className="w-full resize-y border border-warm-gray-300 px-4 py-4 font-serif text-[16px] leading-8 outline-none focus:border-emerald-forest"
             />
-            <p className="mt-2 text-xs text-warm-gray-400">
-              Untuk tahap pertama editor menyimpan teks secara aman. Editor visual/format kaya akan kita tingkatkan setelah alur CMS inti stabil.
-            </p>
+            <div className="mt-3 space-y-2 border border-[#dfe4d9] bg-[#f7f8f3] p-4 text-xs text-warm-gray-500">
+              <p>
+                Pisahkan paragraf dengan satu baris kosong. Untuk menyisipkan teaser video YouTube di posisi mana pun, tulis marker pada baris tersendiri:
+              </p>
+              <code className="block overflow-x-auto bg-white px-3 py-2 font-mono text-[11px] text-emerald-800">
+                [[youtube:https://youtu.be/VIDEO_ID]]
+              </code>
+              <p>
+                Judul teaser juga bisa ditentukan:
+              </p>
+              <code className="block overflow-x-auto bg-white px-3 py-2 font-mono text-[11px] text-emerald-800">
+                [[youtube:https://youtu.be/VIDEO_ID|Saksikan momen setoran lengkap]]
+              </code>
+            </div>
           </div>
         </div>
 
@@ -291,7 +302,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-warm-gray-500">Slug</dt>
-                <dd className="max-w-[180px] truncate text-right text-warm-gray-700">
+                <dd className="max-w-[180px] break-all text-right text-warm-gray-700">
                   {slug || 'dibuat otomatis'}
                 </dd>
               </div>
@@ -303,10 +314,10 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
             <input
               value={featuredImage}
               onChange={(e) => setFeaturedImage(e.target.value)}
-              placeholder="https://..."
+              placeholder="https://drive.google.com/file/d/.../view"
               className="w-full border border-warm-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-forest"
             />
-            <p className="mt-2 text-xs text-warm-gray-400">Masukkan URL gambar. Upload media akan dibuat di modul Media.</p>
+            <p className="mt-2 text-xs text-warm-gray-400">Tempel tautan foto Google Drive yang dapat dilihat siapa pun yang memiliki tautan. Foto akan tampil di beranda, daftar artikel, dan halaman artikel.</p>
           </div>
 
           <div className="bg-white border border-warm-gray-200 p-5">

@@ -31,7 +31,7 @@ export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   heroTitleLine2: 'Membaca, Menjaga',
   heroTitleAccent: 'Mahida.',
   heroDescription:
-    'Satu ruang untuk ilmu, karya, dan kehidupan pesantren. Temukan kitab, terjemahan, esai, dokumentasi, dan perjalanan Mahida di sini.',
+    'Ruang digital untuk mengenal Mahida dan membaca publikasi yang telah diterbitkan.',
   heroPrimaryLabel: 'Mulai Membaca',
   heroPrimaryHref: '/literasi',
   heroSecondaryLabel: 'Jelajahi Mahida',

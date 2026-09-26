@@ -1,0 +1,35 @@
+'use client';
+
+import { useState } from 'react';
+import { PenTool } from 'lucide-react';
+import { driveThumbnailUrl } from '@/lib/media-links';
+
+export default function ArticleCover({
+  url,
+  dark = false,
+}: {
+  url: string | null;
+  dark?: boolean;
+}) {
+  const src = url ? driveThumbnailUrl(url) ?? url : null;
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+
+  if (src && failedUrl !== src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        onError={() => setFailedUrl(src)}
+        className="block aspect-[4/3] w-full bg-mahida-50 object-contain"
+      />
+    );
+  }
+
+  return (
+    <div className={`grid aspect-[4/3] place-items-center px-6 ${dark ? 'text-[#f1d63d]' : 'text-[#759081]'}`}>
+      <PenTool size={30} strokeWidth={1.5} aria-hidden="true" />
+    </div>
+  );
+}

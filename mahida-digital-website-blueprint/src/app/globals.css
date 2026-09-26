@@ -75,11 +75,43 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html, body { min-width: 320px; }
+
+main, section, article, aside, nav, form, fieldset,
+.grid > *, .flex > * { min-width: 0; }
+
+img, video, iframe { max-width: 100%; }
+input, select, textarea { min-width: 0; max-width: 100%; }
+textarea { resize: vertical; }
+
+h1, h2, h3, p, a, label, figcaption { overflow-wrap: anywhere; }
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--color-brass);
+  outline-offset: 3px;
+}
+
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px; }
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--color-cream);
   color: var(--color-charcoal);
   line-height: 1.7;
+}
+
+body:has([data-admin-shell]) > .site-nav,
+body:has([data-admin-shell]) > .site-footer {
+  display: none;
+}
+
+body:has([data-admin-shell]) > main {
+  padding-top: 0;
 }
 
 /* Dark mode support */
@@ -241,6 +273,9 @@ body {
   transition: all 0.2s ease;
   border: none;
   cursor: pointer;
+  min-height: 44px;
+  justify-content: center;
+  text-align: center;
 }
 
 .btn-primary:hover {
@@ -261,6 +296,9 @@ body {
   border-radius: var(--radius-mahida-sm);
   transition: all 0.2s ease;
   cursor: pointer;
+  min-height: 44px;
+  justify-content: center;
+  text-align: center;
 }
 
 .btn-secondary:hover {
@@ -281,6 +319,7 @@ body {
   border-radius: var(--radius-mahida-sm);
   transition: all 0.2s ease;
   cursor: pointer;
+  min-height: 44px;
 }
 
 .btn-ghost:hover {
@@ -371,6 +410,28 @@ body {
   color: var(--color-charcoal);
 }
 
+.prose-article :where(img, iframe, video, pre) { max-width: 100%; }
+.prose-article :where(pre, table) { overflow-x: auto; }
+.prose-article table { display: block; }
+.prose-article :where(code, a) { overflow-wrap: anywhere; }
+
+.empty-state {
+  display: grid;
+  place-content: center;
+  min-height: 10rem;
+  padding: clamp(1.25rem, 5vw, 2.5rem);
+  border: 1px solid var(--color-mahida-200);
+  background: white;
+  color: var(--color-warm-gray-600);
+  text-align: center;
+}
+
+.empty-state.empty-state-dark {
+  border-color: rgba(255, 255, 255, .15);
+  background: rgba(255, 255, 255, .05);
+  color: rgba(255, 255, 255, .8);
+}
+
 .prose-article h2 {
   font-family: var(--font-serif);
   font-size: 1.65rem;
@@ -392,6 +453,14 @@ body {
 
 .prose-article p {
   margin-bottom: 1.35rem;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+@media (max-width: 640px) {
+  .prose-article p {
+    text-align: left;
+  }
 }
 
 .prose-article a {

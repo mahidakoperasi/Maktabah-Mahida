@@ -121,7 +121,7 @@ export default async function AdminArticlesPage({
                   >
                     {article.title}
                   </Link>
-                  <p className="mt-1 truncate text-xs text-warm-gray-400">/{article.slug}</p>
+                  <p className="mt-1 break-all text-xs text-warm-gray-400">/{article.slug}</p>
                   {article.excerpt && (
                     <p className="mt-1 line-clamp-1 text-sm text-warm-gray-500">{article.excerpt}</p>
                   )}

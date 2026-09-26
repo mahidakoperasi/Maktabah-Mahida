@@ -3,7 +3,6 @@ import Link from 'next/link';
 import {
   ArrowRight,
   BookOpen,
-  CalendarDays,
   Leaf,
   PenTool,
   ShoppingBag,
@@ -13,17 +12,28 @@ import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { getHomepageSettings } from '@/lib/homepage-settings';
+import { getPublicMenu, getPublicPage } from '@/lib/cms';
+import { driveIdFromUrl } from '@/lib/media-links';
+import ArticleCover from '@/components/ArticleCover';
 
 export const dynamic = 'force-dynamic';
 
 function articleHref(slug: string) {
-  return `/literasi/artikel/${slug}`;
+  return `/karya/artikel/${slug}`;
 }
 
 export default async function HomePage() {
   const settings = await getHomepageSettings();
+  const menu = await getPublicMenu();
+  const menuPaths = new Set(menu.flatMap((item) => [item.path, ...item.children.map((child) => child.path)]));
+  const articlesEnabled = Boolean(await getPublicPage('/karya/artikel'));
+  const explore = await Promise.all(menu.filter((item) => item.path !== '/').slice(0, 4).map(async (item) => ({
+    ...item,
+    intro: (await getPublicPage(item.path))?.intro,
+    icon: item.path === '/karya' ? PenTool : item.path === '/media' ? Video : item.path === '/koperasi' ? ShoppingBag : BookOpen,
+  })));
 
-  const latestPublished = await db
+  const latestPublished = articlesEnabled ? await db
     .select({
       id: posts.id,
       title: posts.title,
@@ -32,15 +42,16 @@ export default async function HomePage() {
       type: posts.type,
       publishedAt: posts.publishedAt,
       readingTime: posts.readingTime,
+      featuredImage: posts.featuredImage,
     })
     .from(posts)
-    .where(eq(posts.status, 'published'))
+    .where(and(eq(posts.type, 'article'), eq(posts.status, 'published')))
     .orderBy(desc(posts.publishedAt))
-    .limit(8);
+    .limit(8) : [];
 
   let featured = latestPublished.slice(0, 3);
 
-  if (settings.featuredArticleIds.length > 0) {
+  if (articlesEnabled && settings.featuredArticleIds.length > 0) {
     const selected = await db
       .select({
         id: posts.id,
@@ -50,10 +61,12 @@ export default async function HomePage() {
         type: posts.type,
         publishedAt: posts.publishedAt,
         readingTime: posts.readingTime,
+        featuredImage: posts.featuredImage,
       })
       .from(posts)
       .where(
         and(
+          eq(posts.type, 'article'),
           eq(posts.status, 'published'),
           inArray(posts.id, settings.featuredArticleIds)
         )
@@ -65,12 +78,6 @@ export default async function HomePage() {
     );
   }
 
-  const stats = [
-    [settings.stat1Value, settings.stat1Label],
-    [settings.stat2Value, settings.stat2Label],
-    [settings.stat3Value, settings.stat3Label],
-  ].filter(([value]) => Boolean(value));
-
   const heroEyebrowParts = settings.heroEyebrow
     .split('•')
     .map((part) => part.trim())
@@ -78,7 +85,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="relative -mt-[88px] overflow-hidden bg-[#075b3a] pt-[88px] text-white">
+      <section className="relative -mt-[76px] overflow-hidden bg-[#075b3a] pt-[76px] text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_22%,rgba(20,154,99,0.14),transparent_32%),radial-gradient(circle_at_88%_74%,rgba(0,33,22,0.26),transparent_34%)]" />
         <div
           className="absolute inset-0 opacity-[0.055]"
@@ -115,7 +122,7 @@ export default async function HomePage() {
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#042b1e]/76 to-transparent" />
         </div>
 
-        <div className="relative mx-auto grid min-h-[760px] max-w-[1500px] items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[.98fr_1.02fr] lg:px-12 lg:pb-14 lg:pt-20 xl:gap-16">
+        <div className="relative mx-auto grid max-w-[1500px] items-center gap-9 px-4 py-12 sm:px-8 sm:py-16 lg:min-h-[760px] lg:grid-cols-[minmax(0,.98fr)_minmax(0,1.02fr)] lg:px-12 lg:pb-14 lg:pt-20 xl:gap-16">
           <div className="relative z-20 max-w-[690px] lg:-translate-y-2">
             <div className="mb-6 flex items-center gap-3">
               <span className="h-[2px] w-8 bg-[#e4c72f]" />
@@ -136,7 +143,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <h1 className="font-serif text-[clamp(3rem,5.15vw,5.35rem)] font-bold leading-[0.98] tracking-[-0.042em] text-[#fffef9]">
+            <h1 className="font-serif text-[clamp(2.15rem,6vw,5.35rem)] font-bold leading-[1.04] tracking-[-0.035em] text-[#fffef9] lg:leading-[0.98]">
               <span className="block">{settings.heroTitleLine1}</span>
               <span className="mt-2 block">{settings.heroTitleLine2}</span>
               <span className="mt-2 inline-block text-[#e4c72f]">{settings.heroTitleAccent}</span>
@@ -147,20 +154,20 @@ export default async function HomePage() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
+              {menuPaths.has(settings.heroPrimaryHref) && <Link
                 href={settings.heroPrimaryHref}
-                className="inline-flex items-center gap-2 rounded-full bg-[#f3d43a] px-6 py-3.5 text-sm font-bold text-[#073c29] transition-all hover:-translate-y-0.5 hover:bg-[#f6dc55]"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#f3d43a] px-5 py-3 text-center text-sm font-bold text-[#073c29] transition-all hover:-translate-y-0.5 hover:bg-[#f6dc55]"
               >
                 {settings.heroPrimaryLabel}
                 <ArrowRight size={16} />
-              </Link>
-              <Link
+              </Link>}
+              {menuPaths.has(settings.heroSecondaryHref) && <Link
                 href={settings.heroSecondaryHref}
-                className="inline-flex items-center gap-2 rounded-full border border-white/35 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:border-[#e4c72f] hover:text-[#f3dc55]"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/35 px-5 py-3 text-center text-sm font-semibold text-white transition-all hover:border-[#e4c72f] hover:text-[#f3dc55]"
               >
                 {settings.heroSecondaryLabel}
                 <ArrowRight size={15} />
-              </Link>
+              </Link>}
             </div>
 
             <div className="mt-10 flex items-center gap-3 text-sm italic text-white/52">
@@ -169,8 +176,8 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="relative z-10 mx-auto min-h-[500px] w-full max-w-[590px] lg:min-h-[570px] lg:translate-x-2">
-            <div className="absolute -right-10 top-10 h-[410px] w-[410px] rounded-full border border-[#d4b13f]/28" />
+          <div className="relative z-10 mx-auto min-h-[290px] w-full max-w-[590px] sm:min-h-[420px] lg:min-h-[570px] lg:translate-x-2">
+            <div className="absolute -right-5 top-10 h-60 w-60 rounded-full border border-[#d4b13f]/28 sm:-right-10 sm:h-[410px] sm:w-[410px]" />
 
             <div
               className="absolute inset-x-3 inset-y-0 overflow-hidden border border-white/12 bg-[#fbfaf2] shadow-[0_28px_80px_rgba(1,35,23,0.20)]"
@@ -181,18 +188,18 @@ export default async function HomePage() {
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(7,91,58,0.035),transparent_38%),linear-gradient(145deg,#fffef8_0%,#f1f3eb_100%)]" />
 
-              <div className="absolute inset-0 flex items-center justify-center px-10 py-12">
+              <div className="absolute inset-0 flex items-center justify-center px-4 py-7 sm:px-10 sm:py-12">
                 <div className="relative text-center">
-                  <div className="absolute left-1/2 top-1/2 h-[390px] w-[285px] -translate-x-1/2 -translate-y-1/2 rounded-[48%] border border-[#b99a3c]/40" />
+                  <div className="absolute left-1/2 top-1/2 h-56 w-40 -translate-x-1/2 -translate-y-1/2 rounded-[48%] border border-[#b99a3c]/40 sm:h-[390px] sm:w-[285px]" />
                   <Image
                     src="/brand/mahida-logo.webp"
                     alt="Logo Pondok Pesantren Mahida"
                     width={280}
                     height={280}
                     priority
-                    className="relative mx-auto h-[245px] w-[245px] object-contain drop-shadow-[0_22px_34px_rgba(4,62,39,0.12)]"
+                    className="relative mx-auto h-36 w-36 object-contain drop-shadow-[0_22px_34px_rgba(4,62,39,0.12)] sm:h-[245px] sm:w-[245px]"
                   />
-                  <p className="mt-4 font-arabic text-4xl text-[#075b3a]">مَنْبَعُ الْهِدَايَةِ</p>
+                  <p className="mt-2 font-arabic text-2xl text-[#075b3a] sm:mt-4 sm:text-4xl">مَنْبَعُ الْهِدَايَةِ</p>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.27em] text-[#7d867e]">
                     Sumber Petunjuk
                   </p>
@@ -212,43 +219,43 @@ export default async function HomePage() {
                 Hari Ini di Mahida
               </h2>
             </div>
-            <Link href="/literasi/artikel" className="inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
+            {menuPaths.has('/karya/artikel') && <Link href="/karya/artikel" className="inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
               Semua Artikel <ArrowRight size={15} />
-            </Link>
+            </Link>}
           </div>
 
           {latestPublished.length === 0 ? (
-            <div className="border border-[#dfe4d9] bg-[#fffef9] p-10 text-sm text-[#777f78]">
+            <div className="empty-state text-sm">
               Belum ada konten terbit. Konten terbaru dari Admin Panel akan tampil di sini.
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="columns-1 gap-6 md:columns-2 lg:columns-3">
               {latestPublished.slice(0, 4).map((item, index) => (
                 <Link
                   key={item.id}
                   href={articleHref(item.slug)}
-                  className="group relative min-h-[250px] overflow-hidden border border-[#dde3d8] bg-[#fffef9] p-6 transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
+                  className="group mb-6 inline-block w-full break-inside-avoid overflow-hidden border border-[#dde3d8] bg-[#fffef9] align-top transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
                 >
-                  <span className="absolute right-5 top-4 font-serif text-5xl font-bold text-[#edf1e9]">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span className="inline-flex bg-[#edf2e9] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#50705f]">
-                    {item.type === 'article' ? 'Artikel' : item.type}
-                  </span>
-                  <h3 className="relative mt-12 font-serif text-xl font-bold leading-snug text-[#203d31] transition-colors group-hover:text-[#075b3a]">
-                    {item.title}
-                  </h3>
-                  <div className="absolute bottom-5 left-6 right-6 flex items-center justify-between border-t border-[#e8ebe3] pt-4 text-xs text-[#8a918a]">
-                    <span>
-                      {item.publishedAt
-                        ? new Date(item.publishedAt).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : ''}
+                  <div className="bg-[#edf2e9]">
+                    <ArticleCover url={item.featuredImage} />
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex bg-[#edf2e9] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#50705f]">
+                        {item.type === 'article' ? 'Artikel' : item.type}
+                      </span>
+                      <span className="font-serif text-2xl font-bold text-[#9cae9f]">{String(index + 1).padStart(2, '0')}</span>
+                    </div>
+                    <h3 className="mt-4 font-serif text-xl font-bold leading-snug text-[#203d31] transition-colors group-hover:text-[#075b3a]">
+                      {item.title}
+                    </h3>
+                    {item.publishedAt && <p className="mt-2 text-xs text-[#8a918a]">
+                      {new Date(item.publishedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>}
+                    {item.excerpt && <p className="mt-4 line-clamp-3 text-sm leading-6 text-[#657168]">{item.excerpt}</p>}
+                    <span className="mt-5 flex justify-end border-t border-[#e8ebe3] pt-3 text-[#075b3a]">
+                      <ArrowRight size={14} />
                     </span>
-                    <ArrowRight size={14} className="text-[#075b3a]" />
                   </div>
                 </Link>
               ))}
@@ -259,8 +266,8 @@ export default async function HomePage() {
 
       <section className="bg-[#fffef9] py-24">
         <div className="mx-auto grid max-w-[1450px] items-center gap-12 px-5 sm:px-8 lg:grid-cols-[.92fr_1.08fr] lg:px-12 xl:gap-20">
-          <div className="relative min-h-[560px] overflow-hidden bg-[#edf2e8]" style={{ borderRadius: '140px 24px 140px 24px' }}>
-            {settings.aboutImageUrl ? (
+          <div className="relative min-h-[320px] overflow-hidden rounded-[80px_24px_80px_24px] bg-[#edf2e8] sm:min-h-[420px] lg:min-h-[560px] lg:rounded-[140px_24px_140px_24px]">
+            {settings.aboutImageUrl && !driveIdFromUrl(settings.aboutImageUrl) ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={settings.aboutImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
             ) : (
@@ -284,21 +291,10 @@ export default async function HomePage() {
               {settings.aboutDescription}
             </p>
 
-            {stats.length > 0 && (
-              <div className="mt-9 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
-                {stats.map(([value, label]) => (
-                  <div key={label} className="border-t-2 border-[#e4c72f] pt-4">
-                    <span className="font-serif text-3xl font-bold text-[#075b3a]">{value}</span>
-                    <p className="mt-1 text-sm text-[#778079]">{label}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <Link href="/tentang/profil" className="mt-10 inline-flex items-center gap-2 rounded-full bg-[#075b3a] px-6 py-3.5 text-sm font-bold text-white">
+            {menuPaths.has('/tentang/profil') && <Link href="/tentang/profil" className="mt-10 inline-flex items-center gap-2 rounded-full bg-[#075b3a] px-6 py-3.5 text-sm font-bold text-white">
               Mengenal Mahida
               <ArrowRight size={16} />
-            </Link>
+            </Link>}
           </div>
         </div>
       </section>
@@ -311,36 +307,42 @@ export default async function HomePage() {
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#e4c72f]">Literasi Mahida</p>
               <h2 className="mt-2 font-serif text-4xl font-bold tracking-[-0.03em] md:text-5xl">Bacaan Pilihan</h2>
             </div>
-            <Link href="/literasi/artikel" className="inline-flex items-center gap-2 text-sm font-semibold text-white/75 hover:text-[#f3dc55]">
+            {menuPaths.has('/karya/artikel') && <Link href="/karya/artikel" className="inline-flex items-center gap-2 text-sm font-semibold text-white/75 hover:text-[#f3dc55]">
               Jelajahi Artikel <ArrowRight size={15} />
-            </Link>
+            </Link>}
           </div>
 
           {featured.length === 0 ? (
-            <div className="border border-white/12 bg-white/5 p-9 text-sm text-white/60">
+            <div className="empty-state empty-state-dark text-sm">
               Belum ada bacaan pilihan. Admin dapat memilih artikel setelah artikel diterbitkan.
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="columns-1 gap-6 md:columns-2 lg:columns-3">
               {featured.map((article, index) => (
-                <article key={article.id} className="group relative min-h-[390px] overflow-hidden border border-white/12 bg-white/[0.045] p-7">
-                  <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full border border-[#e4c72f]/20" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#e4c72f]">
-                    Pilihan {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <div className="mt-10 grid h-20 w-20 place-items-center rounded-full bg-white/[0.07] text-[#f1d63d]">
-                    <PenTool size={27} />
-                  </div>
-                  <h3 className="mt-8 font-serif text-2xl font-bold leading-snug text-white group-hover:text-[#f3dc55]">
-                    <Link href={articleHref(article.slug)}>{article.title}</Link>
-                  </h3>
-                  {article.excerpt && (
-                    <p className="mt-4 line-clamp-3 text-sm leading-7 text-white/60">{article.excerpt}</p>
-                  )}
-                  <div className="absolute bottom-6 left-7 right-7 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
-                    <span>{article.readingTime ? `${article.readingTime} menit baca` : 'Artikel'}</span>
-                    <ArrowRight size={15} className="text-[#e4c72f]" />
-                  </div>
+                <article key={article.id} className="group mb-6 inline-block w-full break-inside-avoid overflow-hidden border border-white/12 bg-white/[0.045] align-top">
+                  <Link href={articleHref(article.slug)} className="block">
+                    <div className="bg-white/[0.06]">
+                      <ArticleCover url={article.featuredImage} dark />
+                    </div>
+                    <div className="p-7">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#f3dc55]">
+                        Pilihan {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <h3 className="mt-3 font-serif text-2xl font-bold leading-snug text-white transition-colors group-hover:text-[#f3dc55]">
+                        {article.title}
+                      </h3>
+                      {article.publishedAt && <p className="mt-2 text-xs text-white/45">
+                        {new Date(article.publishedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>}
+                      {article.excerpt && (
+                        <p className="mt-4 line-clamp-3 text-sm leading-7 text-white/60">{article.excerpt}</p>
+                      )}
+                      <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
+                        <span>{article.readingTime ? `${article.readingTime} menit baca` : 'Artikel'}</span>
+                        <ArrowRight size={15} className="text-[#e4c72f]" />
+                      </div>
+                    </div>
+                  </Link>
                 </article>
               ))}
             </div>
@@ -358,16 +360,11 @@ export default async function HomePage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: 'Karya', href: '/karya', icon: PenTool, desc: 'Tulisan, terjemahan, sastra, dan karya santri.' },
-              { label: 'Maktabah', href: '/maktabah', icon: BookOpen, desc: 'Kitab, buku, kajian, dan ruang ilmu.' },
-              { label: 'Media', href: '/media', icon: Video, desc: 'Video, galeri, dokumentasi, dan cerita visual.' },
-              { label: 'Kegiatan', href: '/agenda', icon: CalendarDays, desc: 'Agenda, berita, prestasi, dan perjalanan Mahida.' },
-            ].map((item, index) => (
+            {explore.map((item, index) => (
               <Link
-                key={item.label}
-                href={item.href}
-                className="group relative min-h-[275px] overflow-hidden border border-[#dfe4d9] bg-[#fffef9] p-7 transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.1)]"
+                key={item.id}
+                href={item.path}
+                className="group relative flex min-h-[275px] flex-col overflow-hidden border border-[#dfe4d9] bg-[#fffef9] p-6 transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.1)] sm:p-7"
               >
                 <span className="absolute right-5 top-4 font-serif text-5xl font-bold text-[#edf1e9]">
                   {String(index + 1).padStart(2, '0')}
@@ -376,15 +373,15 @@ export default async function HomePage() {
                   <item.icon size={22} />
                 </div>
                 <h3 className="mt-8 font-serif text-2xl font-bold text-[#173d2d]">{item.label}</h3>
-                <p className="mt-3 text-sm leading-7 text-[#6f7871]">{item.desc}</p>
-                <span className="absolute bottom-6 left-7 inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
+                <p className="mt-3 text-sm leading-7 text-[#6f7871]">{item.intro || 'Informasi resmi akan tersedia setelah diisi admin.'}</p>
+                <span className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-bold text-[#075b3a]">
                   Jelajahi <ArrowRight size={14} />
                 </span>
               </Link>
             ))}
           </div>
 
-          <div className="mt-12 overflow-hidden bg-[#075b3a] text-white" style={{ borderRadius: '34px 110px 34px 34px' }}>
+          {menuPaths.has('/koperasi') && <div className="mt-12 overflow-hidden bg-[#075b3a] text-white" style={{ borderRadius: '34px 110px 34px 34px' }}>
             <div className="grid items-center gap-8 px-8 py-10 md:grid-cols-[1fr_auto] lg:px-12">
               <div>
                 <div className="mb-3 flex items-center gap-2 text-[#e4c72f]">
@@ -397,7 +394,7 @@ export default async function HomePage() {
                 Kunjungi Koperasi <ArrowRight size={15} />
               </Link>
             </div>
-          </div>
+          </div>}
         </div>
       </section>
     </>

@@ -74,6 +74,7 @@ export const posts = pgTable('posts', {
   content: text('content'), // HTML content or JSON structure
   contentRaw: text('content_raw'), // Original content for editing
   type: postTypeEnum('type').notNull().default('article'),
+  karyaCategory: varchar('karya_category', { length: 30 }),
   status: postStatusEnum('status').notNull().default('draft'),
   featuredImage: text('featured_image'),
   authorId: integer('author_id').references(() => authors.id),
@@ -159,17 +160,11 @@ export const videos = pgTable('videos', {
   id: serial('id').primaryKey(),
   title: varchar('title', { length: 500 }).notNull(),
   slug: varchar('slug', { length: 500 }).unique().notNull(),
-  videoId: varchar('video_id', { length: 20 }).notNull(), // YouTube ID
-  platform: varchar('platform', { length: 20 }).default('youtube'),
+  youtubeId: varchar('youtube_id', { length: 20 }).notNull(),
   description: text('description'),
-  thumbnailUrl: text('thumbnail_url'),
-  categoryId: integer('category_id').references(() => categories.id),
-  postId: integer('post_id').references(() => posts.id),
-  featured: boolean('featured').default(false),
-  publishedAt: timestamp('published_at'),
-  status: postStatusEnum('status').notNull().default('published'),
-  viewCount: integer('view_count').default(0),
-  createdAt: timestamp('created_at').defaultNow(),
+  status: postStatusEnum('status').notNull().default('draft'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
 // Social Posts (Facebook, etc.)
@@ -209,22 +204,17 @@ export const galleries = pgTable('galleries', {
   title: varchar('title', { length: 500 }).notNull(),
   slug: varchar('slug', { length: 500 }).unique().notNull(),
   description: text('description'),
-  type: varchar('type', { length: 50 }).default('album'), // album, photo_story
-  coverImage: text('cover_image'),
-  eventId: integer('event_id').references(() => events.id),
-  status: postStatusEnum('status').notNull().default('published'),
-  createdAt: timestamp('created_at').defaultNow(),
+  status: postStatusEnum('status').notNull().default('draft'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
 // Gallery Images
 export const galleryImages = pgTable('gallery_images', {
   id: serial('id').primaryKey(),
-  galleryId: integer('gallery_id').references(() => galleries.id, { onDelete: 'cascade' }),
+  galleryId: integer('gallery_id').references(() => galleries.id, { onDelete: 'cascade' }).notNull(),
   imageUrl: text('image_url').notNull(),
   caption: text('caption'),
   sortOrder: integer('sort_order').default(0),
-  focalPointX: real('focal_point_x'),
-  focalPointY: real('focal_point_y'),
 });
 
 // Products (Koperasi)
@@ -233,16 +223,53 @@ export const products = pgTable('products', {
   name: varchar('name', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 255 }).unique().notNull(),
   description: text('description'),
-  category: varchar('category', { length: 100 }), // kitab, buku, atk, perlengkapan, paket
-  price: real('price'),
-  originalPrice: real('original_price'),
-  image: text('image'),
-  inStock: boolean('in_stock').default(true),
-  orderInfo: text('order_info'),
-  featured: boolean('featured').default(false),
-  status: postStatusEnum('status').notNull().default('published'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
+  productType: varchar('product_type', { length: 20 }).notNull(),
+  price: integer('price').notNull(),
+  imageUrl: text('image_url'),
+  digitalFileUrl: text('digital_file_url'),
+  inStock: boolean('in_stock').notNull().default(true),
+  status: postStatusEnum('status').notNull().default('draft'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const cmsPages = pgTable('cms_pages', {
+  id: serial('id').primaryKey(),
+  path: varchar('path', { length: 255 }).notNull().unique(),
+  title: varchar('title', { length: 255 }).notNull(),
+  intro: text('intro'),
+  body: text('body'),
+  status: postStatusEnum('status').notNull().default('draft'),
+  isSystem: boolean('is_system').notNull().default(false),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const navigationItems = pgTable('navigation_items', {
+  id: serial('id').primaryKey(),
+  parentId: integer('parent_id'),
+  path: varchar('path', { length: 255 }).notNull().unique(),
+  label: varchar('label', { length: 100 }).notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isVisible: boolean('is_visible').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const ebookOrders = pgTable('ebook_orders', {
+  id: serial('id').primaryKey(),
+  code: varchar('code', { length: 40 }).notNull().unique(),
+  productId: integer('product_id').references(() => products.id, { onDelete: 'restrict' }).notNull(),
+  productNameSnapshot: varchar('product_name_snapshot', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  priceSnapshot: integer('price_snapshot').notNull(),
+  fileUrlSnapshot: text('file_url_snapshot').notNull(),
+  status: varchar('status', { length: 30 }).notNull().default('awaiting_payment'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  reportedAt: timestamp('reported_at'),
+  paidAmount: integer('paid_amount'),
+  paidAt: timestamp('paid_at'),
+  verifiedAt: timestamp('verified_at'),
+  deliveredAt: timestamp('delivered_at'),
 });
 
 // Media Library
@@ -344,4 +371,11 @@ export const analyticsEvents = pgTable('analytics_events', {
   userAgent: text('user_agent'),
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Login attempt counters for admin accounts
+export const loginRateLimits = pgTable('login_rate_limits', {
+  userId: integer('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  attempts: integer('attempts').notNull().default(0),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull().defaultNow(),
 });
