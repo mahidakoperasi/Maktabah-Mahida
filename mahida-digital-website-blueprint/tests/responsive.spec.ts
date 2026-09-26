@@ -76,8 +76,10 @@ for (const width of widths) {
       expect(layout.heading?.scroll, `${width}px clipped heading on ${path}`).toBeLessThanOrEqual((layout.heading?.client ?? 0) + 1);
     }
 
-    for (const path of publicPaths) await check(path);
-    await expect(page.getByRole('link', { name: 'Kontak Pendaftaran Santri' })).toBeVisible();
+    for (const path of publicPaths) {
+      await check(path);
+      await expect(page.getByRole('link', { name: 'Kontak Pendaftaran Santri' })).toBeVisible();
+    }
 
     if (width < 1280) {
       await page.goto('/');
