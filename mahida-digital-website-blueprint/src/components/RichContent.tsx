@@ -1,13 +1,24 @@
 import type { ReactNode } from 'react';
 import YouTubeArticleBlock from './YouTubeArticleBlock';
 import { driveThumbnailUrl, youtubeIdFromUrl } from '@/lib/media-links';
+import { safeArticleLink } from '@/lib/rich-links';
 
 const blocks = /(\[\[(?:image|youtube):[^\]]+\]\])/gi;
 const imageMarker = /^\[\[image:(https:\/\/[^\]|\s]+)(?:\|([^\]]{0,200}))?\]\]$/i;
 const youtubeMarker = /^\[\[youtube:(https:\/\/[^\]|\s]+)(?:\|([^\]]{0,200}))?\]\]$/i;
 
 function inline(text: string): ReactNode[] {
-  return text.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*|\+\+[^+\n]+\+\+)/g).map((part, index) => {
+  return text.split(/(\[[^\]\n]{1,200}\]\(https:\/\/[^\s)]+\)|https:\/\/[^\s<>()]+|\*\*[^*\n]+\*\*|\*[^*\n]+\*|\+\+[^+\n]+\+\+)/g).map((part, index) => {
+    const link = /^\[([^\]\n]{1,200})\]\((https:\/\/[^\s)]+)\)$/.exec(part);
+    if (link) {
+      const href = safeArticleLink(link[2]);
+      if (href) return <a key={index} href={href} target="_blank" rel="noopener noreferrer" className="break-all text-emerald-forest underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">{link[1]}</a>;
+    }
+    if (part.startsWith('https://')) {
+      const address = part.replace(/[.,!?;:]+$/, '');
+      const href = safeArticleLink(address);
+      if (href) return <span key={index}><a href={href} target="_blank" rel="noopener noreferrer" className="break-all text-emerald-forest underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">{address}</a>{part.slice(address.length)}</span>;
+    }
     if (part.startsWith('**') && part.endsWith('**')) return <strong key={index}>{part.slice(2, -2)}</strong>;
     if (part.startsWith('*') && part.endsWith('*')) return <em key={index}>{part.slice(1, -1)}</em>;
     if (part.startsWith('++') && part.endsWith('++')) return <u key={index}>{part.slice(2, -2)}</u>;
