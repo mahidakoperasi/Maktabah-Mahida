@@ -1,13 +1,24 @@
 import type { ReactNode } from 'react';
 import YouTubeArticleBlock from './YouTubeArticleBlock';
 import { driveThumbnailUrl, youtubeIdFromUrl } from '@/lib/media-links';
+import { safeArticleLink } from '@/lib/rich-links';
 
 const blocks = /(\[\[(?:image|youtube):[^\]]+\]\])/gi;
 const imageMarker = /^\[\[image:(https:\/\/[^\]|\s]+)(?:\|([^\]]{0,200}))?\]\]$/i;
 const youtubeMarker = /^\[\[youtube:(https:\/\/[^\]|\s]+)(?:\|([^\]]{0,200}))?\]\]$/i;
 
 function inline(text: string): ReactNode[] {
-  return text.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*|\+\+[^+\n]+\+\+)/g).map((part, index) => {
+  return text.split(/(\[[^\]\n]{1,200}\]\(https:\/\/[^\s)]+\)|https:\/\/[^\s<>()]+|\*\*[^*\n]+\*\*|\*[^*\n]+\*|\+\+[^+\n]+\+\+)/g).map((part, index) => {
+    const link = /^\[([^\]\n]{1,200})\]\((https:\/\/[^\s)]+)\)$/.exec(part);
+    if (link) {
+      const href = safeArticleLink(link[2]);
+      if (href) return <a key={index} href={href} target="_blank" rel="noopener noreferrer" className="break-all text-emerald-forest underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">{link[1]}</a>;
+    }
+    if (part.startsWith('https://')) {
+      const address = part.replace(/[.,!?;:]+$/, '');
+      const href = safeArticleLink(address);
+      if (href) return <span key={index}><a href={href} target="_blank" rel="noopener noreferrer" className="break-all text-emerald-forest underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2">{address}</a>{part.slice(address.length)}</span>;
+    }
     if (part.startsWith('**') && part.endsWith('**')) return <strong key={index}>{part.slice(2, -2)}</strong>;
     if (part.startsWith('*') && part.endsWith('*')) return <em key={index}>{part.slice(1, -1)}</em>;
     if (part.startsWith('++') && part.endsWith('++')) return <u key={index}>{part.slice(2, -2)}</u>;
@@ -38,7 +49,14 @@ export default function RichContent({ content }: { content: string }) {
       return;
     }
     part.split(/\n\s*\n/).map((value) => value.trim()).filter(Boolean).forEach((paragraph) => {
-      nodes.push(<p key={key++} dir="auto">{inline(paragraph.replace(/\s*\n\s*/g, ' '))}</p>);
+      const lines = paragraph.split('\n').map((line) => line.trim()).filter(Boolean);
+      if (lines.every((line) => /^\d+\.\s+/.test(line))) {
+        nodes.push(<ol key={key++} dir="auto" className="list-decimal space-y-1 pl-6">{lines.map((line, index) => <li key={index}>{inline(line.replace(/^\d+\.\s+/, ''))}</li>)}</ol>);
+      } else if (lines.every((line) => /^-\s+/.test(line))) {
+        nodes.push(<ul key={key++} dir="auto" className="list-disc space-y-1 pl-6">{lines.map((line, index) => <li key={index}>{inline(line.replace(/^-\s+/, ''))}</li>)}</ul>);
+      } else {
+        nodes.push(<p key={key++} dir="auto">{inline(paragraph.replace(/\s*\n\s*/g, ' '))}</p>);
+      }
     });
   });
   return <>{nodes}</>;

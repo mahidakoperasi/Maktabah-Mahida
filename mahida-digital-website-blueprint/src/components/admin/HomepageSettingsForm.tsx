@@ -194,7 +194,7 @@ export default function HomepageSettingsForm({ articles }: { articles: ArticleOp
       <section className="bg-white border border-warm-gray-200 p-5 space-y-4">
         <div>
           <h2 className="font-semibold text-charcoal">Bacaan Pilihan</h2>
-          <p className="text-xs text-warm-gray-400 mt-1">Pilih maksimal 3 artikel terbit. Jika kosong, homepage memakai artikel terbaru.</p>
+          <p className="text-xs text-warm-gray-400 mt-1">Kurasi manual, terpisah dari Halaman Hari Ini. Pilih maksimal 3 artikel terbit; jika kosong, tampilkan artikel terbaru.</p>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           {[0, 1, 2].map((index) => (

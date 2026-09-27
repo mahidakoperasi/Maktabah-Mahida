@@ -1,6 +1,6 @@
-import CmsPage from '@/components/CmsPage';
+import { PublicContentList } from '@/components/PublicContent';
 
 export const dynamic = 'force-dynamic';
 export default function Page() {
-  return <CmsPage path="/berita" />;
+  return <PublicContentList section="berita" pagePath="/berita" />;
 }

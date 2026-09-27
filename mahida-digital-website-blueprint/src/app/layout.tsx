@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SectionNavigation from "@/components/SectionNavigation";
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="bg-cream text-charcoal antialiased min-h-screen flex flex-col">
         <Navbar />
         <main className="min-w-0 flex-1 pt-[76px]">
+          <SectionNavigation />
           {children}
         </main>
         <Footer />
