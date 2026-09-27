@@ -166,7 +166,7 @@ test('news remains in the database when archived and can be restored', async ({ 
   expect(created.status()).toBe(201);
   const { item } = await created.json();
   await page.goto('/berita');
-  await expect(page.getByRole('link', { name: title })).toBeVisible();
+  await expect(page.getByRole('link', { name: title, exact: true })).toBeVisible();
 
   const archived = await page.request.delete('/api/admin/content/berita', { data: { id: item.id } });
   expect(archived.ok()).toBe(true);
