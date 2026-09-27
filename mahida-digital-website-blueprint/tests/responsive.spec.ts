@@ -142,3 +142,26 @@ test('editor shortcuts and lists preserve page scroll', async ({ page, context }
   await page.getByRole('button', { name: 'Daftar poin' }).click();
   await expect(page.getByLabel('Pratinjau tulisan').locator('ul li')).toHaveCount(2);
 });
+
+test('news remains in the database when archived and can be restored', async ({ page, context }) => {
+  const token = jwt.sign({ userId: adminId, email: 'mahidakoperasi@gmail.com', role: 'admin' }, process.env.JWT_SECRET!);
+  await context.addCookies([{ name: 'mahida_session', value: token, url: 'http://127.0.0.1:3010' }]);
+  const title = `Berita tersimpan ${Date.now()}`;
+  const payload = { title, content: 'Isi berita untuk memeriksa status dan penyimpanan.', status: 'published' };
+  const created = await page.request.post('/api/admin/content/berita', { data: payload });
+  expect(created.status()).toBe(201);
+  const { item } = await created.json();
+  await page.goto('/berita');
+  await expect(page).toHaveURL(/\/media\/berita$/);
+  await expect(page.getByRole('link', { name: title })).toBeVisible();
+
+  const archived = await page.request.delete('/api/admin/content/berita', { data: { id: item.id } });
+  expect(archived.ok()).toBe(true);
+  const listing = await page.request.get('/api/admin/content/berita');
+  const archivedItem = (await listing.json()).items.find((row: { id: number }) => row.id === item.id);
+  expect(archivedItem.status).toBe('archived');
+
+  const restored = await page.request.patch('/api/admin/content/berita', { data: { ...payload, id: item.id } });
+  expect(restored.ok()).toBe(true);
+  expect((await restored.json()).item.publishedAt).toBe(item.publishedAt);
+});
