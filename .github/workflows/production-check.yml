@@ -74,3 +74,17 @@ jobs:
 
       - name: Docker build
         run: docker build -t mahida-digital-ci .
+
+      - name: Export Stage 4 image for the small VPS
+        if: github.head_ref == 'ops/stage4-image-artifact'
+        run: docker save mahida-digital-ci | gzip -1 > mahida-stage4-image.tar.gz
+
+      - name: Upload Stage 4 image
+        if: github.head_ref == 'ops/stage4-image-artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mahida-stage4-image
+          path: mahida-digital-website-blueprint/mahida-stage4-image.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
