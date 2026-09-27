@@ -74,3 +74,15 @@ jobs:
 
       - name: Docker build
         run: docker build -t mahida-digital-ci .
+
+      - name: Export image for VPS
+        run: docker save mahida-digital-ci | gzip -1 > mahida-pr12-image.tar.gz
+
+      - name: Upload image for VPS
+        uses: actions/upload-artifact@v4
+        with:
+          name: mahida-pr12-image
+          path: mahida-digital-website-blueprint/mahida-pr12-image.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
