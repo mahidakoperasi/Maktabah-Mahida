@@ -13,53 +13,56 @@ import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { getHomepageSettings } from '@/lib/homepage-settings';
 import { getPublicMenu, getPublicPage } from '@/lib/cms';
-import { driveIdFromUrl, driveThumbnailUrl } from '@/lib/media-links';
+import { driveThumbnailUrl, publicImageUrl } from '@/lib/media-links';
 import ArticleCover from '@/components/ArticleCover';
+import HomepageAboutImage from '@/components/HomepageAboutImage';
+import HeroWidgetImage from '@/components/HeroWidgetImage';
+import { karyaPostLabel, karyaPostPath } from '@/lib/karya-post';
 
 export const dynamic = 'force-dynamic';
-
-function articleHref(slug: string) {
-  return `/karya/artikel/${slug}`;
-}
 
 export default async function HomePage() {
   const settings = await getHomepageSettings();
   const widgetImage = driveThumbnailUrl(settings.heroWidgetImageUrl) ?? '/brand/mahida-logo.webp';
   const menu = await getPublicMenu();
   const menuPaths = new Set(menu.flatMap((item) => [item.path, ...item.children.map((child) => child.path)]));
-  const articlesEnabled = Boolean(await getPublicPage('/karya/artikel'));
   const explore = await Promise.all(menu.filter((item) => item.path !== '/').slice(0, 4).map(async (item) => ({
     ...item,
     intro: (await getPublicPage(item.path))?.intro,
     icon: item.path === '/karya' ? PenTool : item.path === '/media' ? Video : item.path === '/koperasi' ? ShoppingBag : BookOpen,
   })));
 
-  const latestPublished = articlesEnabled ? await db
+  const latestPublished = (await db
     .select({
       id: posts.id,
       title: posts.title,
       slug: posts.slug,
       excerpt: posts.excerpt,
       type: posts.type,
+      karyaCategory: posts.karyaCategory,
       publishedAt: posts.publishedAt,
       readingTime: posts.readingTime,
       featuredImage: posts.featuredImage,
     })
     .from(posts)
-    .where(and(eq(posts.type, 'article'), eq(posts.status, 'published')))
-    .orderBy(desc(posts.publishedAt))
-    .limit(8) : [];
+    .where(and(inArray(posts.type, ['article', 'essay', 'work']), eq(posts.status, 'published')))
+    .orderBy(desc(posts.publishedAt), desc(posts.id))
+    .limit(25)).flatMap((row) => {
+      const href = karyaPostPath(row);
+      return href && menuPaths.has(href.slice(0, href.lastIndexOf('/'))) ? [{ ...row, href }] : [];
+    });
 
   let featured = latestPublished.slice(0, 3);
 
-  if (articlesEnabled && settings.featuredArticleIds.length > 0) {
-    const selected = await db
+  if (settings.featuredWorkIds.length > 0) {
+    const selected = (await db
       .select({
         id: posts.id,
         title: posts.title,
         slug: posts.slug,
         excerpt: posts.excerpt,
         type: posts.type,
+        karyaCategory: posts.karyaCategory,
         publishedAt: posts.publishedAt,
         readingTime: posts.readingTime,
         featuredImage: posts.featuredImage,
@@ -67,13 +70,16 @@ export default async function HomePage() {
       .from(posts)
       .where(
         and(
-          eq(posts.type, 'article'),
+          inArray(posts.type, ['article', 'essay', 'work']),
           eq(posts.status, 'published'),
-          inArray(posts.id, settings.featuredArticleIds)
+          inArray(posts.id, settings.featuredWorkIds)
         )
-      );
+      )).flatMap((row) => {
+        const href = karyaPostPath(row);
+        return href && menuPaths.has(href.slice(0, href.lastIndexOf('/'))) ? [{ ...row, href }] : [];
+      });
 
-    const order = new Map(settings.featuredArticleIds.map((id, index) => [id, index]));
+    const order = new Map(settings.featuredWorkIds.map((id, index) => [id, index]));
     featured = selected.sort(
       (a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99)
     );
@@ -177,31 +183,19 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="relative z-10 mx-auto flex min-h-[210px] w-full max-w-[590px] justify-end sm:min-h-[340px] lg:min-h-[570px] lg:translate-x-2">
-            <div className="absolute -right-5 top-10 hidden h-60 w-60 rounded-full border border-[#d4b13f]/28 lg:block lg:h-[410px] lg:w-[410px]" />
-
-            <div
-              className="hero-logo-widget relative flex h-fit min-h-[180px] w-[min(62%,220px)] items-center justify-center overflow-hidden rounded-3xl border border-white/20 bg-[#063f2d]/35 p-3 shadow-lg backdrop-blur-[2px] sm:min-h-[280px] sm:w-[min(55%,330px)] lg:absolute lg:inset-x-3 lg:inset-y-0 lg:h-auto lg:w-auto lg:border-white/12 lg:bg-[#fbfaf2] lg:p-0 lg:shadow-[0_28px_80px_rgba(1,35,23,0.20)]"
-            >
-              <div className="absolute inset-0 hidden bg-[radial-gradient(circle_at_50%_42%,rgba(7,91,58,0.035),transparent_38%),linear-gradient(145deg,#fffef8_0%,#f1f3eb_100%)] lg:block" />
-
-              <div className="relative flex items-center justify-center text-white lg:absolute lg:inset-0 lg:px-10 lg:py-12">
-                <div className="relative text-center">
-                  <div className="absolute left-1/2 top-1/2 hidden h-56 w-40 -translate-x-1/2 -translate-y-1/2 rounded-[48%] border border-[#b99a3c]/40 lg:block lg:h-[390px] lg:w-[285px]" />
-                  <Image
-                    src={widgetImage}
-                    alt="Logo atau foto Pondok Pesantren Mahida"
-                    width={280}
-                    height={280}
-                    priority
-                    unoptimized
-                    className="relative mx-auto h-24 w-24 object-contain sm:h-40 sm:w-40 lg:h-[245px] lg:w-[245px]"
-                  />
-                  {settings.heroWidgetArabic && <p className="mt-2 font-arabic text-lg text-white sm:text-2xl lg:mt-4 lg:text-4xl lg:text-[#075b3a]">{settings.heroWidgetArabic}</p>}
-                  {settings.heroWidgetSubtitle && <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 sm:text-[10px] lg:tracking-[0.27em] lg:text-[#7d867e]">{settings.heroWidgetSubtitle}</p>}
-                </div>
+          <div className="relative z-10 mx-auto flex min-h-[210px] w-full max-w-[590px] items-center justify-end sm:min-h-[340px] lg:min-h-[570px]">
+            <div className="absolute -right-5 top-1/2 hidden h-[410px] w-[410px] -translate-y-1/2 rounded-full border border-[#d4b13f]/28 lg:block" />
+            {settings.heroWidgetLayout === 'photo' ? (
+              <div className="hero-logo-widget relative h-[min(76vw,320px)] w-[min(58vw,240px)] overflow-hidden rounded-3xl border border-white/25 bg-[#073e2b]/50 p-2 shadow-[0_24px_55px_rgba(1,35,23,0.22)] sm:h-[390px] sm:w-[300px] lg:h-[470px] lg:w-[min(32vw,390px)] lg:p-3">
+                <HeroWidgetImage src={widgetImage} photo />
               </div>
-            </div>
+            ) : (
+              <div className="hero-logo-widget relative flex min-h-[180px] w-[min(62vw,240px)] flex-col items-center justify-center rounded-3xl border border-white/20 bg-[#fbfaf2]/95 p-5 text-center shadow-[0_24px_55px_rgba(1,35,23,0.18)] sm:min-h-[290px] sm:w-[300px] lg:min-h-[390px] lg:w-[min(30vw,360px)] lg:p-8">
+                <HeroWidgetImage src={widgetImage} photo={false} />
+                {settings.heroWidgetArabic && <p className="mt-4 font-arabic text-2xl text-[#075b3a] lg:text-3xl">{settings.heroWidgetArabic}</p>}
+                {settings.heroWidgetSubtitle && <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#7d867e]">{settings.heroWidgetSubtitle}</p>}
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -215,8 +209,8 @@ export default async function HomePage() {
                 Hari Ini di Mahida
               </h2>
             </div>
-            {menuPaths.has('/karya/artikel') && <Link href="/karya/artikel" className="inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
-              Semua Artikel <ArrowRight size={15} />
+            {menuPaths.has('/karya') && <Link href="/karya" className="inline-flex items-center gap-2 text-sm font-bold text-[#075b3a]">
+              Semua Karya <ArrowRight size={15} />
             </Link>}
           </div>
 
@@ -229,7 +223,7 @@ export default async function HomePage() {
               {latestPublished.slice(0, 4).map((item, index) => (
                 <Link
                   key={item.id}
-                  href={articleHref(item.slug)}
+                  href={item.href}
                   className="group mb-6 inline-block w-full break-inside-avoid overflow-hidden border border-[#dde3d8] bg-[#fffef9] align-top transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
                 >
                   <div className="bg-[#edf2e9]">
@@ -238,7 +232,7 @@ export default async function HomePage() {
                   <div className="p-6">
                     <div className="flex items-center justify-between gap-3">
                       <span className="inline-flex bg-[#edf2e9] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#50705f]">
-                        {item.type === 'article' ? 'Artikel' : item.type}
+                        {karyaPostLabel(item)}
                       </span>
                       <span className="font-serif text-2xl font-bold text-[#9cae9f]">{String(index + 1).padStart(2, '0')}</span>
                     </div>
@@ -263,18 +257,7 @@ export default async function HomePage() {
       <section className="bg-[#fffef9] py-24">
         <div className="mx-auto grid max-w-[1450px] items-center gap-12 px-5 sm:px-8 lg:grid-cols-[.92fr_1.08fr] lg:px-12 xl:gap-20">
           <div className="relative min-h-[320px] overflow-hidden rounded-[80px_24px_80px_24px] bg-[#edf2e8] sm:min-h-[420px] lg:min-h-[560px] lg:rounded-[140px_24px_140px_24px]">
-            {settings.aboutImageUrl && !driveIdFromUrl(settings.aboutImageUrl) ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={settings.aboutImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            ) : (
-              <div className="absolute inset-0 grid place-items-center">
-                <div className="text-center">
-                  <Image src="/brand/mahida-logo.webp" alt="" width={190} height={190} className="mx-auto h-44 w-44 object-contain opacity-95" />
-                  <p className="mt-5 font-arabic text-3xl text-[#075b3a]">مَنْبَعُ الْهِدَايَةِ</p>
-                  <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[#839087]">Sumber Petunjuk</p>
-                </div>
-              </div>
-            )}
+            <HomepageAboutImage src={publicImageUrl(settings.aboutImageUrl)} />
             <div className="absolute -right-16 bottom-16 h-7 w-[330px] -rotate-[13deg] bg-[#e4c72f]" />
           </div>
 
@@ -303,20 +286,20 @@ export default async function HomePage() {
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#e4c72f]">Literasi Mahida</p>
               <h2 className="mt-2 font-serif text-4xl font-bold tracking-[-0.03em] md:text-5xl">Bacaan Pilihan</h2>
             </div>
-            {menuPaths.has('/karya/artikel') && <Link href="/karya/artikel" className="inline-flex items-center gap-2 text-sm font-semibold text-white/75 hover:text-[#f3dc55]">
-              Jelajahi Artikel <ArrowRight size={15} />
+            {menuPaths.has('/karya') && <Link href="/karya" className="inline-flex items-center gap-2 text-sm font-semibold text-white/75 hover:text-[#f3dc55]">
+              Jelajahi Karya <ArrowRight size={15} />
             </Link>}
           </div>
 
           {featured.length === 0 ? (
             <div className="empty-state empty-state-dark text-sm">
-              Belum ada bacaan pilihan. Admin dapat memilih artikel setelah artikel diterbitkan.
+              Belum ada bacaan pilihan. Admin dapat memilih karya setelah karya diterbitkan.
             </div>
           ) : (
             <div className="columns-1 gap-6 md:columns-2 lg:columns-3">
               {featured.map((article, index) => (
                 <article key={article.id} className="group mb-6 inline-block w-full break-inside-avoid overflow-hidden border border-white/12 bg-white/[0.045] align-top">
-                  <Link href={articleHref(article.slug)} className="block">
+                  <Link href={article.href} className="block">
                     <div className="bg-white/[0.06]">
                       <ArticleCover url={article.featuredImage} dark />
                     </div>
@@ -334,7 +317,7 @@ export default async function HomePage() {
                         <p className="mt-4 line-clamp-3 text-sm leading-7 text-white/60">{article.excerpt}</p>
                       )}
                       <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
-                        <span>{article.readingTime ? `${article.readingTime} menit baca` : 'Artikel'}</span>
+                        <span>{article.readingTime ? `${article.readingTime} menit baca` : karyaPostLabel(article)}</span>
                         <ArrowRight size={15} className="text-[#e4c72f]" />
                       </div>
                     </div>

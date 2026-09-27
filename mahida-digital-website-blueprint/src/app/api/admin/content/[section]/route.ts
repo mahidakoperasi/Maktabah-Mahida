@@ -7,7 +7,7 @@ import { getAdminUser } from '@/lib/admin-auth';
 import { contentSections, isContentSection } from '@/lib/content-sections';
 import { calculateReadingTime, slugify } from '@/lib/utils';
 import { driveIdFromUrl } from '@/lib/media-links';
-import { invalidDriveImages } from '@/lib/rich-markers';
+import { invalidDriveImages, invalidVideoMarkers } from '@/lib/rich-markers';
 
 const schema = z.object({
   id: z.number().int().positive().optional(),
@@ -44,6 +44,7 @@ async function save(request: NextRequest, context: { params: Promise<{ section: 
   const { id, title, excerpt, content, featuredImage, status } = parsed.data;
   if (featuredImage && !driveIdFromUrl(featuredImage)) return NextResponse.json({ error: 'Foto utama harus berupa tautan Google Drive' }, { status: 400 });
   if (invalidDriveImages(content)) return NextResponse.json({ error: 'Sisipan gambar harus berupa tautan berkas Google Drive' }, { status: 400 });
+  if (invalidVideoMarkers(content)) return NextResponse.json({ error: 'Gunakan tautan video publik YouTube, Facebook, Instagram, atau TikTok yang valid' }, { status: 400 });
   const conditions = [eq(posts.type, target.config.type)];
   if (target.config.category) conditions.push(eq(posts.karyaCategory, target.config.category));
   let existing: typeof posts.$inferSelect | undefined;

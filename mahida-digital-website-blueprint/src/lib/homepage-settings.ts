@@ -15,6 +15,7 @@ export type HomepageSettings = {
   heroWidgetImageUrl: string;
   heroWidgetArabic: string;
   heroWidgetSubtitle: string;
+  heroWidgetLayout: 'logo' | 'photo';
   aboutEyebrow: string;
   aboutTitle: string;
   aboutDescription: string;
@@ -25,7 +26,7 @@ export type HomepageSettings = {
   stat2Label: string;
   stat3Value: string;
   stat3Label: string;
-  featuredArticleIds: number[];
+  featuredWorkIds: number[];
 };
 
 export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
@@ -42,6 +43,7 @@ export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   heroWidgetImageUrl: '/brand/mahida-logo.webp',
   heroWidgetArabic: 'مَنْبَعُ الْهِدَايَةِ',
   heroWidgetSubtitle: 'Sumber Petunjuk',
+  heroWidgetLayout: 'logo',
   aboutEyebrow: 'Tentang Mahida',
   aboutTitle: 'Pondok Pesantren yang Membaca Tradisi dan Zaman',
   aboutDescription:
@@ -53,7 +55,7 @@ export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   stat2Label: 'Santri Aktif',
   stat3Value: '',
   stat3Label: 'Alumni',
-  featuredArticleIds: [],
+  featuredWorkIds: [],
 };
 
 export async function homepageSettingsReady() {
@@ -80,13 +82,16 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
   if (!row?.value) return DEFAULT_HOMEPAGE_SETTINGS;
 
   try {
-    const parsed = JSON.parse(row.value) as Partial<HomepageSettings>;
+    const parsed = JSON.parse(row.value) as Partial<HomepageSettings> & { featuredArticleIds?: number[] };
     return {
       ...DEFAULT_HOMEPAGE_SETTINGS,
       ...parsed,
-      featuredArticleIds: Array.isArray(parsed.featuredArticleIds)
-        ? parsed.featuredArticleIds.filter((value): value is number => Number.isInteger(value))
-        : [],
+      heroWidgetLayout: parsed.heroWidgetLayout === 'logo' || parsed.heroWidgetLayout === 'photo'
+        ? parsed.heroWidgetLayout
+        : parsed.heroWidgetImageUrl && parsed.heroWidgetImageUrl !== DEFAULT_HOMEPAGE_SETTINGS.heroWidgetImageUrl ? 'photo' : 'logo',
+      featuredWorkIds: (Array.isArray(parsed.featuredWorkIds) ? parsed.featuredWorkIds : parsed.featuredArticleIds ?? [])
+        .filter((value): value is number => Number.isInteger(value) && value > 0)
+        .filter((value, index, values) => values.indexOf(value) === index).slice(0, 10),
     };
   } catch {
     return DEFAULT_HOMEPAGE_SETTINGS;

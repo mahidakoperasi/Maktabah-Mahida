@@ -4,7 +4,7 @@ import pg from 'pg';
 
 const widths = [320, 375, 768, 1024, 1440];
 const publicPaths = [
-  '/', '/tentang/profil', '/tentang/kontak', '/karya/artikel',
+  '/', '/tentang/profil', '/tentang/kontak', '/karya/artikel', '/karya/esai', '/karya/terjemahan',
   '/karya/artikel/responsive-ci-article', '/koperasi', '/koperasi/buku',
   '/koperasi/buku/responsive-ci-book', '/media/video', '/media/galeri', '/masuk',
 ];
@@ -34,6 +34,20 @@ test.beforeAll(async () => {
       VALUES ('Artikel Mahida dengan judul panjang untuk pemeriksaan layar kecil',
         'responsive-ci-article', 'article', 'published', 'Ringkasan artikel uji.',
         '/brand/mahida-logo.webp', now())
+      ON CONFLICT (slug) DO NOTHING
+    `);
+    await pool.query(`
+      INSERT INTO posts(title, slug, type, status, excerpt, content_raw, featured_image, published_at)
+      VALUES ('Esai Mahida untuk pengujian sampul', 'responsive-ci-essay', 'essay', 'published',
+        'Ringkasan esai.', 'Tonton video berikut.\n\n[[video:https://www.tiktok.com/@scout2015/video/6718335390845095173|Kisah santri]]\n\n[[video:https://www.facebook.com/watch/?v=123456789|Video Facebook]]\n\n[[video:https://www.instagram.com/reel/C8A1B2C3D4E/|Video Instagram]]',
+        'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrsTuVwXyZ012345/view', now() + interval '2 minutes')
+      ON CONFLICT (slug) DO NOTHING
+    `);
+    await pool.query(`
+      INSERT INTO posts(title, slug, type, karya_category, status, excerpt, content_raw, featured_image, published_at)
+      VALUES ('Terjemahan Mahida untuk pengujian sampul', 'responsive-ci-translation', 'work', 'terjemahan', 'published',
+        'Ringkasan terjemahan.', 'Teks terjemahan.',
+        'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrsTuVwXyZ012345/view', now() + interval '3 minutes')
       ON CONFLICT (slug) DO NOTHING
     `);
     await pool.query(`
@@ -163,4 +177,47 @@ test('news remains in the database when archived and can be restored', async ({ 
   const restored = await page.request.patch('/api/admin/content/berita', { data: { ...payload, id: item.id } });
   expect(restored.ok()).toBe(true);
   expect((await restored.json()).item.publishedAt).toBe(item.publishedAt);
+});
+
+test('beranda curates karya beyond articles; covers, Drive photos, and videos render', async ({ page, context }) => {
+  await page.route('https://drive.google.com/thumbnail**', async (route) => route.fulfill({
+    status: 200, contentType: 'image/svg+xml',
+    body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="green"/></svg>',
+  }));
+  const token = jwt.sign({ userId: adminId, email: 'mahidakoperasi@gmail.com', role: 'admin' }, process.env.JWT_SECRET!);
+  await context.addCookies([{ name: 'mahida_session', value: token, url: 'http://127.0.0.1:3010' }]);
+  const essay = (await (await page.request.get('/api/admin/content/esai')).json()).items.find((item: { slug: string }) => item.slug === 'responsive-ci-essay');
+  const translation = (await (await page.request.get('/api/admin/content/terjemahan')).json()).items.find((item: { slug: string }) => item.slug === 'responsive-ci-translation');
+  const homepage = await (await page.request.get('/api/admin/homepage')).json();
+  const image = 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrsTuVwXyZ012345/view';
+  const saved = await page.request.put('/api/admin/homepage', { data: { ...homepage.settings, featuredWorkIds: [translation.id, essay.id], heroWidgetImageUrl: image, heroWidgetLayout: 'photo', aboutImageUrl: image } });
+  expect(saved.ok()).toBe(true);
+
+  await page.goto('/');
+  const latest = page.getByRole('heading', { name: 'Hari Ini di Mahida' }).locator('xpath=../..').locator('xpath=..');
+  await expect(latest.locator('a[href="/karya/esai/responsive-ci-essay"]')).toBeVisible();
+  await expect(latest.locator('a[href="/karya/terjemahan/responsive-ci-translation"]')).toBeVisible();
+  const curated = page.getByRole('heading', { name: 'Bacaan Pilihan' }).locator('xpath=../..');
+  await expect(curated.locator('a[href="/karya/terjemahan/responsive-ci-translation"]')).toBeVisible();
+  await expect(curated.locator('a[href="/karya/esai/responsive-ci-essay"]')).toBeVisible();
+  expect((await curated.locator('a[href^="/karya/"]').first().getAttribute('href'))).toBe('/karya/terjemahan/responsive-ci-translation');
+  const html = await (await page.request.get('/')).text();
+  expect(html).toContain('drive.google.com/thumbnail');
+  await expect(page.locator('.hero-logo-widget')).toHaveClass(/bg-\[#073e2b\]/);
+
+  await page.goto('/karya/esai');
+  await expect(page.getByRole('link', { name: 'Buka Esai Mahida untuk pengujian sampul' }).locator('img')).toHaveAttribute('src', /drive.google.com\/thumbnail/);
+  await page.goto('/karya/esai/responsive-ci-essay');
+  await expect(page.locator('figure img[alt="Esai Mahida untuk pengujian sampul"]')).toBeVisible();
+  await expect(page.getByText('Buka gambar di Google Drive')).toHaveCount(0);
+  await page.getByRole('button', { name: /Putar video TikTok/ }).click();
+  await expect(page.locator('iframe[src="https://www.tiktok.com/player/v1/6718335390845095173"]')).toBeVisible();
+  await page.getByRole('button', { name: /Putar video Facebook/ }).click();
+  await expect(page.locator('iframe[src*="facebook.com/plugins/video.php"]')).toBeVisible();
+  await page.getByRole('button', { name: /Putar video Instagram/ }).click();
+  await expect(page.locator('iframe[src="https://www.instagram.com/reel/C8A1B2C3D4E/embed/"]')).toBeVisible();
+
+  await page.goto('/admin/tampilan/beranda');
+  await expect(page.getByRole('checkbox')).toHaveCount(3);
+  await expect(page.getByText('2 dari 10 karya dipilih')).toBeVisible();
 });

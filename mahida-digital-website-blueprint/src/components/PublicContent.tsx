@@ -9,6 +9,7 @@ import DrivePreview from './DrivePreview';
 import RichContent from './RichContent';
 import DetailEngagement from './DetailEngagement';
 import RelatedContent from './RelatedContent';
+import ArticleCover from './ArticleCover';
 
 function conditions(section: ContentSection) {
   const config = contentSections[section];
@@ -21,14 +22,14 @@ export async function PublicContentList({ section, pagePath }: { section: Conten
   const config = contentSections[section];
   const page = await getPublicPage(pagePath ?? config.publicPath);
   if (!page) notFound();
-  const rows = await db.select({ id: posts.id, title: posts.title, slug: posts.slug, excerpt: posts.excerpt, publishedAt: posts.publishedAt })
+  const rows = await db.select({ id: posts.id, title: posts.title, slug: posts.slug, excerpt: posts.excerpt, publishedAt: posts.publishedAt, featuredImage: posts.featuredImage })
     .from(posts).where(and(...conditions(section))).orderBy(desc(posts.publishedAt));
   return (
     <div className="min-h-screen bg-cream">
       <header className="bg-emerald-forest py-14 text-white"><div className="mx-auto max-w-5xl px-4 sm:px-6"><h1 className="display-md text-white">{page.title}</h1>{page.intro && <p className="mt-4 text-white/80">{page.intro}</p>}</div></header>
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         {rows.length === 0 ? <div className="empty-state"><h2 className="font-serif text-xl font-bold">Belum ada konten terbit</h2><p className="mt-2 text-warm-gray-600">Publikasi akan tampil di sini setelah diterbitkan oleh admin.</p></div>
-          : <div className="grid gap-5 sm:grid-cols-2">{rows.map((item) => <article key={item.id} className="border border-mahida-200 bg-white p-6"><h2 className="font-serif text-xl font-bold"><Link href={`${config.publicPath}/${item.slug}`} className="hover:text-emerald-forest">{item.title}</Link></h2>{item.excerpt && <p className="mt-3 text-sm leading-6 text-warm-gray-600">{item.excerpt}</p>}<Link href={`${config.publicPath}/${item.slug}`} className="mt-5 inline-block text-sm font-semibold text-emerald-forest">Baca selengkapnya →</Link></article>)}</div>}
+          : <div className="grid gap-5 sm:grid-cols-2">{rows.map((item) => <article key={item.id} className="min-w-0 overflow-hidden border border-mahida-200 bg-white"><Link href={`${config.publicPath}/${item.slug}`} aria-label={`Buka ${item.title}`} className="block bg-mahida-50"><ArticleCover url={item.featuredImage} /></Link><div className="p-6"><h2 className="break-words font-serif text-xl font-bold"><Link href={`${config.publicPath}/${item.slug}`} className="hover:text-emerald-forest">{item.title}</Link></h2>{item.excerpt && <p className="mt-3 line-clamp-3 text-sm leading-6 text-warm-gray-600">{item.excerpt}</p>}<Link href={`${config.publicPath}/${item.slug}`} className="mt-5 inline-block min-h-11 text-sm font-semibold text-emerald-forest">Baca selengkapnya →</Link></div></article>)}</div>}
         {page.body && <div className="mt-10 space-y-4">{paragraphs(page.body).map((paragraph, index) => <p key={index} dir="auto">{paragraph}</p>)}</div>}
       </div>
     </div>

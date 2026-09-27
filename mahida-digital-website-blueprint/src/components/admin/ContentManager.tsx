@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { ContentSection } from '@/lib/content-sections';
 import RichTextField from './RichTextField';
+import ImageUrlPreview from './ImageUrlPreview';
 
 type Item = { id: number; title: string; slug: string; excerpt: string | null; content: string | null; featuredImage: string | null; status: string };
 const blank = { title: '', excerpt: '', content: '', featuredImage: '', status: 'draft' };
@@ -66,7 +67,7 @@ export default function ContentManager({ section, label, publicPath }: { section
         <label className="block text-sm">Ringkasan<textarea value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} className="mt-1 w-full border p-3" rows={3} /></label>
         <RichTextField label="Isi tulisan" value={form.content} onChange={(content) => setForm({ ...form, content })} />
         {section === 'terjemahan' && <p className="text-xs text-warm-gray-500">Pisahkan paragraf Arab dan terjemahan dengan baris kosong.</p>}
-        <label className="block text-sm">URL gambar Google Drive (opsional)<input value={form.featuredImage} onChange={(e) => setForm({ ...form, featuredImage: e.target.value })} className="mt-1 w-full border p-3" /></label>
+        <div><label className="block text-sm">URL foto sampul Google Drive (opsional)<input value={form.featuredImage} onChange={(e) => setForm({ ...form, featuredImage: e.target.value })} className="mt-1 w-full border p-3" placeholder="https://drive.google.com/file/d/.../view" /></label><ImageUrlPreview url={form.featuredImage} /></div>
         <label className="block text-sm">Status<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="mt-1 w-full border p-3"><option value="draft">Draft</option><option value="published">Terbit</option><option value="archived">Arsip (tidak tampil)</option></select></label>
         <div className="flex flex-wrap items-center gap-4"><button disabled={saving} type="submit" className="btn-primary">Simpan</button>{form.id && form.status !== 'archived' && <button type="button" className="text-sm text-red-700" onClick={() => { if (confirm('Arsipkan konten ini? Dapat dipulihkan dari daftar.')) submit('DELETE', { id: form.id }); }}>Arsipkan</button>}{form.id && form.status === 'published' && <Link target="_blank" className="text-sm text-emerald-forest" href={`${publicPath}/${items.find((i) => i.id === form.id)?.slug ?? ''}`}>Lihat di web</Link>}</div>
       </form>

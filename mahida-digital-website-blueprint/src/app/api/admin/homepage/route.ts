@@ -18,11 +18,12 @@ function sanitizeHomepageSettings(input: unknown): HomepageSettings {
     return typeof value === 'string' ? value.trim() : fallback;
   };
 
-  const ids = Array.isArray(source.featuredArticleIds)
-    ? source.featuredArticleIds
+  const ids = Array.isArray(source.featuredWorkIds)
+    ? source.featuredWorkIds
         .map((value) => Number(value))
         .filter((value) => Number.isInteger(value) && value > 0)
-        .slice(0, 3)
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .slice(0, 10)
     : [];
 
   return {
@@ -38,6 +39,7 @@ function sanitizeHomepageSettings(input: unknown): HomepageSettings {
     heroWidgetImageUrl: textValue('heroWidgetImageUrl', '') || DEFAULT_HOMEPAGE_SETTINGS.heroWidgetImageUrl,
     heroWidgetArabic: textValue('heroWidgetArabic', DEFAULT_HOMEPAGE_SETTINGS.heroWidgetArabic).slice(0, 120),
     heroWidgetSubtitle: textValue('heroWidgetSubtitle', DEFAULT_HOMEPAGE_SETTINGS.heroWidgetSubtitle).slice(0, 120),
+    heroWidgetLayout: source.heroWidgetLayout === 'photo' ? 'photo' : 'logo',
     aboutEyebrow: textValue('aboutEyebrow', DEFAULT_HOMEPAGE_SETTINGS.aboutEyebrow),
     aboutTitle: textValue('aboutTitle', DEFAULT_HOMEPAGE_SETTINGS.aboutTitle),
     aboutDescription: textValue('aboutDescription', DEFAULT_HOMEPAGE_SETTINGS.aboutDescription),
@@ -48,7 +50,7 @@ function sanitizeHomepageSettings(input: unknown): HomepageSettings {
     stat2Label: textValue('stat2Label', DEFAULT_HOMEPAGE_SETTINGS.stat2Label),
     stat3Value: textValue('stat3Value', ''),
     stat3Label: textValue('stat3Label', DEFAULT_HOMEPAGE_SETTINGS.stat3Label),
-    featuredArticleIds: ids,
+    featuredWorkIds: ids,
   };
 }
 
