@@ -197,7 +197,7 @@ test('beranda curates karya beyond articles; covers, Drive photos, and videos re
   const latest = page.getByRole('heading', { name: 'Hari Ini di Mahida' }).locator('xpath=../..').locator('xpath=..');
   await expect(latest.locator('a[href="/karya/esai/responsive-ci-essay"]')).toBeVisible();
   await expect(latest.locator('a[href="/karya/terjemahan/responsive-ci-translation"]')).toBeVisible();
-  const curated = page.getByRole('heading', { name: 'Bacaan Pilihan' }).locator('xpath=../..');
+  const curated = page.getByRole('heading', { name: 'Bacaan Pilihan' }).locator('xpath=../../..');
   await expect(curated.locator('a[href="/karya/terjemahan/responsive-ci-translation"]')).toBeVisible();
   await expect(curated.locator('a[href="/karya/esai/responsive-ci-essay"]')).toBeVisible();
   expect((await curated.locator('a[href^="/karya/"]').first().getAttribute('href'))).toBe('/karya/terjemahan/responsive-ci-translation');
