@@ -13,7 +13,7 @@ import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { getHomepageSettings } from '@/lib/homepage-settings';
 import { getPublicMenu, getPublicPage } from '@/lib/cms';
-import { driveIdFromUrl } from '@/lib/media-links';
+import { driveIdFromUrl, driveThumbnailUrl } from '@/lib/media-links';
 import ArticleCover from '@/components/ArticleCover';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +24,7 @@ function articleHref(slug: string) {
 
 export default async function HomePage() {
   const settings = await getHomepageSettings();
+  const widgetImage = driveThumbnailUrl(settings.heroWidgetImageUrl) ?? '/brand/mahida-logo.webp';
   const menu = await getPublicMenu();
   const menuPaths = new Set(menu.flatMap((item) => [item.path, ...item.children.map((child) => child.path)]));
   const articlesEnabled = Boolean(await getPublicPage('/karya/artikel'));
@@ -96,9 +97,9 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[78%] overflow-hidden" aria-hidden="true">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] overflow-hidden sm:h-[70%] lg:h-[78%]" aria-hidden="true">
           <div
-            className="absolute bottom-[-7%] left-[-4%] h-[112%] w-[70%] opacity-[0.56] mix-blend-screen"
+            className="absolute bottom-[-7%] left-[-12%] h-[112%] w-[115%] opacity-[0.62] mix-blend-screen sm:left-[-4%] sm:w-[78%] lg:w-[70%]"
             style={{
               WebkitMaskImage:
                 'linear-gradient(to top, #000 14%, #000 72%, rgba(0,0,0,.72) 88%, transparent 100%)',
@@ -112,7 +113,7 @@ export default async function HomePage() {
               fill
               priority
               unoptimized
-              sizes="70vw"
+              sizes="(max-width: 640px) 115vw, 70vw"
               className="object-contain object-bottom grayscale contrast-125 brightness-125"
             />
           </div>
@@ -176,33 +177,28 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="relative z-10 mx-auto min-h-[290px] w-full max-w-[590px] sm:min-h-[420px] lg:min-h-[570px] lg:translate-x-2">
-            <div className="absolute -right-5 top-10 h-60 w-60 rounded-full border border-[#d4b13f]/28 sm:-right-10 sm:h-[410px] sm:w-[410px]" />
+          <div className="relative z-10 mx-auto flex min-h-[210px] w-full max-w-[590px] justify-end sm:min-h-[340px] lg:min-h-[570px] lg:translate-x-2">
+            <div className="absolute -right-5 top-10 hidden h-60 w-60 rounded-full border border-[#d4b13f]/28 lg:block lg:h-[410px] lg:w-[410px]" />
 
             <div
-              className="absolute inset-x-3 inset-y-0 overflow-hidden border border-white/12 bg-[#fbfaf2] shadow-[0_28px_80px_rgba(1,35,23,0.20)]"
-              style={{
-                borderRadius: '168px 168px 42px 168px',
-                clipPath: 'polygon(0 0, 100% 0, 100% 88%, 88% 100%, 0 100%)',
-              }}
+              className="hero-logo-widget relative flex h-fit min-h-[180px] w-[min(62%,220px)] items-center justify-center overflow-hidden rounded-3xl border border-white/20 bg-[#063f2d]/35 p-3 shadow-lg backdrop-blur-[2px] sm:min-h-[280px] sm:w-[min(55%,330px)] lg:absolute lg:inset-x-3 lg:inset-y-0 lg:h-auto lg:w-auto lg:border-white/12 lg:bg-[#fbfaf2] lg:p-0 lg:shadow-[0_28px_80px_rgba(1,35,23,0.20)]"
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(7,91,58,0.035),transparent_38%),linear-gradient(145deg,#fffef8_0%,#f1f3eb_100%)]" />
+              <div className="absolute inset-0 hidden bg-[radial-gradient(circle_at_50%_42%,rgba(7,91,58,0.035),transparent_38%),linear-gradient(145deg,#fffef8_0%,#f1f3eb_100%)] lg:block" />
 
-              <div className="absolute inset-0 flex items-center justify-center px-4 py-7 sm:px-10 sm:py-12">
+              <div className="relative flex items-center justify-center text-white lg:absolute lg:inset-0 lg:px-10 lg:py-12">
                 <div className="relative text-center">
-                  <div className="absolute left-1/2 top-1/2 h-56 w-40 -translate-x-1/2 -translate-y-1/2 rounded-[48%] border border-[#b99a3c]/40 sm:h-[390px] sm:w-[285px]" />
+                  <div className="absolute left-1/2 top-1/2 hidden h-56 w-40 -translate-x-1/2 -translate-y-1/2 rounded-[48%] border border-[#b99a3c]/40 lg:block lg:h-[390px] lg:w-[285px]" />
                   <Image
-                    src="/brand/mahida-logo.webp"
-                    alt="Logo Pondok Pesantren Mahida"
+                    src={widgetImage}
+                    alt="Logo atau foto Pondok Pesantren Mahida"
                     width={280}
                     height={280}
                     priority
-                    className="relative mx-auto h-36 w-36 object-contain drop-shadow-[0_22px_34px_rgba(4,62,39,0.12)] sm:h-[245px] sm:w-[245px]"
+                    unoptimized
+                    className="relative mx-auto h-24 w-24 object-contain sm:h-40 sm:w-40 lg:h-[245px] lg:w-[245px]"
                   />
-                  <p className="mt-2 font-arabic text-2xl text-[#075b3a] sm:mt-4 sm:text-4xl">مَنْبَعُ الْهِدَايَةِ</p>
-                  <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.27em] text-[#7d867e]">
-                    Sumber Petunjuk
-                  </p>
+                  {settings.heroWidgetArabic && <p className="mt-2 font-arabic text-lg text-white sm:text-2xl lg:mt-4 lg:text-4xl lg:text-[#075b3a]">{settings.heroWidgetArabic}</p>}
+                  {settings.heroWidgetSubtitle && <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white/80 sm:text-[10px] lg:tracking-[0.27em] lg:text-[#7d867e]">{settings.heroWidgetSubtitle}</p>}
                 </div>
               </div>
             </div>

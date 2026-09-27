@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye, Save, Send, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import RichTextField from './RichTextField';
 
 type ArticleData = {
   id: number;
@@ -266,13 +267,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
                 {content.trim() ? content.trim().split(/\s+/).length : 0} kata
               </span>
             </div>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Mulai menulis artikel di sini..."
-              rows={22}
-              className="w-full resize-y border border-warm-gray-300 px-4 py-4 font-serif text-[16px] leading-8 outline-none focus:border-emerald-forest"
-            />
+            <RichTextField label="Isi Artikel" value={content} onChange={setContent} />
             <div className="mt-3 space-y-2 border border-[#dfe4d9] bg-[#f7f8f3] p-4 text-xs text-warm-gray-500">
               <p>
                 Pisahkan paragraf dengan satu baris kosong. Untuk menyisipkan teaser video YouTube di posisi mana pun, tulis marker pada baris tersendiri:

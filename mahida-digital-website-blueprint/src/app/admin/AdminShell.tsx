@@ -33,6 +33,7 @@ const navItems: NavItem[] = [
     label: 'Konten',
     children: [
       { label: 'Artikel', icon: FileText, href: '/admin/konten/artikel' },
+      { label: 'Komentar', icon: FileText, href: '/admin/konten/komentar' },
       { label: 'Esai & Opini', icon: FileText, href: '/admin/konten/esai' },
       { label: 'Terjemahan', icon: FileText, href: '/admin/konten/terjemahan' },
       { label: 'Manuskrip', icon: FileText, href: '/admin/konten/manuskrip' },

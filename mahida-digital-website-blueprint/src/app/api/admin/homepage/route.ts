@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { settings } from '@/db/schema';
 import { getAdminUser } from '@/lib/admin-auth';
+import { driveIdFromUrl } from '@/lib/media-links';
 import {
   DEFAULT_HOMEPAGE_SETTINGS,
   getHomepageSettings,
@@ -34,6 +35,9 @@ function sanitizeHomepageSettings(input: unknown): HomepageSettings {
     heroPrimaryHref: textValue('heroPrimaryHref', DEFAULT_HOMEPAGE_SETTINGS.heroPrimaryHref),
     heroSecondaryLabel: textValue('heroSecondaryLabel', DEFAULT_HOMEPAGE_SETTINGS.heroSecondaryLabel),
     heroSecondaryHref: textValue('heroSecondaryHref', DEFAULT_HOMEPAGE_SETTINGS.heroSecondaryHref),
+    heroWidgetImageUrl: textValue('heroWidgetImageUrl', '') || DEFAULT_HOMEPAGE_SETTINGS.heroWidgetImageUrl,
+    heroWidgetArabic: textValue('heroWidgetArabic', DEFAULT_HOMEPAGE_SETTINGS.heroWidgetArabic).slice(0, 120),
+    heroWidgetSubtitle: textValue('heroWidgetSubtitle', DEFAULT_HOMEPAGE_SETTINGS.heroWidgetSubtitle).slice(0, 120),
     aboutEyebrow: textValue('aboutEyebrow', DEFAULT_HOMEPAGE_SETTINGS.aboutEyebrow),
     aboutTitle: textValue('aboutTitle', DEFAULT_HOMEPAGE_SETTINGS.aboutTitle),
     aboutDescription: textValue('aboutDescription', DEFAULT_HOMEPAGE_SETTINGS.aboutDescription),
@@ -76,6 +80,9 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const value = sanitizeHomepageSettings(body);
+    if (value.heroWidgetImageUrl !== DEFAULT_HOMEPAGE_SETTINGS.heroWidgetImageUrl && !driveIdFromUrl(value.heroWidgetImageUrl)) {
+      return NextResponse.json({ error: 'Widget harus memakai tautan berkas Google Drive' }, { status: 400 });
+    }
 
     await db
       .insert(settings)

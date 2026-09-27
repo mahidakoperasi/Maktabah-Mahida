@@ -12,6 +12,7 @@ export const metadata: Metadata = {
     template: "%s | Mahida Digital",
   },
   description: "Website resmi, media, literasi, arsip, dan ekosistem Mahida. Satu ruang untuk mengenal, membaca, melihat, menjaga, dan mengikuti perjalanan Mahida.",
+  icons: { icon: [{ url: '/brand/mahida-logo.webp', type: 'image/webp' }], shortcut: '/brand/mahida-logo.webp', apple: '/brand/mahida-logo.webp' },
   keywords: ["Mahida", "pesantren", "pondok pesantren", "literasi", "kitab", "karya", "maktabah"],
   openGraph: {
     type: "website",

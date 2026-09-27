@@ -2,107 +2,15 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
-import { ArrowLeft, ArrowUpRight } from 'lucide-react';
-import YouTubeArticleBlock from '@/components/YouTubeArticleBlock';
+import { ArrowLeft } from 'lucide-react';
+import RichContent from '@/components/RichContent';
+import DetailEngagement from '@/components/DetailEngagement';
+import RelatedContent from '@/components/RelatedContent';
 import DrivePreview from '@/components/DrivePreview';
 import { driveIdFromUrl } from '@/lib/media-links';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { getPublicPage } from '@/lib/cms';
-
-function getYouTubeId(url: string) {
-  try {
-    const parsed = new URL(url);
-
-    if (parsed.hostname === 'youtu.be') {
-      return parsed.pathname.split('/').filter(Boolean)[0] || null;
-    }
-
-    if (parsed.hostname.endsWith('youtube.com')) {
-      if (parsed.pathname === '/watch') {
-        return parsed.searchParams.get('v');
-      }
-
-      const parts = parsed.pathname.split('/').filter(Boolean);
-      if (['shorts', 'embed', 'live'].includes(parts[0])) {
-        return parts[1] || null;
-      }
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
-function YouTubeTeaser({ url, label }: { url: string; label?: string }) {
-  const videoId = getYouTubeId(url);
-
-  if (!videoId) {
-    return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="my-8 flex items-center justify-between gap-4 border border-mahida-200 bg-white p-5 text-emerald-forest hover:bg-mahida-50"
-      >
-        <span className="font-semibold">{label || 'Tonton video di YouTube'}</span>
-        <ArrowUpRight size={18} />
-      </a>
-    );
-  }
-
-  return <YouTubeArticleBlock videoId={videoId} url={url} label={label} />;
-}
-
-function renderArticleContent(content: string) {
-  const markerPattern = /\[\[youtube:(https?:\/\/[^\]|\s]+)(?:\|([^\]]+))?\]\]/gi;
-  const nodes = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let key = 0;
-
-  while ((match = markerPattern.exec(content)) !== null) {
-    const before = content.slice(lastIndex, match.index);
-
-    before
-      .split(/\n\s*\n/)
-      .map((paragraph) => paragraph.trim())
-      .filter(Boolean)
-      .forEach((paragraph) => {
-        nodes.push(
-          <p key={`p-${key++}`}>
-            {paragraph.replace(/\s*\n\s*/g, ' ')}
-          </p>
-        );
-      });
-
-    nodes.push(
-      <YouTubeTeaser
-        key={`video-${key++}`}
-        url={match[1]}
-        label={match[2]?.trim()}
-      />
-    );
-
-    lastIndex = markerPattern.lastIndex;
-  }
-
-  content
-    .slice(lastIndex)
-    .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean)
-    .forEach((paragraph) => {
-      nodes.push(
-        <p key={`p-${key++}`}>
-          {paragraph.replace(/\s*\n\s*/g, ' ')}
-        </p>
-      );
-    });
-
-  return nodes;
-}
 
 async function getArticle(slug: string) {
   if (!await getPublicPage('/karya/artikel')) return null;
@@ -186,9 +94,12 @@ export default async function PublicArticlePage({
           </figure>
         )}
         <div className="prose-article">
-          {renderArticleContent(article.contentRaw || article.content || '')}
+          <RichContent content={article.contentRaw || article.content || ''} />
         </div>
       </div>
+      <DetailEngagement kind="post" id={article.id}>
+        <RelatedContent kind="post" id={article.id} path="/karya/artikel" />
+      </DetailEngagement>
     </article>
   );
 }

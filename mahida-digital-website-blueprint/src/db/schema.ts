@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, boolean, integer, timestamp, pgEnum, jsonb, real, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, boolean, integer, timestamp, pgEnum, jsonb, real, uuid, uniqueIndex, index } from 'drizzle-orm/pg-core';
 
 // Enums
 export const postTypeEnum = pgEnum('post_type', ['article', 'essay', 'news', 'work', 'story', 'announcement']);
@@ -359,6 +359,27 @@ export const settings = pgTable('settings', {
   type: varchar('type', { length: 50 }).default('string'), // string, json, number, boolean
   updatedAt: timestamp('updated_at').defaultNow(),
 });
+
+// Guest engagement is identified by a private per-browser cookie. Comments require moderation.
+export const engagementLikes = pgTable('engagement_likes', {
+  id: serial('id').primaryKey(),
+  kind: varchar('kind', { length: 20 }).notNull(),
+  entityId: integer('entity_id').notNull(),
+  visitorHash: varchar('visitor_hash', { length: 64 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [uniqueIndex('engagement_like_unique').on(table.kind, table.entityId, table.visitorHash)]);
+
+export const engagementComments = pgTable('engagement_comments', {
+  id: serial('id').primaryKey(),
+  kind: varchar('kind', { length: 20 }).notNull(),
+  entityId: integer('entity_id').notNull(),
+  visitorHash: varchar('visitor_hash', { length: 64 }).notNull(),
+  author: varchar('author', { length: 80 }).notNull(),
+  body: varchar('body', { length: 1000 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+}, (table) => [index('engagement_comment_target_idx').on(table.kind, table.entityId, table.status, table.createdAt)]);
 
 // Analytics Events (simple analytics)
 export const analyticsEvents = pgTable('analytics_events', {

@@ -19,6 +19,9 @@ type HomepageSettings = {
   heroPrimaryHref: string;
   heroSecondaryLabel: string;
   heroSecondaryHref: string;
+  heroWidgetImageUrl: string;
+  heroWidgetArabic: string;
+  heroWidgetSubtitle: string;
   aboutEyebrow: string;
   aboutTitle: string;
   aboutDescription: string;
@@ -140,6 +143,15 @@ export default function HomepageSettingsForm({ articles }: { articles: ArticleOp
           <div className="grid gap-2 sm:grid-cols-2">
             <input value={settings.heroSecondaryLabel} onChange={(e) => update('heroSecondaryLabel', e.target.value)} className="border p-3" placeholder="Label tombol kedua" />
             <input value={settings.heroSecondaryHref} onChange={(e) => update('heroSecondaryHref', e.target.value)} className="border p-3" placeholder="/tentang/profil" />
+          </div>
+        </div>
+        <div className="space-y-3 rounded border border-mahida-200 bg-mahida-50 p-4">
+          <h3 className="font-semibold">Widget logo / foto hero</h3>
+          <p className="text-xs text-warm-gray-600">Tempel tautan berkas foto Google Drive dengan akses publik, atau kosongkan untuk logo pondok bawaan.</p>
+          <label className="block text-sm">Tautan gambar<input value={settings.heroWidgetImageUrl === '/brand/mahida-logo.webp' ? '' : settings.heroWidgetImageUrl} onChange={(e) => update('heroWidgetImageUrl', e.target.value)} className="mt-1 w-full border p-3" placeholder="https://drive.google.com/file/d/.../view" /></label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">Teks Arab<input value={settings.heroWidgetArabic} onChange={(e) => update('heroWidgetArabic', e.target.value)} className="mt-1 w-full border p-3" /></label>
+            <label className="block text-sm">Keterangan<input value={settings.heroWidgetSubtitle} onChange={(e) => update('heroWidgetSubtitle', e.target.value)} className="mt-1 w-full border p-3" /></label>
           </div>
         </div>
       </section>

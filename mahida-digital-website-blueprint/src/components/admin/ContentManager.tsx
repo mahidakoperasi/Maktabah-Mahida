@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { ContentSection } from '@/lib/content-sections';
+import RichTextField from './RichTextField';
 
 type Item = { id: number; title: string; slug: string; excerpt: string | null; content: string | null; featuredImage: string | null; status: string };
 const blank = { title: '', excerpt: '', content: '', featuredImage: '', status: 'draft' };
@@ -53,7 +54,8 @@ export default function ContentManager({ section, label, publicPath }: { section
         {error && <p role="alert" className="bg-red-50 p-3 text-red-700">{error}</p>}
         <label className="block text-sm">Judul<input required maxLength={500} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1 w-full border p-3" /></label>
         <label className="block text-sm">Ringkasan<textarea value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} className="mt-1 w-full border p-3" rows={3} /></label>
-        <label className="block text-sm">Isi tulisan{section === 'terjemahan' && <span className="ml-2 text-xs text-warm-gray-500">Pisahkan paragraf Arab dan terjemahan dengan baris kosong.</span>}<textarea required value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className="mt-1 min-h-72 w-full border p-3" dir="auto" /></label>
+        <RichTextField label="Isi tulisan" value={form.content} onChange={(content) => setForm({ ...form, content })} />
+        {section === 'terjemahan' && <p className="text-xs text-warm-gray-500">Pisahkan paragraf Arab dan terjemahan dengan baris kosong.</p>}
         <label className="block text-sm">URL gambar Google Drive (opsional)<input value={form.featuredImage} onChange={(e) => setForm({ ...form, featuredImage: e.target.value })} className="mt-1 w-full border p-3" /></label>
         <label className="block text-sm">Status<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="mt-1 w-full border p-3"><option value="draft">Draft</option><option value="published">Terbit</option></select></label>
         <div className="flex flex-wrap items-center gap-4"><button disabled={saving} type="submit" className="btn-primary">Simpan</button>{form.id && <button type="button" className="text-sm text-red-700" onClick={() => { if (confirm('Hapus konten ini?')) submit('DELETE', { id: form.id }); }}>Hapus</button>}{form.id && form.status === 'published' && <Link target="_blank" className="text-sm text-emerald-forest" href={`${publicPath}/${items.find((i) => i.id === form.id)?.slug ?? ''}`}>Lihat di web</Link>}</div>
