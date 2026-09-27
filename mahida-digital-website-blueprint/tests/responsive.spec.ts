@@ -104,3 +104,41 @@ for (const width of widths) {
     }
   });
 }
+
+test('submenu switches content without reloading and public navigation hides admin', async ({ page }) => {
+  await page.goto('/karya');
+  await expect(page.locator('header.site-nav').getByRole('link', { name: 'Admin' })).toHaveCount(0);
+  const tabs = page.getByRole('navigation', { name: 'Submenu Karya' });
+  await expect(tabs.getByRole('link', { name: 'Ringkasan' })).toHaveAttribute('aria-current', 'page');
+  await page.evaluate(() => { (window as Window & { __mahidaNavigationCheck?: boolean }).__mahidaNavigationCheck = true; });
+  await tabs.getByRole('link', { name: 'Artikel' }).click();
+  await expect(page).toHaveURL(/\/karya\/artikel$/);
+  await expect(page.getByRole('navigation', { name: 'Submenu Karya' }).getByRole('link', { name: 'Artikel' })).toHaveAttribute('aria-current', 'page');
+  expect(await page.evaluate(() => (window as Window & { __mahidaNavigationCheck?: boolean }).__mahidaNavigationCheck)).toBe(true);
+  await page.goto('/berita');
+  await expect(page).toHaveURL(/\/media\/berita$/);
+});
+
+test('editor shortcuts and lists preserve page scroll', async ({ page, context }) => {
+  const token = jwt.sign({ userId: adminId, email: 'mahidakoperasi@gmail.com', role: 'admin' }, process.env.JWT_SECRET!);
+  await context.addCookies([{ name: 'mahida_session', value: token, url: 'http://127.0.0.1:3010' }]);
+  await page.goto('/admin/konten/artikel/new');
+  const text = page.getByRole('textbox', { name: 'Isi Artikel' });
+  await text.fill('Satu\nDua');
+  await text.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(0, 4));
+  await page.getByRole('button', { name: 'Daftar bernomor' }).scrollIntoViewIfNeeded();
+  const before = await page.evaluate(() => window.scrollY);
+  await page.getByRole('button', { name: 'Daftar bernomor' }).click();
+  await expect(text).toBeFocused();
+  expect(Math.abs((await page.evaluate(() => window.scrollY)) - before)).toBeLessThanOrEqual(2);
+  await page.getByRole('button', { name: 'Pratinjau' }).click();
+  await expect(page.getByLabel('Pratinjau tulisan').locator('ol li').first()).toContainText('Satu');
+  await text.focus();
+  await text.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(0, 7));
+  await page.keyboard.press('Control+b');
+  await expect(text).toHaveValue(/\*\*1\. Satu\*\*/);
+  await text.fill('Apel\nJeruk');
+  await text.evaluate((field: HTMLTextAreaElement) => field.setSelectionRange(0, field.value.length));
+  await page.getByRole('button', { name: 'Daftar poin' }).click();
+  await expect(page.getByLabel('Pratinjau tulisan').locator('ul li')).toHaveCount(2);
+});

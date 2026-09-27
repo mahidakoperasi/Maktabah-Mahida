@@ -27,7 +27,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
   const [featuredImage, setFeaturedImage] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
-  const [status, setStatus] = useState<'draft' | 'published'>('draft');
+  const [status, setStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   const [slug, setSlug] = useState('');
   const [isLoading, setIsLoading] = useState(Boolean(articleId));
   const [isSaving, setIsSaving] = useState(false);
@@ -59,7 +59,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
         setFeaturedImage(article.featuredImage ?? '');
         setMetaTitle(article.metaTitle ?? '');
         setMetaDescription(article.metaDescription ?? '');
-        setStatus(article.status === 'published' ? 'published' : 'draft');
+        setStatus(article.status === 'published' ? 'published' : article.status === 'archived' ? 'archived' : 'draft');
         setSlug(article.slug ?? '');
       } catch (err) {
         if (active) {
@@ -135,7 +135,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
 
   async function deleteArticle() {
     if (!articleId) return;
-    if (!window.confirm('Hapus artikel ini secara permanen?')) return;
+    if (!window.confirm('Arsipkan artikel ini? Anda dapat memulihkannya dari daftar artikel.')) return;
 
     setIsSaving(true);
     setError('');
@@ -177,7 +177,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
             {articleId ? 'Edit Artikel' : 'Artikel Baru'}
           </h1>
           <p className="mt-1 text-sm text-warm-gray-500">
-            {status === 'published' ? 'Artikel sudah diterbitkan' : 'Artikel masih berupa draft'}
+            {status === 'published' ? 'Artikel sudah diterbitkan' : status === 'archived' ? 'Artikel diarsipkan' : 'Artikel masih berupa draft'}
             {slug ? ` • /${slug}` : ''}
           </p>
         </div>
@@ -201,7 +201,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
               className="inline-flex items-center gap-2 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
             >
               <Trash2 size={16} />
-              Hapus
+              Arsipkan
             </button>
           )}
           <button
@@ -292,7 +292,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-warm-gray-500">Status</dt>
                 <dd className={status === 'published' ? 'font-semibold text-emerald-700' : 'font-semibold text-warm-gray-700'}>
-                  {status === 'published' ? 'Terbit' : 'Draft'}
+                  {status === 'published' ? 'Terbit' : status === 'archived' ? 'Arsip' : 'Draft'}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-3">

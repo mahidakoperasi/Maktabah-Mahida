@@ -63,7 +63,6 @@ export default function NavbarClient({ items }: { items: PublicMenuItem[] }) {
           ))}
         </nav>
         <div className="flex shrink-0 items-center gap-2">
-          <Link href="/admin" className="hidden min-h-11 items-center px-3 py-2 text-sm font-semibold text-emerald-forest sm:inline-flex">Admin</Link>
           <button ref={menuButton} type="button" className="grid h-11 w-11 place-items-center rounded bg-emerald-forest text-white xl:hidden" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="mobile-site-menu" aria-label={open ? 'Tutup menu' : 'Buka menu'}>
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -83,7 +82,6 @@ export default function NavbarClient({ items }: { items: PublicMenuItem[] }) {
               {section === item.id && <div id={`site-submenu-${item.id}`}>{item.children.map((child) => <Link key={child.id} href={child.path} onClick={() => setOpen(false)} className="block py-3 pl-5 text-sm text-warm-gray-600">{child.label}</Link>)}</div>}
             </div>
           ))}
-          <Link href="/admin" onClick={() => setOpen(false)} className="block py-3 font-semibold text-emerald-forest sm:hidden">Admin</Link>
         </nav>
         </>
       )}

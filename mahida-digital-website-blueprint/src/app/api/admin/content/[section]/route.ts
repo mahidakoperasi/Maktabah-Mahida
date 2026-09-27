@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
@@ -15,7 +15,7 @@ const schema = z.object({
   excerpt: z.string().trim().max(2000).default(''),
   content: z.string().trim().min(1).max(1000000),
   featuredImage: z.string().trim().max(2048).default(''),
-  status: z.enum(['draft','published']).default('draft'),
+  status: z.enum(['draft','published','archived']).default('draft'),
 });
 
 async function guard(request: NextRequest, context: { params: Promise<{ section: string }> }) {
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sec
   if (target.config.category) conditions.push(eq(posts.karyaCategory, target.config.category));
   const items = await db.select({
     id: posts.id, title: posts.title, slug: posts.slug, excerpt: posts.excerpt,
-    content: posts.contentRaw, status: posts.status, featuredImage: posts.featuredImage,
+    content: sql<string>`coalesce(${posts.contentRaw}, ${posts.content}, '')`, status: posts.status, featuredImage: posts.featuredImage,
   }).from(posts).where(and(...conditions)).orderBy(desc(posts.updatedAt));
   return NextResponse.json({ items });
 }
@@ -46,8 +46,9 @@ async function save(request: NextRequest, context: { params: Promise<{ section: 
   if (invalidDriveImages(content)) return NextResponse.json({ error: 'Sisipan gambar harus berupa tautan berkas Google Drive' }, { status: 400 });
   const conditions = [eq(posts.type, target.config.type)];
   if (target.config.category) conditions.push(eq(posts.karyaCategory, target.config.category));
+  let existing: typeof posts.$inferSelect | undefined;
   if (edit && id) {
-    const [existing] = await db.select().from(posts).where(and(eq(posts.id, id), ...conditions)).limit(1);
+    [existing] = await db.select().from(posts).where(and(eq(posts.id, id), ...conditions)).limit(1);
     if (!existing) return NextResponse.json({ error: 'Konten tidak ditemukan dalam modul ini' }, { status: 404 });
   }
   try {
@@ -62,7 +63,7 @@ async function save(request: NextRequest, context: { params: Promise<{ section: 
     const values = {
       title, slug, excerpt: excerpt || null, content, contentRaw: content,
       featuredImage: featuredImage || null, status, readingTime: calculateReadingTime(content),
-      publishedAt: status === 'published' ? now : null,
+      publishedAt: status === 'published' ? existing?.publishedAt ?? now : existing?.publishedAt ?? null,
       updatedAt: now,
     };
     if (edit && id) {
@@ -91,6 +92,8 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   if (!parsed.success) return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 });
   const conditions = [eq(posts.id, parsed.data.id), eq(posts.type, target.config.type)];
   if (target.config.category) conditions.push(eq(posts.karyaCategory, target.config.category));
-  const rows = await db.delete(posts).where(and(...conditions)).returning({ id: posts.id });
-  return NextResponse.json({ ok: rows.length > 0 });
+  const [item] = await db.update(posts).set({ status: 'archived', updatedAt: new Date() })
+    .where(and(...conditions)).returning({ id: posts.id });
+  return item ? NextResponse.json({ ok: true })
+    : NextResponse.json({ error: 'Konten tidak ditemukan' }, { status: 404 });
 }

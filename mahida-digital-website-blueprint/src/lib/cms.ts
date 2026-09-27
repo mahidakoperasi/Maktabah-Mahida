@@ -1,4 +1,5 @@
 import { and, asc, eq } from 'drizzle-orm';
+import { cache } from 'react';
 import { db } from '@/db';
 import { cmsPages, navigationItems } from '@/db/schema';
 
@@ -29,7 +30,7 @@ export function validNewCmsPath(path: string) {
   return true;
 }
 
-export async function getPublicMenu(): Promise<PublicMenuItem[]> {
+export const getPublicMenu = cache(async function getPublicMenu(): Promise<PublicMenuItem[]> {
   if (!process.env.DATABASE_URL) return [];
   try {
     const rows = await db.select({
@@ -47,7 +48,7 @@ export async function getPublicMenu(): Promise<PublicMenuItem[]> {
     console.error('Navigation unavailable:', error instanceof Error ? error.message : error);
     return [];
   }
-}
+});
 
 export async function getPublicPage(path: string) {
   const [page] = await db.select().from(cmsPages)

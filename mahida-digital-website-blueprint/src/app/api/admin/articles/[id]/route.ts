@@ -157,12 +157,12 @@ export async function DELETE(
     return NextResponse.json({ error: 'ID artikel tidak valid' }, { status: 400 });
   }
 
-  const deleted = await db
-    .delete(posts)
+  const archived = await db
+    .update(posts).set({ status: 'archived', updatedAt: new Date() })
     .where(and(eq(posts.id, articleId), eq(posts.type, 'article')))
     .returning({ id: posts.id });
 
-  if (!deleted.length) {
+  if (!archived.length) {
     return NextResponse.json({ error: 'Artikel tidak ditemukan' }, { status: 404 });
   }
 

@@ -49,7 +49,14 @@ export default function RichContent({ content }: { content: string }) {
       return;
     }
     part.split(/\n\s*\n/).map((value) => value.trim()).filter(Boolean).forEach((paragraph) => {
-      nodes.push(<p key={key++} dir="auto">{inline(paragraph.replace(/\s*\n\s*/g, ' '))}</p>);
+      const lines = paragraph.split('\n').map((line) => line.trim()).filter(Boolean);
+      if (lines.every((line) => /^\d+\.\s+/.test(line))) {
+        nodes.push(<ol key={key++} dir="auto" className="list-decimal space-y-1 pl-6">{lines.map((line, index) => <li key={index}>{inline(line.replace(/^\d+\.\s+/, ''))}</li>)}</ol>);
+      } else if (lines.every((line) => /^-\s+/.test(line))) {
+        nodes.push(<ul key={key++} dir="auto" className="list-disc space-y-1 pl-6">{lines.map((line, index) => <li key={index}>{inline(line.replace(/^-\s+/, ''))}</li>)}</ul>);
+      } else {
+        nodes.push(<p key={key++} dir="auto">{inline(paragraph.replace(/\s*\n\s*/g, ' '))}</p>);
+      }
     });
   });
   return <>{nodes}</>;
