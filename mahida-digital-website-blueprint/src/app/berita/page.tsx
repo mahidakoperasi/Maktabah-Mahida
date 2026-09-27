@@ -1,6 +1,6 @@
-import { redirect } from 'next/navigation';
+import { PublicContentList } from '@/components/PublicContent';
 
 export const dynamic = 'force-dynamic';
 export default function Page() {
-  redirect('/media/berita');
+  return <PublicContentList section="berita" pagePath="/berita" />;
 }

@@ -17,9 +17,9 @@ function conditions(section: ContentSection) {
   return filters;
 }
 
-export async function PublicContentList({ section }: { section: ContentSection }) {
+export async function PublicContentList({ section, pagePath }: { section: ContentSection; pagePath?: string }) {
   const config = contentSections[section];
-  const page = await getPublicPage(config.publicPath);
+  const page = await getPublicPage(pagePath ?? config.publicPath);
   if (!page) notFound();
   const rows = await db.select({ id: posts.id, title: posts.title, slug: posts.slug, excerpt: posts.excerpt, publishedAt: posts.publishedAt })
     .from(posts).where(and(...conditions(section))).orderBy(desc(posts.publishedAt));

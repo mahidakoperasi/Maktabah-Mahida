@@ -116,7 +116,7 @@ test('submenu switches content without reloading and public navigation hides adm
   await expect(page.getByRole('navigation', { name: 'Submenu Karya' }).getByRole('link', { name: 'Artikel' })).toHaveAttribute('aria-current', 'page');
   expect(await page.evaluate(() => (window as Window & { __mahidaNavigationCheck?: boolean }).__mahidaNavigationCheck)).toBe(true);
   await page.goto('/berita');
-  await expect(page).toHaveURL(/\/media\/berita$/);
+  await expect(page.getByRole('heading', { name: 'Berita' })).toBeVisible();
 });
 
 test('editor shortcuts and lists preserve page scroll', async ({ page, context }) => {
@@ -152,7 +152,6 @@ test('news remains in the database when archived and can be restored', async ({ 
   expect(created.status()).toBe(201);
   const { item } = await created.json();
   await page.goto('/berita');
-  await expect(page).toHaveURL(/\/media\/berita$/);
   await expect(page.getByRole('link', { name: title })).toBeVisible();
 
   const archived = await page.request.delete('/api/admin/content/berita', { data: { id: item.id } });
