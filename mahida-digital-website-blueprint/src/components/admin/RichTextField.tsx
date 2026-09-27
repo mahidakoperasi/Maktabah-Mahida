@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Bold, ImagePlus, Italic, Underline } from 'lucide-react';
+import { Bold, ImagePlus, Italic, Link2, Underline } from 'lucide-react';
 import { driveIdFromUrl } from '@/lib/media-links';
+import { safeArticleLink } from '@/lib/rich-links';
 import RichContent from '@/components/RichContent';
 
 export default function RichTextField({ value, onChange, label = 'Isi tulisan' }: {
@@ -33,18 +34,28 @@ export default function RichTextField({ value, onChange, label = 'Isi tulisan' }
     insert(`[[image:${url.trim()}${caption ? `|${caption}` : ''}]]`, '', '', true);
   }
 
+  function addLink() {
+    const url = window.prompt('Tempel tautan HTTPS tujuan');
+    if (url === null) return;
+    const href = safeArticleLink(url.trim());
+    if (!href) { setError('Gunakan tautan HTTPS yang valid.'); return; }
+    setError('');
+    insert('[', `](${href})`, 'teks tautan');
+  }
+
   return <div className="min-w-0 space-y-2">
     <span className="text-sm font-medium">{label}</span>
     <div role="toolbar" aria-label="Format tulisan" className="flex flex-wrap gap-2 rounded border border-warm-gray-300 bg-warm-gray-50 p-2">
       <button type="button" title="Tebal" aria-label="Tebal" className="grid h-11 w-11 place-items-center rounded border bg-white" onClick={() => insert('**', '**', 'teks tebal')}><Bold size={18} /></button>
       <button type="button" title="Miring" aria-label="Miring" className="grid h-11 w-11 place-items-center rounded border bg-white" onClick={() => insert('*', '*', 'teks miring')}><Italic size={18} /></button>
       <button type="button" title="Garis bawah" aria-label="Garis bawah" className="grid h-11 w-11 place-items-center rounded border bg-white" onClick={() => insert('++', '++', 'teks bergaris bawah')}><Underline size={18} /></button>
+      <button type="button" title="Sisipkan tautan" className="flex min-h-11 items-center gap-2 rounded border bg-white px-3 text-sm" onClick={addLink}><Link2 size={18} /> Sisipkan tautan</button>
       <button type="button" title="Sisipkan foto Drive" className="flex min-h-11 items-center gap-2 rounded border bg-white px-3 text-sm" onClick={addImage}><ImagePlus size={18} /> Sisipkan gambar</button>
       <button type="button" className="min-h-11 rounded border bg-white px-3 text-sm" onClick={() => setPreview(!preview)} aria-pressed={preview}>Pratinjau</button>
     </div>
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
     <textarea ref={ref} required value={value} onChange={(event) => onChange(event.target.value)} aria-label={label} rows={18} className="w-full resize-y border border-warm-gray-300 p-4 text-base leading-8" dir="auto" />
     {preview && <div className="prose-article min-h-20 rounded border bg-white p-4" aria-label="Pratinjau tulisan"><RichContent content={value} /></div>}
-    <p className="text-xs text-warm-gray-500">Pilih teks lalu gunakan toolbar. Sisipan gambar memakai tautan berkas Drive yang dapat dilihat publik.</p>
+    <p className="text-xs text-warm-gray-500">Pilih teks lalu gunakan toolbar. Tautan memakai HTTPS; sisipan gambar memakai berkas Drive yang dapat dilihat publik.</p>
   </div>;
 }
