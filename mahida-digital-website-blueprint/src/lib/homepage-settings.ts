@@ -12,6 +12,9 @@ export type HomepageSettings = {
   heroPrimaryHref: string;
   heroSecondaryLabel: string;
   heroSecondaryHref: string;
+  heroWidgetImageUrl: string;
+  heroWidgetArabic: string;
+  heroWidgetSubtitle: string;
   aboutEyebrow: string;
   aboutTitle: string;
   aboutDescription: string;
@@ -36,6 +39,9 @@ export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   heroPrimaryHref: '/literasi',
   heroSecondaryLabel: 'Jelajahi Mahida',
   heroSecondaryHref: '/tentang/profil',
+  heroWidgetImageUrl: '/brand/mahida-logo.webp',
+  heroWidgetArabic: 'مَنْبَعُ الْهِدَايَةِ',
+  heroWidgetSubtitle: 'Sumber Petunjuk',
   aboutEyebrow: 'Tentang Mahida',
   aboutTitle: 'Pondok Pesantren yang Membaca Tradisi dan Zaman',
   aboutDescription:

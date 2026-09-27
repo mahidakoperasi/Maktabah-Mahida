@@ -5,6 +5,7 @@ import { posts } from '@/db/schema';
 import { getAdminUser } from '@/lib/admin-auth';
 import { updateArticleInput } from '@/lib/article-input';
 import { calculateReadingTime, slugify } from '@/lib/utils';
+import { invalidDriveImages } from '@/lib/rich-markers';
 
 async function uniqueSlug(title: string, currentId: number) {
   const base = slugify(title) || 'artikel';
@@ -88,6 +89,7 @@ export async function PATCH(
     const title = String(body.title ?? existing.title).trim();
     const excerpt = String(body.excerpt ?? existing.excerpt ?? '').trim();
     const contentRaw = String(body.content ?? existing.contentRaw ?? existing.content ?? '').trim();
+    if (invalidDriveImages(contentRaw)) return NextResponse.json({ error: 'Sisipan gambar harus berupa tautan berkas Google Drive' }, { status: 400 });
 
     if (!title || !contentRaw) {
       return NextResponse.json(

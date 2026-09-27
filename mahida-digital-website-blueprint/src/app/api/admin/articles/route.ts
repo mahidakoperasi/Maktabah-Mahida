@@ -5,6 +5,7 @@ import { posts } from '@/db/schema';
 import { getAdminUser } from '@/lib/admin-auth';
 import { createArticleInput } from '@/lib/article-input';
 import { calculateReadingTime, slugify } from '@/lib/utils';
+import { invalidDriveImages } from '@/lib/rich-markers';
 
 async function uniqueSlug(title: string, currentId?: number) {
   const base = slugify(title) || 'artikel';
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
     const title = String(body.title ?? '').trim();
     const excerpt = String(body.excerpt ?? '').trim();
     const contentRaw = String(body.content ?? '').trim();
+    if (invalidDriveImages(contentRaw)) return NextResponse.json({ error: 'Sisipan gambar harus berupa tautan berkas Google Drive' }, { status: 400 });
     const requestedStatus = String(body.status ?? 'draft');
 
     if (!title) {

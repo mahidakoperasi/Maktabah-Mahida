@@ -77,6 +77,13 @@ html {
 
 html, body { min-width: 320px; }
 
+@media (min-width: 1024px) {
+  .hero-logo-widget {
+    border-radius: 168px 168px 42px 168px;
+    clip-path: polygon(0 0, 100% 0, 100% 88%, 88% 100%, 0 100%);
+  }
+}
+
 main, section, article, aside, nav, form, fieldset,
 .grid > *, .flex > * { min-width: 0; }
 
