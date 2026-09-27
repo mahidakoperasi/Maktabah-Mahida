@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 import HomepageSettingsForm from '@/components/admin/HomepageSettingsForm';
@@ -9,16 +9,18 @@ export default async function HomepageAdminPage() {
   `);
   const postsReady = Boolean((readyResult.rows?.[0] as { ready?: boolean } | undefined)?.ready);
 
-  const articles = postsReady
+  const works = postsReady
     ? await db
         .select({
           id: posts.id,
           title: posts.title,
           status: posts.status,
+          type: posts.type,
+          karyaCategory: posts.karyaCategory,
         })
         .from(posts)
-        .where(and(eq(posts.type, 'article'), eq(posts.status, 'published')))
-        .orderBy(desc(posts.publishedAt))
+        .where(and(inArray(posts.type, ['article', 'essay', 'work']), eq(posts.status, 'published')))
+        .orderBy(desc(posts.publishedAt), desc(posts.id))
     : [];
 
   return (
@@ -31,7 +33,7 @@ export default async function HomepageAdminPage() {
         </p>
       </div>
 
-      <HomepageSettingsForm articles={articles} />
+      <HomepageSettingsForm works={works} />
     </div>
   );
 }

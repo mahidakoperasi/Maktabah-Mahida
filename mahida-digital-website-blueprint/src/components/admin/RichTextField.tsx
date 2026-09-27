@@ -1,8 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Bold, ImagePlus, Italic, Link2, List, ListOrdered, Underline } from 'lucide-react';
-import { driveIdFromUrl } from '@/lib/media-links';
+import { Bold, ImagePlus, Italic, Link2, List, ListOrdered, Play, Underline } from 'lucide-react';
+import { driveIdFromUrl, videoEmbedFromUrl } from '@/lib/media-links';
 import { safeArticleLink } from '@/lib/rich-links';
 import RichContent from '@/components/RichContent';
 
@@ -80,6 +80,16 @@ export default function RichTextField({ value, onChange, label = 'Isi tulisan' }
     insert('[', `](${href})`, 'teks tautan');
   }
 
+  function addVideo() {
+    const url = window.prompt('Tempel tautan video publik YouTube, Facebook, Instagram, atau TikTok');
+    if (url === null) return;
+    const video = videoEmbedFromUrl(url.trim());
+    if (!video) { setError('Gunakan tautan postingan video publik yang lengkap dan valid.'); return; }
+    const caption = window.prompt('Judul video (opsional)')?.replace(/[|\[\]]/g, '').trim().slice(0, 200);
+    setError('');
+    insert(`[[video:${video.url}${caption ? `|${caption}` : ''}]]`, '', '', true);
+  }
+
   return <div className="min-w-0 space-y-2">
     <span className="text-sm font-medium">{label}</span>
     <div role="toolbar" aria-label="Format tulisan" onMouseDown={(event) => { if ((event.target as Element).closest('button')) event.preventDefault(); }} className="flex flex-wrap gap-2 rounded border border-warm-gray-300 bg-warm-gray-50 p-2">
@@ -90,11 +100,12 @@ export default function RichTextField({ value, onChange, label = 'Isi tulisan' }
       <button type="button" title="Daftar poin" aria-label="Daftar poin" className="grid h-11 w-11 place-items-center rounded border bg-white" onClick={() => addList(false)}><List size={18} /></button>
       <button type="button" title="Sisipkan tautan" className="flex min-h-11 items-center gap-2 rounded border bg-white px-3 text-sm" onClick={addLink}><Link2 size={18} /> Sisipkan tautan</button>
       <button type="button" title="Sisipkan foto Drive" className="flex min-h-11 items-center gap-2 rounded border bg-white px-3 text-sm" onClick={addImage}><ImagePlus size={18} /> Sisipkan gambar</button>
+      <button type="button" title="Sisipkan video" className="flex min-h-11 items-center gap-2 rounded border bg-white px-3 text-sm" onClick={addVideo}><Play size={18} /> Sisipkan video</button>
       <button type="button" className="min-h-11 rounded border bg-white px-3 text-sm" onClick={() => setPreview(!preview)} aria-pressed={preview}>Pratinjau</button>
     </div>
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
     <textarea ref={ref} required value={value} onChange={(event) => onChange(event.target.value)} onKeyDown={handleKeyDown} aria-label={label} rows={18} className="w-full resize-y border border-warm-gray-300 p-4 text-base leading-8" dir="auto" />
     {preview && <div className="prose-article min-h-20 rounded border bg-white p-4" aria-label="Pratinjau tulisan"><RichContent content={value} /></div>}
-    <p className="text-xs text-warm-gray-500">Pilih teks lalu gunakan toolbar. Ctrl/⌘+B/I/U untuk format; Enter melanjutkan daftar. Tautan memakai HTTPS; foto memakai berkas Drive publik.</p>
+    <p className="text-xs text-warm-gray-500">Pilih teks lalu gunakan toolbar. Ctrl/⌘+B/I/U untuk format; Enter melanjutkan daftar. Foto memakai Drive publik; video memakai tautan postingan publik.</p>
   </div>;
 }

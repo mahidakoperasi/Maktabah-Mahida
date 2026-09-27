@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { Save } from 'lucide-react';
+import { karyaPostLabel } from '@/lib/karya-post';
+import ImageUrlPreview from './ImageUrlPreview';
 
-type ArticleOption = {
+type WorkOption = {
   id: number;
   title: string;
   status: string;
+  type: string;
+  karyaCategory: string | null;
 };
 
 type HomepageSettings = {
@@ -22,6 +26,7 @@ type HomepageSettings = {
   heroWidgetImageUrl: string;
   heroWidgetArabic: string;
   heroWidgetSubtitle: string;
+  heroWidgetLayout: 'logo' | 'photo';
   aboutEyebrow: string;
   aboutTitle: string;
   aboutDescription: string;
@@ -32,10 +37,10 @@ type HomepageSettings = {
   stat2Label: string;
   stat3Value: string;
   stat3Label: string;
-  featuredArticleIds: number[];
+  featuredWorkIds: number[];
 };
 
-export default function HomepageSettingsForm({ articles }: { articles: ArticleOption[] }) {
+export default function HomepageSettingsForm({ works }: { works: WorkOption[] }) {
   const [settings, setSettings] = useState<HomepageSettings | null>(null);
   const [ready, setReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -54,7 +59,7 @@ export default function HomepageSettingsForm({ articles }: { articles: ArticleOp
 
         if (active) {
           setReady(Boolean(data.ready));
-          setSettings(data.settings);
+          setSettings({ ...data.settings, featuredWorkIds: data.settings.featuredWorkIds.filter((id: number) => works.some((work) => work.id === id)) });
         }
       } catch (err) {
         if (active) setError(err instanceof Error ? err.message : 'Gagal memuat pengaturan');
@@ -65,19 +70,24 @@ export default function HomepageSettingsForm({ articles }: { articles: ArticleOp
     return () => {
       active = false;
     };
-  }, []);
+  }, [works]);
 
   function update<K extends keyof HomepageSettings>(key: K, value: HomepageSettings[K]) {
     setSettings((current) => (current ? { ...current, [key]: value } : current));
   }
 
-  function updateFeatured(index: number, value: string) {
+  function toggleFeatured(id: number) {
     if (!settings) return;
-    const next = [...settings.featuredArticleIds];
-    const id = Number(value);
-    if (id > 0) next[index] = id;
-    else next.splice(index, 1);
-    update('featuredArticleIds', next.filter(Boolean).slice(0, 3));
+    const selected = settings.featuredWorkIds;
+    if (!selected.includes(id) && selected.length >= 10) return;
+    update('featuredWorkIds', selected.includes(id) ? selected.filter((value) => value !== id) : [...selected, id]);
+  }
+
+  function moveFeatured(index: number, direction: -1 | 1) {
+    if (!settings || index + direction < 0 || index + direction >= settings.featuredWorkIds.length) return;
+    const next = [...settings.featuredWorkIds];
+    [next[index], next[index + direction]] = [next[index + direction], next[index]];
+    update('featuredWorkIds', next);
   }
 
   async function save() {
@@ -149,6 +159,8 @@ export default function HomepageSettingsForm({ articles }: { articles: ArticleOp
           <h3 className="font-semibold">Widget logo / foto hero</h3>
           <p className="text-xs text-warm-gray-600">Tempel tautan berkas foto Google Drive dengan akses publik, atau kosongkan untuk logo pondok bawaan.</p>
           <label className="block text-sm">Tautan gambar<input value={settings.heroWidgetImageUrl === '/brand/mahida-logo.webp' ? '' : settings.heroWidgetImageUrl} onChange={(e) => update('heroWidgetImageUrl', e.target.value)} className="mt-1 w-full border p-3" placeholder="https://drive.google.com/file/d/.../view" /></label>
+          <ImageUrlPreview url={settings.heroWidgetImageUrl === '/brand/mahida-logo.webp' ? '' : settings.heroWidgetImageUrl} />
+          <label className="block text-sm">Tampilan widget<select className="mt-1 w-full border p-3" value={settings.heroWidgetLayout} onChange={(e) => update('heroWidgetLayout', e.target.value as 'logo' | 'photo')}><option value="logo">Logo</option><option value="photo">Foto / poster</option></select></label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm">Teks Arab<input value={settings.heroWidgetArabic} onChange={(e) => update('heroWidgetArabic', e.target.value)} className="mt-1 w-full border p-3" /></label>
             <label className="block text-sm">Keterangan<input value={settings.heroWidgetSubtitle} onChange={(e) => update('heroWidgetSubtitle', e.target.value)} className="mt-1 w-full border p-3" /></label>
@@ -164,7 +176,8 @@ export default function HomepageSettingsForm({ articles }: { articles: ArticleOp
         <input value={settings.aboutEyebrow} onChange={(e) => update('aboutEyebrow', e.target.value)} className="w-full border p-3" placeholder="Label section" />
         <input value={settings.aboutTitle} onChange={(e) => update('aboutTitle', e.target.value)} className="w-full border p-3" placeholder="Judul tentang" />
         <textarea value={settings.aboutDescription} onChange={(e) => update('aboutDescription', e.target.value)} rows={5} className="w-full border p-3" placeholder="Deskripsi tentang" />
-        <input value={settings.aboutImageUrl} onChange={(e) => update('aboutImageUrl', e.target.value)} className="w-full border p-3" placeholder="URL foto / gambar profil pondok" />
+        <label className="block text-sm">Tautan foto Tentang Mahida<input value={settings.aboutImageUrl} onChange={(e) => update('aboutImageUrl', e.target.value)} className="mt-1 w-full border p-3" placeholder="URL foto / gambar profil pondok" /></label>
+        <ImageUrlPreview url={settings.aboutImageUrl} />
 
         <div className="grid gap-4 md:grid-cols-3">
           {[
@@ -194,25 +207,27 @@ export default function HomepageSettingsForm({ articles }: { articles: ArticleOp
       <section className="bg-white border border-warm-gray-200 p-5 space-y-4">
         <div>
           <h2 className="font-semibold text-charcoal">Bacaan Pilihan</h2>
-          <p className="text-xs text-warm-gray-400 mt-1">Kurasi manual, terpisah dari Halaman Hari Ini. Pilih maksimal 3 artikel terbit; jika kosong, tampilkan artikel terbaru.</p>
+          <p className="text-xs text-warm-gray-400 mt-1">Pilih maksimal 10 karya terbit dari semua kategori. Jika kosong, tampilkan karya terbaru. Karya yang diarsipkan tidak akan tampil.</p>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          {[0, 1, 2].map((index) => (
-            <select
-              key={index}
-              value={settings.featuredArticleIds[index] ?? ''}
-              onChange={(e) => updateFeatured(index, e.target.value)}
-              className="border p-3"
-            >
-              <option value="">Otomatis / kosong</option>
-              {articles.map((article) => (
-                <option key={article.id} value={article.id}>
-                  {article.title}
-                </option>
-              ))}
-            </select>
-          ))}
+        <p role="status" className="text-sm text-warm-gray-600">{settings.featuredWorkIds.length} dari 10 karya dipilih</p>
+        <div className="max-h-72 space-y-1 overflow-y-auto rounded border border-mahida-200 p-2">
+          {works.length ? works.map((work) => <label key={work.id} className="flex min-h-11 items-center gap-3 rounded p-2 hover:bg-mahida-50">
+            <input type="checkbox" checked={settings.featuredWorkIds.includes(work.id)} disabled={!settings.featuredWorkIds.includes(work.id) && settings.featuredWorkIds.length >= 10} onChange={() => toggleFeatured(work.id)} className="h-5 w-5 shrink-0 accent-emerald-forest" />
+            <span className="min-w-0 break-words text-sm"><span className="mr-2 text-warm-gray-500">{karyaPostLabel(work)}</span>{work.title}</span>
+          </label>) : <p className="p-3 text-sm text-warm-gray-500">Belum ada karya terbit.</p>}
         </div>
+        {settings.featuredWorkIds.length > 0 && <div className="space-y-2" aria-label="Urutan Bacaan Pilihan">
+          <h3 className="font-semibold">Urutan tampil</h3>
+          {settings.featuredWorkIds.map((id, index) => {
+            const work = works.find((item) => item.id === id);
+            if (!work) return null;
+            return <div key={id} className="flex min-w-0 items-center gap-2 rounded border p-2 text-sm">
+              <span className="min-w-0 flex-1 break-words">{index + 1}. {work.title}</span>
+              <button type="button" disabled={index === 0} onClick={() => moveFeatured(index, -1)} aria-label={`Naikkan ${work.title}`} className="min-h-11 min-w-11 rounded border disabled:opacity-40">↑</button>
+              <button type="button" disabled={index === settings.featuredWorkIds.length - 1} onClick={() => moveFeatured(index, 1)} aria-label={`Turunkan ${work.title}`} className="min-h-11 min-w-11 rounded border disabled:opacity-40">↓</button>
+            </div>;
+          })}
+        </div>}
       </section>
 
       <div className="flex justify-end">

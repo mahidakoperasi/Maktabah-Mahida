@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye, Save, Send, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import RichTextField from './RichTextField';
+import ImageUrlPreview from './ImageUrlPreview';
 
 type ArticleData = {
   id: number;
@@ -268,20 +269,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
               </span>
             </div>
             <RichTextField label="Isi Artikel" value={content} onChange={setContent} />
-            <div className="mt-3 space-y-2 border border-[#dfe4d9] bg-[#f7f8f3] p-4 text-xs text-warm-gray-500">
-              <p>
-                Pisahkan paragraf dengan satu baris kosong. Untuk menyisipkan teaser video YouTube di posisi mana pun, tulis marker pada baris tersendiri:
-              </p>
-              <code className="block overflow-x-auto bg-white px-3 py-2 font-mono text-[11px] text-emerald-800">
-                [[youtube:https://youtu.be/VIDEO_ID]]
-              </code>
-              <p>
-                Judul teaser juga bisa ditentukan:
-              </p>
-              <code className="block overflow-x-auto bg-white px-3 py-2 font-mono text-[11px] text-emerald-800">
-                [[youtube:https://youtu.be/VIDEO_ID|Saksikan momen setoran lengkap]]
-              </code>
-            </div>
+            <p className="mt-3 text-xs text-warm-gray-500">Gunakan tombol Sisipkan video untuk menambahkan YouTube, Facebook, Instagram, atau TikTok. Video dimuat saat pengunjung menekan tombol putar.</p>
           </div>
         </div>
 
@@ -313,6 +301,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
               className="w-full border border-warm-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-forest"
             />
             <p className="mt-2 text-xs text-warm-gray-400">Tempel tautan foto Google Drive yang dapat dilihat siapa pun yang memiliki tautan. Foto akan tampil di beranda, daftar artikel, dan halaman artikel.</p>
+            <ImageUrlPreview url={featuredImage} />
           </div>
 
           <div className="bg-white border border-warm-gray-200 p-5">

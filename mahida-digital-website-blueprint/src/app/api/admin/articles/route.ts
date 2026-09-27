@@ -5,7 +5,7 @@ import { posts } from '@/db/schema';
 import { getAdminUser } from '@/lib/admin-auth';
 import { createArticleInput } from '@/lib/article-input';
 import { calculateReadingTime, slugify } from '@/lib/utils';
-import { invalidDriveImages } from '@/lib/rich-markers';
+import { invalidDriveImages, invalidVideoMarkers } from '@/lib/rich-markers';
 
 async function uniqueSlug(title: string, currentId?: number) {
   const base = slugify(title) || 'artikel';
@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
     const excerpt = String(body.excerpt ?? '').trim();
     const contentRaw = String(body.content ?? '').trim();
     if (invalidDriveImages(contentRaw)) return NextResponse.json({ error: 'Sisipan gambar harus berupa tautan berkas Google Drive' }, { status: 400 });
+    if (invalidVideoMarkers(contentRaw)) return NextResponse.json({ error: 'Gunakan tautan video publik YouTube, Facebook, Instagram, atau TikTok yang valid' }, { status: 400 });
     const requestedStatus = String(body.status ?? 'draft');
 
     if (!title) {

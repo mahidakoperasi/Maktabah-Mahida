@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
-import YouTubeArticleBlock from './YouTubeArticleBlock';
-import { driveThumbnailUrl, youtubeIdFromUrl } from '@/lib/media-links';
+import VideoEmbedBlock from './VideoEmbedBlock';
+import { driveThumbnailUrl, videoEmbedFromUrl } from '@/lib/media-links';
 import { safeArticleLink } from '@/lib/rich-links';
 
-const blocks = /(\[\[(?:image|youtube):[^\]]+\]\])/gi;
+const blocks = /(\[\[(?:image|youtube|video):[^\]]+\]\])/gi;
 const imageMarker = /^\[\[image:(https:\/\/[^\]|\s]+)(?:\|([^\]]{0,200}))?\]\]$/i;
-const youtubeMarker = /^\[\[youtube:(https:\/\/[^\]|\s]+)(?:\|([^\]]{0,200}))?\]\]$/i;
+const videoMarker = /^\[\[(?:youtube|video):(https:\/\/[^\]|\s]+)(?:\|([^\]]{0,200}))?\]\]$/i;
 
 function inline(text: string): ReactNode[] {
   return text.split(/(\[[^\]\n]{1,200}\]\(https:\/\/[^\s)]+\)|https:\/\/[^\s<>()]+|\*\*[^*\n]+\*\*|\*[^*\n]+\*|\+\+[^+\n]+\+\+)/g).map((part, index) => {
@@ -42,10 +42,10 @@ export default function RichContent({ content }: { content: string }) {
       );
       return;
     }
-    const video = youtubeMarker.exec(part);
+    const video = videoMarker.exec(part);
     if (video) {
-      const id = youtubeIdFromUrl(video[1]);
-      if (id) nodes.push(<YouTubeArticleBlock key={key++} videoId={id} url={video[1]} label={video[2]?.trim()} />);
+      const embed = videoEmbedFromUrl(video[1]);
+      if (embed) nodes.push(<VideoEmbedBlock key={key++} video={embed} label={video[2]?.trim()} />);
       return;
     }
     part.split(/\n\s*\n/).map((value) => value.trim()).filter(Boolean).forEach((paragraph) => {
