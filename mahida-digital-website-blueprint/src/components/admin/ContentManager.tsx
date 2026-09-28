@@ -5,13 +5,14 @@ import Link from 'next/link';
 import type { ContentSection } from '@/lib/content-sections';
 import RichTextField from './RichTextField';
 import ImageUrlPreview from './ImageUrlPreview';
+import AuthorFields from './AuthorFields';
 
-type Item = { id: number; title: string; slug: string; excerpt: string | null; content: string | null; featuredImage: string | null; status: string };
-const blank = { title: '', excerpt: '', content: '', featuredImage: '', status: 'draft' };
+type Item = { id: number; title: string; slug: string; excerpt: string | null; content: string | null; featuredImage: string | null; status: string; authorId: number | null; authorClass: string | null };
+const blank = { title: '', excerpt: '', content: '', featuredImage: '', status: 'draft', authorId: null as number | null, authorClass: '' };
 
 export default function ContentManager({ section, label, publicPath }: { section: ContentSection; label: string; publicPath: string }) {
   const [items, setItems] = useState<Item[]>([]);
-  const [form, setForm] = useState<{ id?: number; title: string; excerpt: string; content: string; featuredImage: string; status: string }>(blank);
+  const [form, setForm] = useState<{ id?: number; title: string; excerpt: string; content: string; featuredImage: string; status: string; authorId: number | null; authorClass: string }>(blank);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [saving, setSaving] = useState(false);
@@ -45,7 +46,7 @@ export default function ContentManager({ section, label, publicPath }: { section
         setNotice('Konten diarsipkan. Pilih kembali dari daftar untuk memulihkannya.');
       } else {
         const item = data.item as Item;
-        setForm({ id: item.id, title: item.title, excerpt: item.excerpt ?? '', content: item.content ?? '', featuredImage: item.featuredImage ?? '', status: item.status });
+        setForm({ id: item.id, title: item.title, excerpt: item.excerpt ?? '', content: item.content ?? '', featuredImage: item.featuredImage ?? '', status: item.status, authorId: item.authorId, authorClass: item.authorClass ?? '' });
         setNotice(item.status === 'published' ? `Konten diterbitkan di ${publicPath}/${item.slug}` : 'Konten berhasil disimpan.');
       }
     } catch (err) { setError(err instanceof Error ? err.message : 'Gagal menyimpan'); }
@@ -56,7 +57,7 @@ export default function ContentManager({ section, label, publicPath }: { section
       <section className="space-y-4">
         <div><h1 className="font-serif text-3xl font-bold">{label}</h1><p className="mt-1 text-sm text-warm-gray-600">{items.length} konten dalam modul ini.</p></div>
         {items.length === 0 && <p className="empty-state text-sm">Belum ada konten. Tulis dan terbitkan dari formulir ini.</p>}
-        {items.map((item) => <button key={item.id} onClick={() => { setNotice(''); setForm({ id: item.id, title: item.title, excerpt: item.excerpt ?? '', content: item.content ?? '', featuredImage: item.featuredImage ?? '', status: item.status }); }} className="block w-full border border-mahida-200 bg-white p-4 text-left hover:bg-mahida-50"><span className="font-semibold">{item.title}</span><span className="ml-2 text-xs text-warm-gray-500">{item.status}</span></button>)}
+        {items.map((item) => <button key={item.id} onClick={() => { setNotice(''); setForm({ id: item.id, title: item.title, excerpt: item.excerpt ?? '', content: item.content ?? '', featuredImage: item.featuredImage ?? '', status: item.status, authorId: item.authorId, authorClass: item.authorClass ?? '' }); }} className="block w-full border border-mahida-200 bg-white p-4 text-left hover:bg-mahida-50"><span className="font-semibold">{item.title}</span><span className="ml-2 text-xs text-warm-gray-500">{item.status}</span></button>)}
       </section>
       <form onSubmit={(event) => { event.preventDefault(); submit(form.id ? 'PATCH' : 'POST', form); }} className="space-y-4 border border-mahida-200 bg-white p-5">
         <div className="flex items-center justify-between"><h2 className="font-serif text-xl font-bold">{form.id ? 'Edit konten' : 'Konten baru'}</h2><button className="text-sm text-emerald-forest" type="button" onClick={() => setForm(blank)}>Baru</button></div>
@@ -68,6 +69,7 @@ export default function ContentManager({ section, label, publicPath }: { section
         <RichTextField label="Isi tulisan" value={form.content} onChange={(content) => setForm({ ...form, content })} />
         {section === 'terjemahan' && <p className="text-xs text-warm-gray-500">Pisahkan paragraf Arab dan terjemahan dengan baris kosong.</p>}
         <div><label className="block text-sm">URL foto sampul Google Drive (opsional)<input value={form.featuredImage} onChange={(e) => setForm({ ...form, featuredImage: e.target.value })} className="mt-1 w-full border p-3" placeholder="https://drive.google.com/file/d/.../view" /></label><ImageUrlPreview url={form.featuredImage} /></div>
+        {['esai', 'terjemahan', 'manuskrip'].includes(section) && <AuthorFields authorId={form.authorId} authorClass={form.authorClass} onChange={(authorId, authorClass) => setForm((current) => ({ ...current, authorId, authorClass }))} />}
         <label className="block text-sm">Status<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="mt-1 w-full border p-3"><option value="draft">Draft</option><option value="published">Terbit</option><option value="archived">Arsip (tidak tampil)</option></select></label>
         <div className="flex flex-wrap items-center gap-4"><button disabled={saving} type="submit" className="btn-primary">Simpan</button>{form.id && form.status !== 'archived' && <button type="button" className="text-sm text-red-700" onClick={() => { if (confirm('Arsipkan konten ini? Dapat dipulihkan dari daftar.')) submit('DELETE', { id: form.id }); }}>Arsipkan</button>}{form.id && form.status === 'published' && <Link target="_blank" className="text-sm text-emerald-forest" href={`${publicPath}/${items.find((i) => i.id === form.id)?.slug ?? ''}`}>Lihat di web</Link>}</div>
       </form>

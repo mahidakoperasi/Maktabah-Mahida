@@ -78,6 +78,7 @@ export const posts = pgTable('posts', {
   status: postStatusEnum('status').notNull().default('draft'),
   featuredImage: text('featured_image'),
   authorId: integer('author_id').references(() => authors.id),
+  authorClass: varchar('author_class', { length: 100 }),
   createdBy: integer('created_by').references(() => users.id),
   publishedAt: timestamp('published_at'),
   scheduledAt: timestamp('scheduled_at'),
@@ -252,6 +253,16 @@ export const navigationItems = pgTable('navigation_items', {
   sortOrder: integer('sort_order').notNull().default(0),
   isVisible: boolean('is_visible').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const admissionSettings = pgTable('admission_settings', {
+  id: integer('id').primaryKey().default(1),
+  introduction: text('introduction').notNull().default(''),
+  steps: jsonb('steps').$type<string[]>().notNull().default([]),
+  requirements: jsonb('requirements').$type<string[]>().notNull().default([]),
+  applicationLabel: varchar('application_label', { length: 100 }).notNull().default('Daftar Sekarang'),
+  applicationUrl: text('application_url').notNull().default(''),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const ebookOrders = pgTable('ebook_orders', {

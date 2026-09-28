@@ -6,6 +6,7 @@ import { getAdminUser } from '@/lib/admin-auth';
 import { updateArticleInput } from '@/lib/article-input';
 import { calculateReadingTime, slugify } from '@/lib/utils';
 import { invalidDriveImages, invalidVideoMarkers } from '@/lib/rich-markers';
+import { validAuthorId } from '@/lib/author';
 
 async function uniqueSlug(title: string, currentId: number) {
   const base = slugify(title) || 'artikel';
@@ -86,6 +87,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Data artikel tidak valid' }, { status: 400 });
     }
     const body = parsed.data;
+    const authorId = body.authorId === undefined ? existing.authorId : body.authorId;
+    if (!await validAuthorId(authorId)) return NextResponse.json({ error: 'Penulis tidak ditemukan' }, { status: 400 });
     const title = String(body.title ?? existing.title).trim();
     const excerpt = String(body.excerpt ?? existing.excerpt ?? '').trim();
     const contentRaw = String(body.content ?? existing.contentRaw ?? existing.content ?? '').trim();
@@ -119,6 +122,8 @@ export async function PATCH(
         content: contentRaw,
         contentRaw,
         status,
+        authorId,
+        authorClass: authorId ? (body.authorClass ?? existing.authorClass ?? '').trim() || null : null,
         publishedAt:
           status === 'published'
             ? existing.publishedAt ?? now

@@ -5,12 +5,13 @@ import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { getPublicPage, paragraphs } from '@/lib/cms';
 import DailyHighlight from '@/components/DailyHighlight';
+import SummaryCard from '@/components/SummaryCard';
 
 export const dynamic = 'force-dynamic';
 export default async function KaryaPage() {
   const page = await getPublicPage('/karya');
   if (!page) notFound();
-  const works = await db.select({ id: posts.id, title: posts.title, slug: posts.slug, type: posts.type, category: posts.karyaCategory, excerpt: posts.excerpt })
+  const works = await db.select({ id: posts.id, title: posts.title, slug: posts.slug, type: posts.type, category: posts.karyaCategory, excerpt: posts.excerpt, featuredImage: posts.featuredImage })
     .from(posts).where(and(or(inArray(posts.type, ['article','essay']), and(eq(posts.type,'work'), inArray(posts.karyaCategory,['terjemahan','manuskrip']))), eq(posts.status, 'published')))
     .orderBy(desc(posts.publishedAt)).limit(20);
   function pathOf(type: string, category: string | null) {
@@ -23,7 +24,7 @@ export default async function KaryaPage() {
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         {page.body && <div className="mb-8 space-y-4 text-warm-gray-600">{paragraphs(page.body).map((part, index) => <p key={index}>{part}</p>)}</div>}
         {works.length === 0 ? <div className="empty-state">Belum ada karya terbit. Karya akan muncul setelah diterbitkan oleh admin.</div>
-          : <div className="grid gap-5 sm:grid-cols-2">{works.map((work) => <article key={work.id} className="border border-mahida-200 bg-white p-6"><p className="label mb-2">{pathOf(work.type, work.category).split('/').at(-1)}</p><h2 className="font-serif text-xl font-bold"><Link href={`${pathOf(work.type, work.category)}/${work.slug}`}>{work.title}</Link></h2>{work.excerpt && <p className="mt-3 text-sm text-warm-gray-600">{work.excerpt}</p>}</article>)}</div>}
+          : <div className="grid gap-5 sm:grid-cols-2">{works.map((work) => <SummaryCard key={work.id} href={`${pathOf(work.type, work.category)}/${work.slug}`} title={work.title} excerpt={work.excerpt} cover={work.featuredImage} label={pathOf(work.type, work.category).split('/').at(-1)} />)}</div>}
       </div>
     </div>
   );

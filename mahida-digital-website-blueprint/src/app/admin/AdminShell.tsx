@@ -27,12 +27,14 @@ const navItems: NavItem[] = [
       { label: 'Beranda', icon: LayoutDashboard, href: '/admin/tampilan/beranda' },
       { label: 'Halaman & Menu', icon: FileText, href: '/admin/tampilan/halaman' },
       { label: 'Media Sosial & Kontak', icon: FileText, href: '/admin/tampilan/kontak' },
+      { label: 'Pendaftaran Santri', icon: FileText, href: '/admin/tampilan/pendaftaran' },
     ],
   },
   {
     label: 'Konten',
     children: [
       { label: 'Artikel', icon: FileText, href: '/admin/konten/artikel' },
+      { label: 'Penulis', icon: Users, href: '/admin/konten/penulis' },
       { label: 'Komentar', icon: FileText, href: '/admin/konten/komentar' },
       { label: 'Esai & Opini', icon: FileText, href: '/admin/konten/esai' },
       { label: 'Terjemahan', icon: FileText, href: '/admin/konten/terjemahan' },
