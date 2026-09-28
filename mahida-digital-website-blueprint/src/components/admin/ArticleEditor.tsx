@@ -6,6 +6,7 @@ import { ArrowLeft, Eye, Save, Send, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import RichTextField from './RichTextField';
 import ImageUrlPreview from './ImageUrlPreview';
+import AuthorFields from './AuthorFields';
 
 type ArticleData = {
   id: number;
@@ -18,6 +19,8 @@ type ArticleData = {
   featuredImage: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
+  authorId: number | null;
+  authorClass: string | null;
 };
 
 export default function ArticleEditor({ articleId }: { articleId?: number }) {
@@ -28,6 +31,8 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
   const [featuredImage, setFeaturedImage] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
+  const [authorId, setAuthorId] = useState<number | null>(null);
+  const [authorClass, setAuthorClass] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   const [slug, setSlug] = useState('');
   const [isLoading, setIsLoading] = useState(Boolean(articleId));
@@ -60,6 +65,8 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
         setFeaturedImage(article.featuredImage ?? '');
         setMetaTitle(article.metaTitle ?? '');
         setMetaDescription(article.metaDescription ?? '');
+        setAuthorId(article.authorId ?? null);
+        setAuthorClass(article.authorClass ?? '');
         setStatus(article.status === 'published' ? 'published' : article.status === 'archived' ? 'archived' : 'draft');
         setSlug(article.slug ?? '');
       } catch (err) {
@@ -107,6 +114,8 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
             featuredImage,
             metaTitle,
             metaDescription,
+            authorId,
+            authorClass,
             status: nextStatus,
           }),
         }
@@ -274,6 +283,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
         </div>
 
         <aside className="space-y-5">
+          <AuthorFields authorId={authorId} authorClass={authorClass} onChange={(id, classValue) => { setAuthorId(id); setAuthorClass(classValue); }} />
           <div className="bg-white border border-warm-gray-200 p-5">
             <h2 className="mb-4 font-semibold text-charcoal">Publikasi</h2>
             <dl className="space-y-3 text-sm">

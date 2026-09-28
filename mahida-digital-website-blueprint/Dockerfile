@@ -12,6 +12,8 @@ RUN npm run build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
+ARG RELEASE_SHA=unknown
+LABEL org.opencontainers.image.revision=$RELEASE_SHA
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0

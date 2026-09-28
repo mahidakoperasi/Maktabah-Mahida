@@ -8,6 +8,8 @@ export const createArticleInput = z.object({
   metaTitle: z.string().trim().max(500).optional(),
   metaDescription: z.string().trim().max(2000).optional(),
   featuredImage: z.string().trim().max(2048).optional(),
+  authorId: z.number().int().positive().nullable().optional(),
+  authorClass: z.string().trim().max(100).optional(),
 });
 
 export const updateArticleInput = createArticleInput.partial().extend({

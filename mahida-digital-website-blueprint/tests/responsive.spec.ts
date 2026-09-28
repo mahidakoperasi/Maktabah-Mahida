@@ -5,12 +5,12 @@ import pg from 'pg';
 const widths = [320, 375, 768, 1024, 1440];
 const publicPaths = [
   '/', '/tentang/profil', '/tentang/kontak', '/karya/artikel', '/karya/esai', '/karya/terjemahan',
-  '/karya/artikel/responsive-ci-article', '/koperasi', '/koperasi/buku',
-  '/koperasi/buku/responsive-ci-book', '/media/video', '/media/galeri', '/masuk',
+  '/karya/artikel/responsive-ci-article', '/karya', '/koperasi', '/koperasi/buku',
+  '/koperasi/buku/responsive-ci-book', '/media/video', '/media/galeri', '/tentang/pendaftaran', '/masuk',
 ];
 const adminPaths = [
   '/admin', '/admin/tampilan/beranda', '/admin/tampilan/halaman',
-  '/admin/tampilan/kontak', '/admin/konten/artikel', '/admin/konten/artikel/new',
+  '/admin/tampilan/kontak', '/admin/tampilan/pendaftaran', '/admin/konten/penulis', '/admin/konten/artikel', '/admin/konten/artikel/new',
   '/admin/koperasi/produk', '/admin/koperasi/pesanan', '/admin/admins',
 ];
 let adminId: number;
@@ -29,6 +29,10 @@ test.beforeAll(async () => {
       RETURNING id
     `);
     adminId = user.rows[0].id;
+    const author = await pool.query<{ id: number }>(`
+      INSERT INTO authors(name, slug) VALUES ('Fita Retno Anjani', 'fita-retno-anjani')
+      ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name RETURNING id
+    `);
     await pool.query(`
       INSERT INTO posts(title, slug, type, status, excerpt, featured_image, published_at)
       VALUES ('Artikel Mahida dengan judul panjang untuk pemeriksaan layar kecil',
@@ -50,6 +54,10 @@ test.beforeAll(async () => {
         'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrsTuVwXyZ012345/view', now() + interval '3 minutes')
       ON CONFLICT (slug) DO NOTHING
     `);
+    await pool.query(`UPDATE posts SET author_id = $1, author_class = 'Kelas X MA' WHERE slug = 'responsive-ci-essay'`, [author.rows[0].id]);
+    await pool.query(`INSERT INTO galleries(title, slug, description, status) VALUES ('Galeri uji Mahida', 'responsive-ci-gallery', 'Foto Mahida.', 'published') ON CONFLICT (slug) DO NOTHING`);
+    const gallery = await pool.query<{ id: number }>(`SELECT id FROM galleries WHERE slug = 'responsive-ci-gallery'`);
+    await pool.query(`INSERT INTO gallery_images(gallery_id, image_url, sort_order) VALUES ($1, '/brand/mahida-logo.webp', 0)`, [gallery.rows[0].id]);
     await pool.query(`
       INSERT INTO products(name, slug, product_type, price, image_url, status)
       VALUES ('Poster Buku Mahida untuk uji tampilan di semua layar',
@@ -220,4 +228,47 @@ test('beranda curates karya beyond articles; covers, Drive photos, and videos re
   await page.goto('/admin/tampilan/beranda');
   await expect(page.getByRole('checkbox')).toHaveCount(3);
   await expect(page.getByText('2 dari 10 karya dipilih')).toBeVisible();
+});
+
+test('carousel scrolls without page overflow and every Karya summary has a cover', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 820 });
+  await page.goto('/');
+  const carousel = page.getByRole('region', { name: 'Hari Ini di Mahida' });
+  await expect(carousel).toBeVisible();
+  expect(await carousel.evaluate((element) => element.scrollWidth)).toBeGreaterThan(await carousel.evaluate((element) => element.clientWidth));
+  await page.getByRole('button', { name: 'Kartu berikutnya: Hari Ini di Mahida' }).click();
+  await expect.poll(() => carousel.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);
+
+  await page.goto('/karya');
+  await expect(page.getByRole('link', { name: 'Buka Esai Mahida untuk pengujian sampul' }).locator('img')).toHaveAttribute('src', /drive.google.com\/thumbnail/);
+  await page.goto('/media/galeri');
+  await expect(page.getByRole('link', { name: 'Buka Galeri uji Mahida' }).locator('img')).toHaveAttribute('src', '/brand/mahida-logo.webp');
+});
+
+test('author archive, social metadata, and admission settings show published data', async ({ page, context }) => {
+  const token = jwt.sign({ userId: adminId, email: 'mahidakoperasi@gmail.com', role: 'admin' }, process.env.JWT_SECRET!);
+  await context.addCookies([{ name: 'mahida_session', value: token, url: 'http://127.0.0.1:3010' }]);
+  const authorResponse = await page.request.get('/api/admin/authors');
+  expect(authorResponse.ok()).toBe(true);
+  expect((await authorResponse.json()).authors.some((author: { slug: string }) => author.slug === 'fita-retno-anjani')).toBe(true);
+
+  await page.goto('/karya/esai/responsive-ci-essay');
+  await expect(page.getByRole('link', { name: 'Fita Retno Anjani' })).toHaveAttribute('href', '/penulis/fita-retno-anjani');
+  await expect(page.getByText(/Kelas X MA/)).toBeVisible();
+  await expect(page.locator('time').filter({ hasText: 'WIB' })).toBeVisible();
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /https:\/\/mahida\.my\.id\/api\/og-image\//);
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
+  await page.getByRole('link', { name: 'Fita Retno Anjani' }).click();
+  await expect(page.getByRole('link', { name: 'Buka Esai Mahida untuk pengujian sampul' })).toBeVisible();
+
+  const saved = await page.request.put('/api/admin/admissions', { data: {
+    introduction: 'Pendaftaran santri Mahida.', steps: ['Isi formulir', 'Verifikasi berkas'],
+    requirements: ['Identitas calon santri'], applicationLabel: 'Isi formulir', applicationUrl: 'https://example.invalid/daftar',
+  } });
+  expect(saved.ok()).toBe(true);
+  await page.goto('/tentang/pendaftaran');
+  await expect(page.getByRole('heading', { name: 'Informasi Pendaftaran Santri' })).toBeVisible();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Verifikasi berkas' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Isi formulir' })).toHaveAttribute('href', 'https://example.invalid/daftar');
 });

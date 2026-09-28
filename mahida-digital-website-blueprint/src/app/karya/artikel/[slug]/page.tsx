@@ -9,8 +9,10 @@ import RelatedContent from '@/components/RelatedContent';
 import DrivePreview from '@/components/DrivePreview';
 import { driveIdFromUrl } from '@/lib/media-links';
 import { db } from '@/db';
-import { posts } from '@/db/schema';
+import { authors, posts } from '@/db/schema';
 import { getPublicPage } from '@/lib/cms';
+import AuthorByline from '@/components/AuthorByline';
+import { socialMetadata } from '@/lib/social-metadata';
 
 async function getArticle(slug: string) {
   if (!await getPublicPage('/karya/artikel')) return null;
@@ -20,7 +22,9 @@ async function getArticle(slug: string) {
     .where(and(eq(posts.slug, slug), eq(posts.type, 'article'), eq(posts.status, 'published')))
     .limit(1);
 
-  return article ?? null;
+  if (!article) return null;
+  const [author] = article.authorId ? await db.select({ name: authors.name, slug: authors.slug }).from(authors).where(eq(authors.id, article.authorId)).limit(1) : [];
+  return { ...article, author: author ?? null };
 }
 
 export async function generateMetadata({
@@ -33,10 +37,7 @@ export async function generateMetadata({
 
   if (!article) return { title: 'Artikel Tidak Ditemukan' };
 
-  return {
-    title: article.metaTitle || article.title,
-    description: article.metaDescription || article.excerpt || undefined,
-  };
+  return socialMetadata({ title: article.metaTitle || article.title, description: article.metaDescription || article.excerpt || article.contentRaw || article.content, image: article.ogImage || article.featuredImage, path: `/karya/artikel/${slug}` });
 }
 
 export default async function PublicArticlePage({
@@ -59,23 +60,13 @@ export default async function PublicArticlePage({
           </Link>
           <p className="label mb-3">Artikel</p>
           <h1 className="display-md text-charcoal">{article.title}</h1>
+          <AuthorByline author={article.author} authorClass={article.authorClass} publishedAt={article.publishedAt} />
           {article.excerpt && (
             <p className="mt-5 max-w-3xl text-lg leading-relaxed text-warm-gray-600">
               {article.excerpt}
             </p>
           )}
-          <div className="mt-6 flex flex-wrap gap-4 text-xs text-warm-gray-400">
-            {article.publishedAt && (
-              <span>
-                {new Date(article.publishedAt).toLocaleDateString('id-ID', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
-              </span>
-            )}
-            {article.readingTime ? <span>{article.readingTime} menit baca</span> : null}
-          </div>
+          {article.readingTime && <p className="mt-3 text-xs text-warm-gray-500">{article.readingTime} menit baca</p>}
         </div>
       </header>
 

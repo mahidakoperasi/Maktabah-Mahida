@@ -8,6 +8,7 @@ import { contentSections, isContentSection } from '@/lib/content-sections';
 import { calculateReadingTime, slugify } from '@/lib/utils';
 import { driveIdFromUrl } from '@/lib/media-links';
 import { invalidDriveImages, invalidVideoMarkers } from '@/lib/rich-markers';
+import { validAuthorId } from '@/lib/author';
 
 const schema = z.object({
   id: z.number().int().positive().optional(),
@@ -16,6 +17,8 @@ const schema = z.object({
   content: z.string().trim().min(1).max(1000000),
   featuredImage: z.string().trim().max(2048).default(''),
   status: z.enum(['draft','published','archived']).default('draft'),
+  authorId: z.number().int().positive().nullable().default(null),
+  authorClass: z.string().trim().max(100).default(''),
 });
 
 async function guard(request: NextRequest, context: { params: Promise<{ section: string }> }) {
@@ -32,6 +35,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ sec
   const items = await db.select({
     id: posts.id, title: posts.title, slug: posts.slug, excerpt: posts.excerpt,
     content: sql<string>`coalesce(${posts.contentRaw}, ${posts.content}, '')`, status: posts.status, featuredImage: posts.featuredImage,
+    authorId: posts.authorId, authorClass: posts.authorClass,
   }).from(posts).where(and(...conditions)).orderBy(desc(posts.updatedAt));
   return NextResponse.json({ items });
 }
@@ -41,7 +45,8 @@ async function save(request: NextRequest, context: { params: Promise<{ section: 
   if (!target) return NextResponse.json({ error: 'Tidak diizinkan atau modul tidak dikenal' }, { status: 403 });
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success || (edit && !parsed.data?.id)) return NextResponse.json({ error: 'Data konten tidak valid' }, { status: 400 });
-  const { id, title, excerpt, content, featuredImage, status } = parsed.data;
+  const { id, title, excerpt, content, featuredImage, status, authorId, authorClass } = parsed.data;
+  if (!await validAuthorId(authorId)) return NextResponse.json({ error: 'Penulis tidak ditemukan' }, { status: 400 });
   if (featuredImage && !driveIdFromUrl(featuredImage)) return NextResponse.json({ error: 'Foto utama harus berupa tautan Google Drive' }, { status: 400 });
   if (invalidDriveImages(content)) return NextResponse.json({ error: 'Sisipan gambar harus berupa tautan berkas Google Drive' }, { status: 400 });
   if (invalidVideoMarkers(content)) return NextResponse.json({ error: 'Gunakan tautan video publik YouTube, Facebook, Instagram, atau TikTok yang valid' }, { status: 400 });
@@ -64,6 +69,7 @@ async function save(request: NextRequest, context: { params: Promise<{ section: 
     const values = {
       title, slug, excerpt: excerpt || null, content, contentRaw: content,
       featuredImage: featuredImage || null, status, readingTime: calculateReadingTime(content),
+      authorId, authorClass: authorId ? authorClass || null : null,
       publishedAt: status === 'published' ? existing?.publishedAt ?? now : existing?.publishedAt ?? null,
       updatedAt: now,
     };

@@ -43,7 +43,7 @@ test('editor, gambar, reaksi tamu, moderasi, rekomendasi, dan hero mobile', asyn
   await expect(prose.locator('em')).toHaveText('miring');
   await expect(prose.locator('u')).toHaveText('garis bawah');
   await expect(prose.locator('img')).toHaveAttribute('src', /drive.google.com\/thumbnail\?id=1234567890abcde/);
-  await expect(page.getByRole('link', { name: /Artikel rekomendasi/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Artikel rekomendasi', exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Suka/ }).click();
   await expect(page.getByRole('button', { name: /Suka/ })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('link', { name: /Komentar/ }).click();

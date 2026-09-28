@@ -713,6 +713,18 @@ body:has([data-admin-shell]) > main {
 }
 
 /* Scrollbar styling */
+.content-carousel {
+  scrollbar-width: none;
+}
+
+.content-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-carousel { scroll-behavior: auto; }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }

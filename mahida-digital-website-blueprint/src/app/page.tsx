@@ -17,6 +17,7 @@ import { driveThumbnailUrl, publicImageUrl } from '@/lib/media-links';
 import ArticleCover from '@/components/ArticleCover';
 import HomepageAboutImage from '@/components/HomepageAboutImage';
 import HeroWidgetImage from '@/components/HeroWidgetImage';
+import ContentCarousel from '@/components/ContentCarousel';
 import { karyaPostLabel, karyaPostPath } from '@/lib/karya-post';
 
 export const dynamic = 'force-dynamic';
@@ -219,12 +220,12 @@ export default async function HomePage() {
               Belum ada konten terbit. Konten terbaru dari Admin Panel akan tampil di sini.
             </div>
           ) : (
-            <div className="columns-1 gap-6 md:columns-2 lg:columns-3">
+            <ContentCarousel label="Hari Ini di Mahida">
               {latestPublished.slice(0, 4).map((item, index) => (
                 <Link
                   key={item.id}
                   href={item.href}
-                  className="group mb-6 inline-block w-full break-inside-avoid overflow-hidden border border-[#dde3d8] bg-[#fffef9] align-top transition-all hover:-translate-y-1 hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
+                  className="group flex w-full flex-col overflow-hidden border border-[#dde3d8] bg-[#fffef9] transition-all hover:shadow-[0_18px_48px_rgba(16,56,39,0.11)]"
                 >
                   <div className="bg-[#edf2e9]">
                     <ArticleCover url={item.featuredImage} />
@@ -249,16 +250,15 @@ export default async function HomePage() {
                   </div>
                 </Link>
               ))}
-            </div>
+            </ContentCarousel>
           )}
         </div>
       </section>
 
       <section className="bg-[#fffef9] py-24">
         <div className="mx-auto grid max-w-[1450px] items-center gap-12 px-5 sm:px-8 lg:grid-cols-[.92fr_1.08fr] lg:px-12 xl:gap-20">
-          <div className="relative min-h-[320px] overflow-hidden rounded-[80px_24px_80px_24px] bg-[#edf2e8] sm:min-h-[420px] lg:min-h-[560px] lg:rounded-[140px_24px_140px_24px]">
+          <div className="relative min-h-[320px] overflow-hidden rounded-xl bg-[#edf2e8] shadow-md sm:min-h-[420px] lg:min-h-[560px]">
             <HomepageAboutImage src={publicImageUrl(settings.aboutImageUrl)} />
-            <div className="absolute -right-16 bottom-16 h-7 w-[330px] -rotate-[13deg] bg-[#e4c72f]" />
           </div>
 
           <div>
@@ -284,7 +284,7 @@ export default async function HomePage() {
           <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#e4c72f]">Literasi Mahida</p>
-              <h2 className="mt-2 font-serif text-4xl font-bold tracking-[-0.03em] md:text-5xl">Bacaan Pilihan</h2>
+              <h2 className="mt-2 font-serif text-4xl font-bold tracking-[-0.03em] md:text-5xl">{settings.featuredWorkIds.length ? 'Bacaan Pilihan' : 'Bacaan Terbaru'}</h2>
             </div>
             {menuPaths.has('/karya') && <Link href="/karya" className="inline-flex items-center gap-2 text-sm font-semibold text-white/75 hover:text-[#f3dc55]">
               Jelajahi Karya <ArrowRight size={15} />
@@ -296,14 +296,14 @@ export default async function HomePage() {
               Belum ada bacaan pilihan. Admin dapat memilih karya setelah karya diterbitkan.
             </div>
           ) : (
-            <div className="columns-1 gap-6 md:columns-2 lg:columns-3">
+            <ContentCarousel label="Bacaan Pilihan">
               {featured.map((article, index) => (
-                <article key={article.id} className="group mb-6 inline-block w-full break-inside-avoid overflow-hidden border border-white/12 bg-white/[0.045] align-top">
-                  <Link href={article.href} className="block">
+                <article key={article.id} className="group flex w-full flex-col overflow-hidden border border-white/12 bg-white/[0.045]">
+                  <Link href={article.href} className="flex h-full flex-col">
                     <div className="bg-white/[0.06]">
                       <ArticleCover url={article.featuredImage} dark />
                     </div>
-                    <div className="p-7">
+                    <div className="flex flex-1 flex-col p-7">
                       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#f3dc55]">
                         Pilihan {String(index + 1).padStart(2, '0')}
                       </span>
@@ -316,7 +316,7 @@ export default async function HomePage() {
                       {article.excerpt && (
                         <p className="mt-4 line-clamp-3 text-sm leading-7 text-white/60">{article.excerpt}</p>
                       )}
-                      <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
+                      <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/45">
                         <span>{article.readingTime ? `${article.readingTime} menit baca` : karyaPostLabel(article)}</span>
                         <ArrowRight size={15} className="text-[#e4c72f]" />
                       </div>
@@ -324,7 +324,7 @@ export default async function HomePage() {
                   </Link>
                 </article>
               ))}
-            </div>
+            </ContentCarousel>
           )}
         </div>
       </section>
