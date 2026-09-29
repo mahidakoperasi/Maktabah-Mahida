@@ -19,7 +19,7 @@ function MobileItems({ items, close }: { items: PublicMenuItem[]; close: () => v
   </ul>;
 }
 
-export default function NavbarClient({ items }: { items: PublicMenuItem[] }) {
+export default function NavbarClient({ items, brandName = 'MAHIDA' }: { items: PublicMenuItem[]; brandName?: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState<number | null>(null);
@@ -49,7 +49,7 @@ export default function NavbarClient({ items }: { items: PublicMenuItem[] }) {
 
   return <header onKeyDown={(event) => { if (event.key === 'Escape') { setDesktopOpen(null); setChildOpen(null); } }} className="site-nav sticky top-0 z-50 border-b border-mahida-200 bg-[#fffef9]/95 backdrop-blur-lg">
     <div className="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between gap-4 px-4 md:px-8 lg:px-12">
-      <Link href="/" onClick={() => setOpen(false)} className="shrink-0 text-xl font-black tracking-tight text-emerald-forest">MAHIDA<span className="text-brass">.</span></Link>
+      <Link href="/" onClick={() => setOpen(false)} className="max-w-[45vw] shrink-0 truncate text-xl font-black tracking-tight text-emerald-forest">{brandName}<span className="text-brass">.</span></Link>
       <nav aria-label="Navigasi utama" className="hidden items-center gap-1 lg:flex">
         {items.map((item) => <div key={item.id} className="group/top relative">
           <div className="flex items-center"><Link href={item.path} onClick={() => { setDesktopOpen(null); setChildOpen(null); }} aria-current={pathname === item.path ? 'page' : undefined} className="inline-flex min-h-11 items-center px-3 py-2 text-sm font-bold text-[#183c2d] hover:text-emerald-rich">{item.label}</Link>{item.children.length > 0 && <button type="button" aria-label={`Submenu ${item.label}`} aria-expanded={desktopOpen === item.id} onClick={() => { setDesktopOpen(desktopOpen === item.id ? null : item.id); setChildOpen(null); }} className="grid h-11 w-7 place-items-center"><ChevronDown size={15} aria-hidden /></button>}</div>

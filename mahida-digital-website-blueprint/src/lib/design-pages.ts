@@ -7,3 +7,6 @@ export const educationUnits = [
 ] as const;
 
 export const unitHref = (slug: string) => `/tentang/unit-pendidikan/${slug}`;
+
+const editorialPaths = new Set(['/tentang/profil', '/tentang/visi-misi', '/pesantren/kehidupan', '/media/kegiatan', '/media/video', '/media/galeri', '/tentang/pendaftaran', ...educationUnits.map((unit) => unitHref(unit.slug))]);
+export function editableEditorialPath(path: string) { return editorialPaths.has(path); }

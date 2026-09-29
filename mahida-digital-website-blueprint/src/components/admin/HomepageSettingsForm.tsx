@@ -1,241 +1,80 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save } from 'lucide-react';
-import { karyaPostLabel } from '@/lib/karya-post';
+import type { HomepageSettings } from '@/lib/homepage-settings';
 import ImageUrlPreview from './ImageUrlPreview';
 
-type WorkOption = {
-  id: number;
-  title: string;
-  status: string;
-  type: string;
-  karyaCategory: string | null;
+const fields = {
+  hero: [['heroEyebrow', 'Teks kecil'], ['heroTitleLine1', 'Judul baris 1'], ['heroTitleLine2', 'Judul baris 2'], ['heroTitleAccent', 'Judul aksen'], ['heroDescription', 'Deskripsi'], ['heroPrimaryLabel', 'Teks tombol utama'], ['heroPrimaryHref', 'Tujuan tombol utama'], ['heroSecondaryLabel', 'Teks tombol kedua'], ['heroSecondaryHref', 'Tujuan tombol kedua']] as const,
+  units: [['unitsEyebrow', 'Teks kecil'], ['unitsTitle', 'Judul'], ['unitsDescription', 'Deskripsi']] as const,
+  news: [['newsEyebrow', 'Teks kecil'], ['newsTitle', 'Judul']] as const,
 };
 
-type HomepageSettings = {
-  heroEyebrow: string;
-  heroTitleLine1: string;
-  heroTitleLine2: string;
-  heroTitleAccent: string;
-  heroDescription: string;
-  heroPrimaryLabel: string;
-  heroPrimaryHref: string;
-  heroSecondaryLabel: string;
-  heroSecondaryHref: string;
-  heroWidgetImageUrl: string;
-  heroWidgetArabic: string;
-  heroWidgetSubtitle: string;
-  heroWidgetLayout: 'logo' | 'photo';
-  aboutEyebrow: string;
-  aboutTitle: string;
-  aboutDescription: string;
-  aboutImageUrl: string;
-  stat1Value: string;
-  stat1Label: string;
-  stat2Value: string;
-  stat2Label: string;
-  stat3Value: string;
-  stat3Label: string;
-  featuredWorkIds: number[];
-};
-
-export default function HomepageSettingsForm({ works }: { works: WorkOption[] }) {
+export default function HomepageSettingsForm() {
   const [settings, setSettings] = useState<HomepageSettings | null>(null);
   const [ready, setReady] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [notice, setNotice] = useState('');
-  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [articles, setArticles] = useState<{ id: number; title: string; type: string }[]>([]);
 
   useEffect(() => {
-    let active = true;
-
-    async function load() {
-      try {
-        const response = await fetch('/api/admin/homepage', { cache: 'no-store' });
-        const data = await response.json();
-
-        if (!response.ok) throw new Error(data.error || 'Gagal memuat pengaturan');
-
-        if (active) {
-          setReady(Boolean(data.ready));
-          setSettings({ ...data.settings, featuredWorkIds: data.settings.featuredWorkIds.filter((id: number) => works.some((work) => work.id === id)) });
-        }
-      } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : 'Gagal memuat pengaturan');
-      }
-    }
-
-    load();
-    return () => {
-      active = false;
-    };
-  }, [works]);
+    fetch('/api/admin/homepage', { cache: 'no-store' }).then(async (response) => {
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Gagal memuat Beranda');
+      setSettings(data.settings); setReady(Boolean(data.ready)); setArticles(data.articles ?? []);
+    }).catch((error) => setMessage(error.message));
+  }, []);
 
   function update<K extends keyof HomepageSettings>(key: K, value: HomepageSettings[K]) {
-    setSettings((current) => (current ? { ...current, [key]: value } : current));
+    setSettings((old) => old ? { ...old, [key]: value } : old);
   }
 
-  function toggleFeatured(id: number) {
+  function toggleArticle(id: number) {
     if (!settings) return;
-    const selected = settings.featuredWorkIds;
-    if (!selected.includes(id) && selected.length >= 10) return;
-    update('featuredWorkIds', selected.includes(id) ? selected.filter((value) => value !== id) : [...selected, id]);
+    const ids = settings.homePostIds;
+    update('homePostIds', ids.includes(id) ? ids.filter((item) => item !== id) : ids.length < 3 ? [...ids, id] : ids);
   }
 
-  function moveFeatured(index: number, direction: -1 | 1) {
-    if (!settings || index + direction < 0 || index + direction >= settings.featuredWorkIds.length) return;
-    const next = [...settings.featuredWorkIds];
+  function moveArticle(index: number, direction: -1 | 1) {
+    if (!settings || index + direction < 0 || index + direction >= settings.homePostIds.length) return;
+    const next = [...settings.homePostIds];
     [next[index], next[index + direction]] = [next[index + direction], next[index]];
-    update('featuredWorkIds', next);
+    update('homePostIds', next);
   }
 
   async function save() {
     if (!settings) return;
-
-    setIsSaving(true);
-    setNotice('');
-    setError('');
-
+    setSaving(true); setMessage('');
     try {
-      const response = await fetch('/api/admin/homepage', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
-      });
+      const response = await fetch('/api/admin/homepage', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
       const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error || 'Gagal menyimpan');
-
-      setSettings(data.settings);
-      setNotice('Pengaturan beranda berhasil disimpan.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menyimpan');
-    } finally {
-      setIsSaving(false);
-    }
+      if (!response.ok) throw new Error(data.error || 'Gagal menyimpan Beranda');
+      setSettings(data.settings); setMessage('Beranda berhasil disimpan. Muat ulang halaman publik untuk melihat hasilnya.');
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Gagal menyimpan'); }
+    finally { setSaving(false); }
   }
 
-  if (!settings) {
-    return <div className="text-sm text-warm-gray-500">Memuat pengaturan beranda...</div>;
-  }
-
-  if (!ready) {
-    return (
-      <div className="border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-        Database pengaturan beranda belum aktif. Jalankan migration homepage settings di Neon terlebih dahulu.
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {error && <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-      {notice && <div className="border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
-
-      <section className="bg-white border border-warm-gray-200 p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-charcoal">Hero Utama</h2>
-          <p className="text-xs text-warm-gray-400 mt-1">Konten paling atas di halaman Beranda.</p>
-        </div>
-        <input value={settings.heroEyebrow} onChange={(e) => update('heroEyebrow', e.target.value)} className="w-full border p-3" placeholder="Eyebrow" />
-        <div className="grid gap-3 md:grid-cols-3">
-          <input value={settings.heroTitleLine1} onChange={(e) => update('heroTitleLine1', e.target.value)} className="border p-3" placeholder="Judul baris 1" />
-          <input value={settings.heroTitleLine2} onChange={(e) => update('heroTitleLine2', e.target.value)} className="border p-3" placeholder="Judul baris 2" />
-          <input value={settings.heroTitleAccent} onChange={(e) => update('heroTitleAccent', e.target.value)} className="border p-3" placeholder="Judul aksen" />
-        </div>
-        <textarea value={settings.heroDescription} onChange={(e) => update('heroDescription', e.target.value)} rows={4} className="w-full border p-3" placeholder="Deskripsi hero" />
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <input value={settings.heroPrimaryLabel} onChange={(e) => update('heroPrimaryLabel', e.target.value)} className="border p-3" placeholder="Label tombol utama" />
-            <input value={settings.heroPrimaryHref} onChange={(e) => update('heroPrimaryHref', e.target.value)} className="border p-3" placeholder="/literasi" />
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <input value={settings.heroSecondaryLabel} onChange={(e) => update('heroSecondaryLabel', e.target.value)} className="border p-3" placeholder="Label tombol kedua" />
-            <input value={settings.heroSecondaryHref} onChange={(e) => update('heroSecondaryHref', e.target.value)} className="border p-3" placeholder="/tentang/profil" />
-          </div>
-        </div>
-        <div className="space-y-3 rounded border border-mahida-200 bg-mahida-50 p-4">
-          <h3 className="font-semibold">Widget logo / foto hero</h3>
-          <p className="text-xs text-warm-gray-600">Tempel tautan berkas foto Google Drive dengan akses publik, atau kosongkan untuk logo pondok bawaan.</p>
-          <label className="block text-sm">Tautan gambar<input value={settings.heroWidgetImageUrl === '/brand/mahida-logo.webp' ? '' : settings.heroWidgetImageUrl} onChange={(e) => update('heroWidgetImageUrl', e.target.value)} className="mt-1 w-full border p-3" placeholder="https://drive.google.com/file/d/.../view" /></label>
-          <ImageUrlPreview url={settings.heroWidgetImageUrl === '/brand/mahida-logo.webp' ? '' : settings.heroWidgetImageUrl} />
-          <label className="block text-sm">Tampilan widget<select className="mt-1 w-full border p-3" value={settings.heroWidgetLayout} onChange={(e) => update('heroWidgetLayout', e.target.value as 'logo' | 'photo')}><option value="logo">Logo</option><option value="photo">Foto / poster</option></select></label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-sm">Teks Arab<input value={settings.heroWidgetArabic} onChange={(e) => update('heroWidgetArabic', e.target.value)} className="mt-1 w-full border p-3" /></label>
-            <label className="block text-sm">Keterangan<input value={settings.heroWidgetSubtitle} onChange={(e) => update('heroWidgetSubtitle', e.target.value)} className="mt-1 w-full border p-3" /></label>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white border border-warm-gray-200 p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-charcoal">Tentang Mahida</h2>
-          <p className="text-xs text-warm-gray-400 mt-1">Teks, visual, dan statistik ringkas di homepage.</p>
-        </div>
-        <input value={settings.aboutEyebrow} onChange={(e) => update('aboutEyebrow', e.target.value)} className="w-full border p-3" placeholder="Label section" />
-        <input value={settings.aboutTitle} onChange={(e) => update('aboutTitle', e.target.value)} className="w-full border p-3" placeholder="Judul tentang" />
-        <textarea value={settings.aboutDescription} onChange={(e) => update('aboutDescription', e.target.value)} rows={5} className="w-full border p-3" placeholder="Deskripsi tentang" />
-        <label className="block text-sm">Tautan foto Tentang Mahida<input value={settings.aboutImageUrl} onChange={(e) => update('aboutImageUrl', e.target.value)} className="mt-1 w-full border p-3" placeholder="URL foto / gambar profil pondok" /></label>
-        <ImageUrlPreview url={settings.aboutImageUrl} />
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            ['stat1Value', 'stat1Label'],
-            ['stat2Value', 'stat2Label'],
-            ['stat3Value', 'stat3Label'],
-          ].map(([valueKey, labelKey], index) => (
-            <div key={valueKey} className="border border-warm-gray-200 p-4">
-              <p className="text-xs font-semibold text-warm-gray-500 mb-2">Statistik {index + 1}</p>
-              <input
-                value={settings[valueKey as keyof HomepageSettings] as string}
-                onChange={(e) => update(valueKey as keyof HomepageSettings, e.target.value as never)}
-                className="w-full border p-2.5 mb-2"
-                placeholder="Isi setelah data diverifikasi"
-              />
-              <input
-                value={settings[labelKey as keyof HomepageSettings] as string}
-                onChange={(e) => update(labelKey as keyof HomepageSettings, e.target.value as never)}
-                className="w-full border p-2.5"
-                placeholder="Label"
-              />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-white border border-warm-gray-200 p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-charcoal">Bacaan Pilihan</h2>
-          <p className="text-xs text-warm-gray-400 mt-1">Pilih maksimal 10 karya terbit dari semua kategori. Jika kosong, tampilkan karya terbaru. Karya yang diarsipkan tidak akan tampil.</p>
-        </div>
-        <p role="status" className="text-sm text-warm-gray-600">{settings.featuredWorkIds.length} dari 10 karya dipilih</p>
-        <div className="max-h-72 space-y-1 overflow-y-auto rounded border border-mahida-200 p-2">
-          {works.length ? works.map((work) => <label key={work.id} className="flex min-h-11 items-center gap-3 rounded p-2 hover:bg-mahida-50">
-            <input type="checkbox" checked={settings.featuredWorkIds.includes(work.id)} disabled={!settings.featuredWorkIds.includes(work.id) && settings.featuredWorkIds.length >= 10} onChange={() => toggleFeatured(work.id)} className="h-5 w-5 shrink-0 accent-emerald-forest" />
-            <span className="min-w-0 break-words text-sm"><span className="mr-2 text-warm-gray-500">{karyaPostLabel(work)}</span>{work.title}</span>
-          </label>) : <p className="p-3 text-sm text-warm-gray-500">Belum ada karya terbit.</p>}
-        </div>
-        {settings.featuredWorkIds.length > 0 && <div className="space-y-2" aria-label="Urutan Bacaan Pilihan">
-          <h3 className="font-semibold">Urutan tampil</h3>
-          {settings.featuredWorkIds.map((id, index) => {
-            const work = works.find((item) => item.id === id);
-            if (!work) return null;
-            return <div key={id} className="flex min-w-0 items-center gap-2 rounded border p-2 text-sm">
-              <span className="min-w-0 flex-1 break-words">{index + 1}. {work.title}</span>
-              <button type="button" disabled={index === 0} onClick={() => moveFeatured(index, -1)} aria-label={`Naikkan ${work.title}`} className="min-h-11 min-w-11 rounded border disabled:opacity-40">↑</button>
-              <button type="button" disabled={index === settings.featuredWorkIds.length - 1} onClick={() => moveFeatured(index, 1)} aria-label={`Turunkan ${work.title}`} className="min-h-11 min-w-11 rounded border disabled:opacity-40">↓</button>
-            </div>;
-          })}
-        </div>}
-      </section>
-
-      <div className="flex justify-end">
-        <button onClick={save} disabled={isSaving} className="btn-primary">
-          <Save size={16} />
-          {isSaving ? 'Menyimpan...' : 'Simpan Beranda'}
-        </button>
-      </div>
-    </div>
-  );
+  if (!settings) return <p>{message || 'Memuat pengaturan Beranda...'}</p>;
+  if (!ready) return <p role="alert">Database pengaturan Beranda belum siap.</p>;
+  const input = ([key, label]: readonly [keyof HomepageSettings, string]) => <label className="block text-sm" key={key}>{label}<input className="mt-1 w-full border p-3" value={settings[key] as string} onChange={(event) => update(key, event.target.value as never)} /></label>;
+  return <div className="space-y-6">
+    {message && <p role="status" className="border bg-white p-3 text-sm">{message}</p>}
+    <section className="space-y-3 border bg-white p-5"><h2 className="text-xl font-bold">Identitas Website</h2>
+      {([['siteName','Nama di navbar dan footer'],['siteTagline','Subjudul footer'],['footerDescription','Deskripsi footer'],['seoTitle','Judul utama mesin pencari'],['seoDescription','Deskripsi utama mesin pencari']] as const).map(input)}
+      <label className="block text-sm">Logo (HTTPS atau Google Drive)<input className="mt-1 w-full border p-3" value={settings.siteLogoUrl} onChange={(event) => update('siteLogoUrl', event.target.value)} /><ImageUrlPreview url={settings.siteLogoUrl} /></label>
+    </section>
+    <section className="space-y-4 border bg-white p-5">
+      <h2 className="text-xl font-bold">Hero Beranda</h2>
+      <div className="grid gap-3 md:grid-cols-2">{fields.hero.map(input)}</div>
+      <label className="block text-sm">Gambar latar (HTTPS atau Google Drive)<input className="mt-1 w-full border p-3" value={settings.heroImageUrl} onChange={(e) => update('heroImageUrl', e.target.value)} /><ImageUrlPreview url={settings.heroImageUrl} /></label>
+      <label className="block text-sm">Video latar (MP4 HTTPS atau Google Drive)<input className="mt-1 w-full border p-3" value={settings.heroVideoUrl} onChange={(e) => update('heroVideoUrl', e.target.value)} /><span className="mt-1 block text-xs text-warm-gray-600">Google Drive tampil sebagai pratinjau tersemat. MP4 HTTPS dapat diputar otomatis tanpa suara. Kosongkan untuk menampilkan gambar.</span></label>
+    </section>
+    <section className="space-y-3 border bg-white p-5"><h2 className="text-xl font-bold">Portal Unit Pendidikan</h2>{fields.units.map(input)}<p className="text-sm text-warm-gray-600">Nama dan urutan unit mengikuti pengaturan Halaman &amp; Menu.</p></section>
+    <section className="space-y-3 border bg-white p-5"><h2 className="text-xl font-bold">Berita &amp; Artikel Terbaru</h2>{fields.news.map(input)}
+      <p className="text-sm text-warm-gray-600">Pilih hingga tiga tulisan terbit. Jika tidak ada pilihan, tiga tulisan terbaru tampil otomatis. Sampul mengikuti gambar unggulan di Konten.</p>
+      <div className="max-h-64 space-y-2 overflow-y-auto border p-3">{articles.map((article) => <label key={article.id} className="flex gap-3 text-sm"><input type="checkbox" checked={settings.homePostIds.includes(article.id)} disabled={!settings.homePostIds.includes(article.id) && settings.homePostIds.length >= 3} onChange={() => toggleArticle(article.id)} />{article.title} ({article.type === 'news' ? 'Berita' : 'Artikel'})</label>)}</div>
+      {settings.homePostIds.map((id, index) => <div key={id} className="flex items-center gap-2 border p-2 text-sm"><span className="flex-1">{index + 1}. {articles.find((article) => article.id === id)?.title ?? 'Tulisan tidak tersedia'}</span><button type="button" aria-label={`Naikkan tulisan ${index + 1}`} disabled={index === 0} onClick={() => moveArticle(index, -1)} className="border px-3 py-2 disabled:opacity-40">↑</button><button type="button" aria-label={`Turunkan tulisan ${index + 1}`} disabled={index === settings.homePostIds.length - 1} onClick={() => moveArticle(index, 1)} className="border px-3 py-2 disabled:opacity-40">↓</button></div>)}
+    </section>
+    <button type="button" disabled={saving} onClick={save} className="btn-primary">{saving ? 'Menyimpan...' : 'Simpan Beranda'}</button>
+  </div>;
 }

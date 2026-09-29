@@ -3,11 +3,25 @@ import { settings } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
 export type HomepageSettings = {
+  siteName: string;
+  siteTagline: string;
+  siteLogoUrl: string;
+  footerDescription: string;
+  seoTitle: string;
+  seoDescription: string;
   heroEyebrow: string;
   heroTitleLine1: string;
   heroTitleLine2: string;
   heroTitleAccent: string;
   heroDescription: string;
+  heroVideoUrl: string;
+  heroImageUrl: string;
+  unitsEyebrow: string;
+  unitsTitle: string;
+  unitsDescription: string;
+  newsEyebrow: string;
+  newsTitle: string;
+  homePostIds: number[];
   heroPrimaryLabel: string;
   heroPrimaryHref: string;
   heroSecondaryLabel: string;
@@ -30,12 +44,26 @@ export type HomepageSettings = {
 };
 
 export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
+  siteName: 'MAHIDA',
+  siteTagline: 'Digital Pesantren',
+  siteLogoUrl: '/brand/mahida-logo.webp',
+  footerDescription: 'Ruang untuk ilmu, karya, dokumentasi, dan khidmah Mahida.',
+  seoTitle: 'Mahida Digital — Belajar. Berkarya. Berkhidmah.',
+  seoDescription: 'Website resmi, media, literasi, arsip, dan ekosistem Mahida. Satu ruang untuk mengenal, membaca, melihat, menjaga, dan mengikuti perjalanan Mahida.',
   heroEyebrow: 'Belajar • Berkarya • Berkhidmah',
   heroTitleLine1: 'Mengenal,',
   heroTitleLine2: 'Membaca, Menjaga',
   heroTitleAccent: 'Mahida.',
   heroDescription:
     'Ruang digital untuk mengenal Mahida dan membaca publikasi yang telah diterbitkan.',
+  heroVideoUrl: '',
+  heroImageUrl: '',
+  unitsEyebrow: 'Pendidikan Mahida',
+  unitsTitle: 'Temukan ruang belajar Anda.',
+  unitsDescription: 'Lima unit pendidikan dalam satu lingkungan Mahida Salam.',
+  newsEyebrow: 'Dari Mahida',
+  newsTitle: 'Berita & Artikel Terbaru',
+  homePostIds: [],
   heroPrimaryLabel: 'Mulai Membaca',
   heroPrimaryHref: '/literasi',
   heroSecondaryLabel: 'Jelajahi Mahida',
@@ -92,6 +120,9 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
       featuredWorkIds: (Array.isArray(parsed.featuredWorkIds) ? parsed.featuredWorkIds : parsed.featuredArticleIds ?? [])
         .filter((value): value is number => Number.isInteger(value) && value > 0)
         .filter((value, index, values) => values.indexOf(value) === index).slice(0, 10),
+      homePostIds: (Array.isArray(parsed.homePostIds) ? parsed.homePostIds : [])
+        .filter((value): value is number => Number.isInteger(value) && value > 0)
+        .filter((value, index, values) => values.indexOf(value) === index).slice(0, 3),
     };
   } catch {
     return DEFAULT_HOMEPAGE_SETTINGS;
