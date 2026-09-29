@@ -29,17 +29,27 @@ async function save(request: NextRequest, edit: boolean) {
   const [page] = await db.select({ id: cmsPages.id, status: cmsPages.status }).from(cmsPages).where(eq(cmsPages.path, path)).limit(1);
   if (!page) return NextResponse.json({ error: 'Buat halaman tujuan sebelum menambah menu' }, { status: 400 });
   if (isVisible && page.status !== 'published') return NextResponse.json({ error: 'Terbitkan halaman sebelum menampilkan menu' }, { status: 400 });
+  let parentDepth = 0;
   if (parentId !== null) {
     const [parent] = await db.select().from(navigationItems).where(eq(navigationItems.id, parentId)).limit(1);
-    if (!parent || parent.parentId !== null || parentId === id) return NextResponse.json({ error: 'Induk menu harus menu tingkat atas' }, { status: 400 });
+    if (!parent || parentId === id || parent.parentId === id) return NextResponse.json({ error: 'Induk menu tidak valid' }, { status: 400 });
+    parentDepth = parent.parentId === null ? 0 : 1;
+    if (parent.parentId !== null) {
+      const [grandparent] = await db.select({ parentId: navigationItems.parentId }).from(navigationItems).where(eq(navigationItems.id, parent.parentId)).limit(1);
+      if (!grandparent || grandparent.parentId !== null) return NextResponse.json({ error: 'Menu hanya mendukung tiga tingkat' }, { status: 400 });
+    }
   }
   try {
     if (edit && id) {
       const [existing] = await db.select().from(navigationItems).where(eq(navigationItems.id, id)).limit(1);
       if (!existing) return NextResponse.json({ error: 'Menu tidak ditemukan' }, { status: 404 });
       if (parentId !== null) {
-        const [child] = await db.select({ id: navigationItems.id }).from(navigationItems).where(eq(navigationItems.parentId, id)).limit(1);
-        if (child) return NextResponse.json({ error: 'Menu dengan submenu tidak dapat menjadi submenu' }, { status: 400 });
+        const children = await db.select({ id: navigationItems.id }).from(navigationItems).where(eq(navigationItems.parentId, id));
+        if (parentDepth === 1 && children.length) return NextResponse.json({ error: 'Menu tingkat ketiga tidak boleh memiliki submenu' }, { status: 400 });
+        if (parentDepth === 0 && children.length) {
+          const descendants = await db.select({ parentId: navigationItems.parentId }).from(navigationItems);
+          if (descendants.some((row) => children.some((child) => child.id === row.parentId))) return NextResponse.json({ error: 'Perubahan ini akan membuat menu lebih dari tiga tingkat' }, { status: 400 });
+        }
       }
       const [item] = await db.update(navigationItems).set({ parentId, path, label, sortOrder, isVisible }).where(eq(navigationItems.id, id)).returning();
       return NextResponse.json({ item });

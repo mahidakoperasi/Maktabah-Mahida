@@ -7,6 +7,7 @@ const publicPaths = [
   '/', '/tentang/profil', '/tentang/kontak', '/karya/artikel', '/karya/esai', '/karya/terjemahan',
   '/karya/artikel/responsive-ci-article', '/karya', '/koperasi', '/koperasi/buku',
   '/koperasi/buku/responsive-ci-book', '/media/video', '/media/galeri', '/tentang/pendaftaran', '/masuk',
+  '/tentang/unit-pendidikan/madrasah-diniyyah', '/tentang/unit-pendidikan/unu-blitar',
 ];
 const adminPaths = [
   '/admin', '/admin/tampilan/beranda', '/admin/tampilan/halaman',
@@ -103,7 +104,7 @@ for (const width of widths) {
       await expect(page.getByRole('contentinfo').getByRole('link', { name: 'Kontak Pendaftaran Santri' })).toBeVisible();
     }
 
-    if (width < 1280) {
+    if (width < 1024) {
       await page.goto('/');
       const trigger = page.getByRole('button', { name: 'Buka menu' });
       await trigger.click();
@@ -127,16 +128,30 @@ for (const width of widths) {
   });
 }
 
-test('submenu switches content without reloading and public navigation hides admin', async ({ page }) => {
-  await page.goto('/karya');
+test('three-level public menu follows Admin visibility and keeps published routes accessible', async ({ page, context }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
   await expect(page.locator('header.site-nav').getByRole('link', { name: 'Admin' })).toHaveCount(0);
-  const tabs = page.getByRole('navigation', { name: 'Submenu Karya' });
-  await expect(tabs.getByRole('link', { name: 'Ringkasan' })).toHaveAttribute('aria-current', 'page');
-  await page.evaluate(() => { (window as Window & { __mahidaNavigationCheck?: boolean }).__mahidaNavigationCheck = true; });
-  await tabs.getByRole('link', { name: 'Artikel' }).click();
-  await expect(page).toHaveURL(/\/karya\/artikel$/);
-  await expect(page.getByRole('navigation', { name: 'Submenu Karya' }).getByRole('link', { name: 'Artikel' })).toHaveAttribute('aria-current', 'page');
-  expect(await page.evaluate(() => (window as Window & { __mahidaNavigationCheck?: boolean }).__mahidaNavigationCheck)).toBe(true);
+  const nav = page.getByRole('navigation', { name: 'Navigasi utama' });
+  await expect(nav.locator(':scope > div > div > a')).toHaveText(['Beranda', 'Tentang Mahida', 'Media', 'Gabung Bersama Kami']);
+  await nav.getByRole('button', { name: 'Submenu Tentang Mahida' }).click();
+  await nav.getByRole('button', { name: 'Submenu Unit Pendidikan' }).click();
+  await expect(nav.getByRole('link', { name: 'Madrasah Diniyyah Mahida Salam' })).toBeVisible();
+  await expect(nav.getByRole('link', { name: "Universitas Nahdlatul Ulama' Blitar di Mahida Salam" })).toBeVisible();
+  const token = jwt.sign({ userId: adminId, email: 'mahidakoperasi@gmail.com', role: 'admin' }, process.env.JWT_SECRET!);
+  await context.addCookies([{ name: 'mahida_session', value: token, url: 'http://127.0.0.1:3010' }]);
+  const menus = (await (await page.request.get('/api/admin/cms/navigation')).json()).items as { id: number; parentId: number; path: string; label: string; sortOrder: number; isVisible: boolean }[];
+  const unit = menus.find((item) => item.path === '/tentang/pendidikan')!;
+  try {
+    const hidden = await page.request.patch('/api/admin/cms/navigation', { data: { ...unit, isVisible: false } });
+    expect(hidden.ok()).toBe(true);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Temukan ruang belajar Anda.' }).locator('xpath=../..').getByRole('link')).toHaveCount(0);
+    expect((await page.request.get('/tentang/unit-pendidikan/madrasah-diniyyah')).status()).toBe(200);
+  } finally {
+    const restored = await page.request.patch('/api/admin/cms/navigation', { data: unit });
+    expect(restored.ok()).toBe(true);
+  }
   await page.goto('/berita');
   await expect(page.getByRole('heading', { name: 'Berita' })).toBeVisible();
 });
@@ -187,31 +202,23 @@ test('news remains in the database when archived and can be restored', async ({ 
   expect((await restored.json()).item.publishedAt).toBe(item.publishedAt);
 });
 
-test('beranda curates karya beyond articles; covers, Drive photos, and videos render', async ({ page, context }) => {
+test('editorial homepage uses published articles and media placeholders', async ({ page, context }) => {
   await page.route('https://drive.google.com/thumbnail**', async (route) => route.fulfill({
     status: 200, contentType: 'image/svg+xml',
     body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="green"/></svg>',
   }));
   const token = jwt.sign({ userId: adminId, email: 'mahidakoperasi@gmail.com', role: 'admin' }, process.env.JWT_SECRET!);
   await context.addCookies([{ name: 'mahida_session', value: token, url: 'http://127.0.0.1:3010' }]);
-  const essay = (await (await page.request.get('/api/admin/content/esai')).json()).items.find((item: { slug: string }) => item.slug === 'responsive-ci-essay');
-  const translation = (await (await page.request.get('/api/admin/content/terjemahan')).json()).items.find((item: { slug: string }) => item.slug === 'responsive-ci-translation');
   const homepage = await (await page.request.get('/api/admin/homepage')).json();
-  const image = 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrsTuVwXyZ012345/view';
-  const saved = await page.request.put('/api/admin/homepage', { data: { ...homepage.settings, featuredWorkIds: [translation.id, essay.id], heroWidgetImageUrl: image, heroWidgetLayout: 'photo', aboutImageUrl: image } });
+  const saved = await page.request.put('/api/admin/homepage', { data: { ...homepage.settings, heroTitleLine1: 'Selamat datang di' } });
   expect(saved.ok()).toBe(true);
 
   await page.goto('/');
-  const latest = page.getByRole('heading', { name: 'Hari Ini di Mahida' }).locator('xpath=../..').locator('xpath=..');
-  await expect(latest.locator('a[href="/karya/esai/responsive-ci-essay"]')).toBeVisible();
-  await expect(latest.locator('a[href="/karya/terjemahan/responsive-ci-translation"]')).toBeVisible();
-  const curated = page.getByRole('heading', { name: 'Bacaan Pilihan' }).locator('xpath=../../..');
-  await expect(curated.locator('a[href="/karya/terjemahan/responsive-ci-translation"]')).toBeVisible();
-  await expect(curated.locator('a[href="/karya/esai/responsive-ci-essay"]')).toBeVisible();
-  expect((await curated.locator('a[href^="/karya/"]').first().getAttribute('href'))).toBe('/karya/terjemahan/responsive-ci-translation');
-  const html = await (await page.request.get('/')).text();
-  expect(html).toContain('drive.google.com/thumbnail');
-  await expect(page.locator('.hero-logo-widget')).toHaveClass(/bg-\[#073e2b\]/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Selamat datang di');
+  await expect(page.getByRole('heading', { name: 'Temukan ruang belajar Anda.' }).locator('xpath=../..').getByRole('link')).toHaveCount(5);
+  await expect(page.locator('a[href="/karya/artikel/responsive-ci-article"]')).toBeVisible();
+  await expect(page.locator('video:not([src])')).toHaveCount(1);
+  await expect(page.getByText('[MEDIA DRIVE ADMIN: Thumbnail Artikel 16:9]').first()).toBeVisible();
 
   await page.goto('/karya/esai');
   await expect(page.getByRole('link', { name: 'Buka Esai Mahida untuk pengujian sampul' }).locator('img')).toHaveAttribute('src', /drive.google.com\/thumbnail/);
@@ -227,23 +234,18 @@ test('beranda curates karya beyond articles; covers, Drive photos, and videos re
 
   await page.goto('/admin/tampilan/beranda');
   await expect(page.getByRole('checkbox')).toHaveCount(3);
-  await expect(page.getByText('2 dari 10 karya dipilih')).toBeVisible();
 });
 
-test('carousel scrolls without page overflow and every Karya summary has a cover', async ({ page }) => {
+test('editorial grid fits narrow screens while existing Karya details keep their covers', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 820 });
   await page.goto('/');
-  const carousel = page.getByRole('region', { name: 'Hari Ini di Mahida' });
-  await expect(carousel).toBeVisible();
-  expect(await carousel.evaluate((element) => element.scrollWidth)).toBeGreaterThan(await carousel.evaluate((element) => element.clientWidth));
-  await page.getByRole('button', { name: 'Kartu berikutnya: Hari Ini di Mahida' }).click();
-  await expect.poll(() => carousel.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  await expect(page.getByRole('heading', { name: 'Berita & Artikel Terbaru' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);
 
   await page.goto('/karya');
   await expect(page.getByRole('link', { name: 'Buka Esai Mahida untuk pengujian sampul' }).locator('img')).toHaveAttribute('src', /drive.google.com\/thumbnail/);
   await page.goto('/media/galeri');
-  await expect(page.getByRole('link', { name: 'Buka Galeri uji Mahida' }).locator('img')).toHaveAttribute('src', '/brand/mahida-logo.webp');
+  await expect(page.getByRole('link', { name: /Galeri uji Mahida/ })).toContainText('[MEDIA DRIVE ADMIN: Sampul Galeri]');
 });
 
 test('author archive, social metadata, and admission settings show published data', async ({ page, context }) => {
