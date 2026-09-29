@@ -35,7 +35,7 @@ test.beforeAll(async () => {
 test('editor, gambar, reaksi tamu, moderasi, rekomendasi, dan hero mobile', async ({ page, context }) => {
   await page.setViewportSize({ width: 375, height: 800 });
   await page.goto('/');
-  await expect(page.locator('main video:not([src])')).toBeVisible();
+  await expect(page.getByText('[MEDIA DRIVE ADMIN: Video Hero]')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(376);
   await page.goto('/karya/artikel/stage4-article');
   const prose = page.locator('.prose-article');

@@ -13,7 +13,7 @@ import ArticleCover from './ArticleCover';
 import SummaryCard from './SummaryCard';
 import AuthorByline from './AuthorByline';
 import GenericPageTemplate from './GenericPageTemplate';
-import MediaPlaceholder from './MediaPlaceholder';
+import EditorialImage from './EditorialImage';
 
 function conditions(section: ContentSection) {
   const config = contentSections[section];
@@ -28,8 +28,8 @@ export async function PublicContentList({ section, pagePath }: { section: Conten
   if (!page) notFound();
   const rows = await db.select({ id: posts.id, title: posts.title, slug: posts.slug, excerpt: posts.excerpt, publishedAt: posts.publishedAt, featuredImage: posts.featuredImage })
     .from(posts).where(and(...conditions(section))).orderBy(desc(posts.publishedAt));
-  if (section === 'kegiatan') return <GenericPageTemplate title={page.title} intro={page.intro} paragraphs={page.body ? paragraphs(page.body) : []} section="Media Mahida">
-    {rows.length ? <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-1">{rows.map((item) => <Link key={item.id} href={`${config.publicPath}/${item.slug}`} className="group block border border-mahida-200 bg-white"><MediaPlaceholder label="Gambar kegiatan" className="aspect-video" /><div className="p-5"><h2 className="text-xl font-bold group-hover:text-emerald-rich">{item.title}</h2>{item.excerpt && <p className="mt-2 text-sm text-warm-gray-600">{item.excerpt}</p>}</div></Link>)}</div> : <p className="empty-state">Belum ada kegiatan terbit.</p>}
+  if (section === 'kegiatan') return <GenericPageTemplate path={config.publicPath} title={page.title} intro={page.intro} paragraphs={page.body ? paragraphs(page.body) : []} section="Media Mahida">
+    {rows.length ? <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-1">{rows.map((item) => <Link key={item.id} href={`${config.publicPath}/${item.slug}`} className="group block border border-mahida-200 bg-white"><EditorialImage url={item.featuredImage} label={`Gambar ${item.title}`} className="aspect-video w-full" /><div className="p-5"><h2 className="text-xl font-bold group-hover:text-emerald-rich">{item.title}</h2>{item.excerpt && <p className="mt-2 text-sm text-warm-gray-600">{item.excerpt}</p>}</div></Link>)}</div> : <p className="empty-state">Belum ada kegiatan terbit.</p>}
   </GenericPageTemplate>;
   return (
     <div className="min-h-screen bg-cream">

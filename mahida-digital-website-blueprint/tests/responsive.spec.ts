@@ -11,6 +11,7 @@ const publicPaths = [
 ];
 const adminPaths = [
   '/admin', '/admin/tampilan/beranda', '/admin/tampilan/halaman',
+  '/admin/tampilan/visual',
   '/admin/tampilan/kontak', '/admin/tampilan/pendaftaran', '/admin/konten/penulis', '/admin/konten/artikel', '/admin/konten/artikel/new',
   '/admin/koperasi/produk', '/admin/koperasi/pesanan', '/admin/admins',
 ];
@@ -208,7 +209,7 @@ test('news remains in the database when archived and can be restored', async ({ 
   expect((await restored.json()).item.publishedAt).toBe(item.publishedAt);
 });
 
-test('editorial homepage uses published articles and media placeholders', async ({ page, context }) => {
+test('editorial homepage uses Admin settings and published article covers', async ({ page, context }) => {
   await page.route('https://drive.google.com/thumbnail**', async (route) => route.fulfill({
     status: 200, contentType: 'image/svg+xml',
     body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="green"/></svg>',
@@ -223,8 +224,8 @@ test('editorial homepage uses published articles and media placeholders', async 
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Selamat datang di');
   await expect(page.locator('section[aria-labelledby="unit-heading"] a[href^="/tentang/unit-pendidikan/"]')).toHaveCount(5);
   await expect(page.locator('a[href="/karya/artikel/responsive-ci-article"]')).toBeVisible();
-  await expect(page.locator('video:not([src])')).toHaveCount(1);
-  await expect(page.getByText('[MEDIA DRIVE ADMIN: Thumbnail Artikel 16:9]').first()).toBeVisible();
+  await expect(page.getByText('[MEDIA DRIVE ADMIN: Video Hero]')).toBeVisible();
+  await expect(page.locator('a[href="/karya/artikel/responsive-ci-article"] img')).toHaveAttribute('src', '/brand/mahida-logo.webp');
 
   await page.goto('/karya/esai');
   await expect(page.getByRole('link', { name: 'Buka Esai Mahida untuk pengujian sampul' }).locator('img')).toHaveAttribute('src', /drive.google.com\/thumbnail/);
@@ -239,7 +240,7 @@ test('editorial homepage uses published articles and media placeholders', async 
   await expect(page.locator('iframe[src="https://www.instagram.com/reel/C8A1B2C3D4E/embed/"]')).toBeVisible();
 
   await page.goto('/admin/tampilan/beranda');
-  await expect(page.getByRole('checkbox')).toHaveCount(3);
+  await expect(page.getByRole('textbox', { name: /Gambar latar/ })).toBeVisible();
 });
 
 test('editorial grid fits narrow screens while existing Karya details keep their covers', async ({ page }) => {
@@ -251,7 +252,37 @@ test('editorial grid fits narrow screens while existing Karya details keep their
   await page.goto('/karya');
   await expect(page.getByRole('link', { name: 'Buka Esai Mahida untuk pengujian sampul' }).locator('img')).toHaveAttribute('src', /drive.google.com\/thumbnail/);
   await page.goto('/media/galeri');
-  await expect(page.getByRole('link', { name: /Galeri uji Mahida/ })).toContainText('[MEDIA DRIVE ADMIN: Sampul Galeri]');
+  await expect(page.getByRole('link', { name: /Galeri uji Mahida/ }).locator('img')).toHaveAttribute('src', '/brand/mahida-logo.webp');
+});
+
+test('Admin changes to hero and unit details appear on public pages', async ({ page, context }) => {
+  await page.route('https://drive.google.com/thumbnail**', async (route) => route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" />' }));
+  const token = jwt.sign({ userId: adminId, email: 'mahidakoperasi@gmail.com', role: 'admin' }, process.env.JWT_SECRET!);
+  await context.addCookies([{ name: 'mahida_session', value: token, url: 'http://127.0.0.1:3010' }]);
+  const path = '/tentang/unit-pendidikan/madrasah-diniyyah';
+  const previousHome = (await (await page.request.get('/api/admin/homepage')).json()).settings;
+  const previousUnit = (await (await page.request.get(`/api/admin/editorial?path=${encodeURIComponent(path)}`)).json()).content;
+  try {
+    expect((await page.request.put('/api/admin/homepage', { data: { ...previousHome, siteName: 'MAHIDA UJI', footerDescription: 'Deskripsi footer uji.', heroPrimaryLabel: 'Daftar Sekarang', heroPrimaryHref: '/tentang/pendaftaran', unitsTitle: 'Belajar di Mahida' } })).ok()).toBe(true);
+    expect((await page.request.put('/api/admin/editorial', { data: {
+      path, ...previousUnit, accreditation: 'Akreditasi A', level: 'Diniyyah Uji',
+      images: ['https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrsTuVwXyZ012345/view', '', ''],
+      facilities: [{ title: 'Perpustakaan', description: 'Ruang baca', imageUrl: '' }, ...previousUnit.facilities.slice(1)],
+    } })).ok()).toBe(true);
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'Daftar Sekarang' })).toHaveAttribute('href', '/tentang/pendaftaran');
+    await expect(page.getByRole('heading', { name: 'Belajar di Mahida' })).toBeVisible();
+    await expect(page.locator('header.site-nav')).toContainText('MAHIDA UJI');
+    await expect(page.locator('footer')).toContainText('Deskripsi footer uji.');
+    await page.goto(path);
+    await expect(page.getByText('Akreditasi A')).toBeVisible();
+    await expect(page.getByText('Diniyyah Uji')).toBeVisible();
+    await expect(page.locator('img[alt="Gambar Madrasah Diniyyah Mahida Salam"]')).toHaveAttribute('src', /drive.google.com\/thumbnail/);
+    await expect(page.getByText('Perpustakaan')).toBeVisible();
+  } finally {
+    expect((await page.request.put('/api/admin/homepage', { data: previousHome })).ok()).toBe(true);
+    expect((await page.request.put('/api/admin/editorial', { data: { path, ...previousUnit } })).ok()).toBe(true);
+  }
 });
 
 test('author archive, social metadata, and admission settings show published data', async ({ page, context }) => {

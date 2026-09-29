@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getPublicPage } from '@/lib/cms';
+import { getPublicPage, paragraphs } from '@/lib/cms';
 import { getAdmissionSettings } from '@/lib/admissions';
 import GenericPageTemplate from '@/components/GenericPageTemplate';
 
@@ -10,7 +10,7 @@ export default async function AdmissionsPage() {
   const page = await getPublicPage('/tentang/pendaftaran');
   if (!page) notFound();
   const settings = await getAdmissionSettings();
-  return <GenericPageTemplate title={page.title} intro={settings.introduction || page.intro} section="Tentang Mahida">
+  return <GenericPageTemplate path={page.path} title={page.title} intro={settings.introduction || page.intro} paragraphs={page.body ? paragraphs(page.body) : []} section="Tentang Mahida">
     <div className="grid gap-10">
       <section aria-labelledby="admission-steps"><h2 id="admission-steps" className="font-serif text-2xl font-bold">Alur Pendaftaran</h2>
         {settings.steps.length ? <ol className="mt-6 border-l-2 border-emerald-forest/30 pl-7">{settings.steps.map((step, index) => <li key={index} className="relative pb-8 last:pb-0"><span className="absolute -left-[2.55rem] grid h-7 w-7 place-items-center rounded-full bg-emerald-forest text-xs font-bold text-white">{index + 1}</span><p className="break-words leading-7">{step}</p></li>)}</ol> : <p className="mt-4 text-warm-gray-600">Tahapan seleksi akan diumumkan melalui kanal resmi Mahida.</p>}

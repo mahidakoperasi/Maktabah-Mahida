@@ -28,6 +28,7 @@ export function driveThumbnailUrl(input: string): string | null {
 export function publicImageUrl(input: string): string | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
+  if (/^\/[\w./-]+$/.test(trimmed) && !trimmed.includes('..') && !trimmed.startsWith('//')) return trimmed;
   const drive = driveThumbnailUrl(trimmed);
   if (drive) return drive;
   try {

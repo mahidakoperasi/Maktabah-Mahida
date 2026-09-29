@@ -8,7 +8,7 @@ const editorialPaths = new Set(['/tentang/profil', '/tentang/visi-misi', '/pesan
 export default async function CmsPage({ path }: { path: string }) {
   const page = await getPublicPage(path);
   if (!page) notFound();
-  if (editorialPaths.has(path)) return <GenericPageTemplate title={page.title} intro={page.intro} paragraphs={page.body ? paragraphs(page.body) : []} section="Mahida Salam" />;
+  if (editorialPaths.has(path)) return <GenericPageTemplate path={path} title={page.title} intro={page.intro} paragraphs={page.body ? paragraphs(page.body) : []} section="Mahida Salam" />;
   return (
     <div className="min-h-screen bg-cream">
       <header className="bg-emerald-forest py-14 text-white">

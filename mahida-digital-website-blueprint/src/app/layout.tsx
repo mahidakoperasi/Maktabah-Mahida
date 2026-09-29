@@ -3,24 +3,22 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { getHomepageSettings } from '@/lib/homepage-settings';
+import { publicImageUrl } from '@/lib/media-links';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://mahida.my.id'),
-  title: {
-    default: "Mahida Digital — Belajar. Berkarya. Berkhidmah.",
-    template: "%s | Mahida Digital",
-  },
-  description: "Website resmi, media, literasi, arsip, dan ekosistem Mahida. Satu ruang untuk mengenal, membaca, melihat, menjaga, dan mengikuti perjalanan Mahida.",
-  icons: { icon: [{ url: '/brand/mahida-logo.webp', type: 'image/webp' }], shortcut: '/brand/mahida-logo.webp', apple: '/brand/mahida-logo.webp' },
-  keywords: ["Mahida", "pesantren", "pondok pesantren", "literasi", "kitab", "karya", "maktabah"],
-  openGraph: {
-    type: "website",
-    locale: "id_ID",
-    siteName: "Mahida Digital",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getHomepageSettings();
+  const icon = publicImageUrl(settings.siteLogoUrl) ?? '/brand/mahida-logo.webp';
+  return {
+    metadataBase: new URL('https://mahida.my.id'),
+    title: { default: settings.seoTitle, template: `%s | ${settings.siteName}` },
+    description: settings.seoDescription,
+    icons: { icon, shortcut: icon, apple: icon },
+    openGraph: { type: 'website', locale: 'id_ID', siteName: settings.siteName },
+  };
+}
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

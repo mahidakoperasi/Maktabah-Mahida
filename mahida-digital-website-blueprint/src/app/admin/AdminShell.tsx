@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
     label: 'Tampilan Website',
     children: [
       { label: 'Beranda', icon: LayoutDashboard, href: '/admin/tampilan/beranda' },
+      { label: 'Visual & Unit Pendidikan', icon: FileText, href: '/admin/tampilan/visual' },
       { label: 'Halaman & Menu', icon: FileText, href: '/admin/tampilan/halaman' },
       { label: 'Media Sosial & Kontak', icon: FileText, href: '/admin/tampilan/kontak' },
       { label: 'Pendaftaran Santri', icon: FileText, href: '/admin/tampilan/pendaftaran' },
