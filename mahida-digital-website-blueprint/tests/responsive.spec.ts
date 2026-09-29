@@ -146,7 +146,7 @@ test('three-level public menu follows Admin visibility and keeps published route
     const hidden = await page.request.patch('/api/admin/cms/navigation', { data: { ...unit, isVisible: false } });
     expect(hidden.ok()).toBe(true);
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'Temukan ruang belajar Anda.' }).locator('xpath=../..').getByRole('link')).toHaveCount(0);
+    await expect(page.locator('section[aria-labelledby="unit-heading"] a[href^="/tentang/unit-pendidikan/"]')).toHaveCount(0);
     expect((await page.request.get('/tentang/unit-pendidikan/madrasah-diniyyah')).status()).toBe(200);
   } finally {
     const restored = await page.request.patch('/api/admin/cms/navigation', { data: unit });
@@ -215,7 +215,7 @@ test('editorial homepage uses published articles and media placeholders', async 
 
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Selamat datang di');
-  await expect(page.getByRole('heading', { name: 'Temukan ruang belajar Anda.' }).locator('xpath=../..').getByRole('link')).toHaveCount(5);
+  await expect(page.locator('section[aria-labelledby="unit-heading"] a[href^="/tentang/unit-pendidikan/"]')).toHaveCount(5);
   await expect(page.locator('a[href="/karya/artikel/responsive-ci-article"]')).toBeVisible();
   await expect(page.locator('video:not([src])')).toHaveCount(1);
   await expect(page.getByText('[MEDIA DRIVE ADMIN: Thumbnail Artikel 16:9]').first()).toBeVisible();
