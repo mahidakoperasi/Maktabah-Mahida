@@ -1,10 +1,14 @@
 import { notFound } from 'next/navigation';
 import { getPublicPage, paragraphs } from '@/lib/cms';
 import DailyHighlight from './DailyHighlight';
+import GenericPageTemplate from './GenericPageTemplate';
+
+const editorialPaths = new Set(['/tentang/profil', '/tentang/visi-misi', '/pesantren/kehidupan']);
 
 export default async function CmsPage({ path }: { path: string }) {
   const page = await getPublicPage(path);
   if (!page) notFound();
+  if (editorialPaths.has(path)) return <GenericPageTemplate title={page.title} intro={page.intro} paragraphs={page.body ? paragraphs(page.body) : []} section="Mahida Salam" />;
   return (
     <div className="min-h-screen bg-cream">
       <header className="bg-emerald-forest py-14 text-white">

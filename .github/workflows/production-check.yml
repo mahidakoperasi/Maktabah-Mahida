@@ -76,13 +76,13 @@ jobs:
         run: docker build --build-arg RELEASE_SHA=${{ github.event.pull_request.head.sha || github.sha }} -t mahida-digital-ci .
 
       - name: Export image for VPS
-        run: docker save mahida-digital-ci | gzip -1 > mahida-pr14-image.tar.gz
+        run: docker save mahida-digital-ci | gzip -1 > mahida-editorial-image.tar.gz
 
       - name: Upload image for VPS
         uses: actions/upload-artifact@v4
         with:
-          name: mahida-pr14-image
-          path: mahida-digital-website-blueprint/mahida-pr14-image.tar.gz
+          name: mahida-editorial-image
+          path: mahida-digital-website-blueprint/mahida-editorial-image.tar.gz
           if-no-files-found: error
           compression-level: 0
           retention-days: 7

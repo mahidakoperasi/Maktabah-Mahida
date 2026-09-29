@@ -7,8 +7,21 @@ export type PublicMenuItem = {
   id: number;
   label: string;
   path: string;
-  children: { id: number; label: string; path: string }[];
+  children: PublicMenuItem[];
 };
+
+type MenuRow = Omit<PublicMenuItem, 'children'> & { parentId: number | null };
+
+export function buildPublicMenu(rows: MenuRow[]): PublicMenuItem[] {
+  const nodes = new Map(rows.map((row) => [row.id, { id: row.id, label: row.label, path: row.path, children: [] as PublicMenuItem[] }]));
+  const roots: PublicMenuItem[] = [];
+  for (const row of rows) {
+    const node = nodes.get(row.id)!;
+    if (row.parentId === null) roots.push(node);
+    else nodes.get(row.parentId)?.children.push(node);
+  }
+  return roots;
+}
 
 export function validCmsPath(path: string) {
   return path === '/' || (
@@ -39,11 +52,7 @@ export const getPublicMenu = cache(async function getPublicMenu(): Promise<Publi
     }).from(navigationItems).innerJoin(cmsPages, eq(navigationItems.path, cmsPages.path))
       .where(and(eq(navigationItems.isVisible, true), eq(cmsPages.status, 'published')))
       .orderBy(asc(navigationItems.sortOrder), asc(navigationItems.id));
-    return rows.filter((item) => item.parentId === null).map((item) => ({
-      id: item.id, label: item.label, path: item.path,
-      children: rows.filter((child) => child.parentId === item.id)
-        .map((child) => ({ id: child.id, label: child.label, path: child.path })),
-    }));
+    return buildPublicMenu(rows);
   } catch (error) {
     console.error('Navigation unavailable:', error instanceof Error ? error.message : error);
     return [];

@@ -14,6 +14,7 @@ export default function CmsManager() {
   const [menuForm, setMenuForm] = useState<{ id?: number; path: string; label: string; parentId: number | null; sortOrder: number; isVisible: boolean }>(emptyMenu);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const menuDepth = (menu: Menu) => menu.parentId === null ? 0 : menus.find((item) => item.id === menu.parentId)?.parentId === null ? 1 : 2;
 
   async function load() {
     const [p, m] = await Promise.all([
@@ -73,13 +74,13 @@ export default function CmsManager() {
       </section>
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="space-y-2"><h2 className="font-serif text-xl font-bold">Menu publik</h2>
-          {menus.map((menu) => <button key={menu.id} type="button" onClick={() => setMenuForm(menu)} className="block w-full border border-mahida-200 bg-white p-3 text-left text-sm hover:bg-mahida-50">{menu.parentId ? '↳ ' : ''}{menu.label} <span className="text-warm-gray-500">{menu.path} · {menu.isVisible ? 'Tampil' : 'Sembunyi'}</span></button>)}
+          {menus.map((menu) => <button key={menu.id} type="button" onClick={() => setMenuForm(menu)} className="block w-full border border-mahida-200 bg-white p-3 text-left text-sm hover:bg-mahida-50">{'↳ '.repeat(menuDepth(menu))}{menu.label} <span className="text-warm-gray-500">{menu.path} · {menu.isVisible ? 'Tampil' : 'Sembunyi'}</span></button>)}
         </div>
         <form className="space-y-3 border border-mahida-200 bg-white p-5" onSubmit={(event) => { event.preventDefault(); submit('navigation', menuForm, menuForm.id ? 'PATCH' : 'POST'); }}>
           <h3 className="font-semibold">{menuForm.id ? 'Edit menu' : 'Menu baru'}</h3>
           <label className="block text-sm">Label<input required value={menuForm.label} onChange={(event) => setMenuForm({ ...menuForm, label: event.target.value })} className="mt-1 w-full border p-2" /></label>
           <label className="block text-sm">Halaman tujuan<select required value={menuForm.path} onChange={(event) => setMenuForm({ ...menuForm, path: event.target.value })} className="mt-1 w-full border p-2"><option value="">Pilih halaman</option>{pages.map((page) => <option key={page.id} value={page.path}>{page.path} — {page.title}</option>)}</select></label>
-          <label className="block text-sm">Di bawah menu<select value={menuForm.parentId ?? ''} onChange={(event) => setMenuForm({ ...menuForm, parentId: event.target.value ? Number(event.target.value) : null })} className="mt-1 w-full border p-2"><option value="">Menu utama</option>{menus.filter((m) => m.parentId === null && m.id !== menuForm.id).map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</select></label>
+          <label className="block text-sm">Di bawah menu<select value={menuForm.parentId ?? ''} onChange={(event) => setMenuForm({ ...menuForm, parentId: event.target.value ? Number(event.target.value) : null })} className="mt-1 w-full border p-2"><option value="">Menu utama</option>{menus.filter((m) => menuDepth(m) < 2 && m.id !== menuForm.id && m.parentId !== menuForm.id).map((m) => <option key={m.id} value={m.id}>{menuDepth(m) ? '↳ ' : ''}{m.label}</option>)}</select></label>
           <label className="block text-sm">Urutan<input type="number" min="0" value={menuForm.sortOrder} onChange={(event) => setMenuForm({ ...menuForm, sortOrder: Number(event.target.value) })} className="mt-1 w-full border p-2" /></label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={menuForm.isVisible} onChange={(event) => setMenuForm({ ...menuForm, isVisible: event.target.checked })} /> Tampilkan di website</label>
           <div className="flex flex-wrap gap-3"><button disabled={saving} className="btn-primary" type="submit">Simpan menu</button><button type="button" className="btn-secondary" onClick={() => setMenuForm(emptyMenu)}>Menu baru</button>{menuForm.id && <button type="button" disabled={saving} className="text-red-700" onClick={() => { if (confirm('Hapus menu ini?')) submit('navigation', { id: menuForm.id }, 'DELETE'); }}>Hapus</button>}</div>

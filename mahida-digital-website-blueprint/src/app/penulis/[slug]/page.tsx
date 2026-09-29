@@ -5,7 +5,7 @@ import { db } from '@/db';
 import { authors, posts } from '@/db/schema';
 import { karyaPostPath } from '@/lib/karya-post';
 import { driveThumbnailUrl, publicImageUrl } from '@/lib/media-links';
-import { getPublicMenu } from '@/lib/cms';
+import { getPublicPage } from '@/lib/cms';
 import SummaryCard from '@/components/SummaryCard';
 import AuthorPortrait from '@/components/AuthorPortrait';
 
@@ -22,8 +22,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function AuthorArchive({ params }: { params: Promise<{ slug: string }> }) {
   const author = await getAuthor((await params).slug);
   if (!author) notFound();
-  const menu = await getPublicMenu();
-  const visibleSections = new Set(menu.flatMap((item) => [item.path, ...item.children.map((child) => child.path)]));
+  const sections = ['/karya/artikel', '/karya/esai', '/karya/terjemahan', '/karya/manuskrip'];
+  const publishedSections = await Promise.all(sections.map(async (path) => await getPublicPage(path) ? path : null));
+  const visibleSections = new Set(publishedSections.filter((path): path is string => Boolean(path)));
   const photo = author.photo ? driveThumbnailUrl(author.photo) ?? publicImageUrl(author.photo) : null;
   const works = await db.select({ id: posts.id, title: posts.title, slug: posts.slug, type: posts.type, karyaCategory: posts.karyaCategory, excerpt: posts.excerpt, featuredImage: posts.featuredImage })
     .from(posts).where(and(eq(posts.authorId, author.id), eq(posts.status, 'published'), inArray(posts.type, ['article', 'essay', 'work'])))
