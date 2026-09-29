@@ -136,8 +136,14 @@ test('three-level public menu follows Admin visibility and keeps published route
   await expect(nav.locator(':scope > div > div > a')).toHaveText(['Beranda', 'Tentang Mahida', 'Media', 'Gabung Bersama Kami']);
   await nav.getByRole('button', { name: 'Submenu Tentang Mahida' }).click();
   await nav.getByRole('button', { name: 'Submenu Unit Pendidikan' }).click();
-  await expect(nav.getByRole('link', { name: 'Madrasah Diniyyah Mahida Salam' })).toBeVisible();
-  await expect(nav.getByRole('link', { name: "Universitas Nahdlatul Ulama' Blitar di Mahida Salam" })).toBeVisible();
+  const unitNames = ['Madrasah Diniyyah Mahida Salam', "Madrasah Al-Qur'an Mahida Salam", 'Madrasah Tsanawiyah Mahida Salam', 'Madrasah Aliyyah Mahida Salam', "Universitas Nahdlatul Ulama' Blitar di Mahida Salam"];
+  await expect(nav.locator('a[href^="/tentang/unit-pendidikan/"]')).toHaveText(unitNames);
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.getByRole('button', { name: 'Buka menu' }).click();
+  const mobile = page.getByRole('navigation', { name: 'Navigasi ponsel' });
+  await mobile.getByRole('button', { name: 'Submenu Tentang Mahida' }).click();
+  await mobile.getByRole('button', { name: 'Submenu Unit Pendidikan' }).click();
+  await expect(mobile.locator('a[href^="/tentang/unit-pendidikan/"]')).toHaveText(unitNames);
   const token = jwt.sign({ userId: adminId, email: 'mahidakoperasi@gmail.com', role: 'admin' }, process.env.JWT_SECRET!);
   await context.addCookies([{ name: 'mahida_session', value: token, url: 'http://127.0.0.1:3010' }]);
   const menus = (await (await page.request.get('/api/admin/cms/navigation')).json()).items as { id: number; parentId: number; path: string; label: string; sortOrder: number; isVisible: boolean }[];
