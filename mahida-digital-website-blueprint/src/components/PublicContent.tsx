@@ -22,42 +22,182 @@ function conditions(section: ContentSection) {
   return filters;
 }
 
-export async function PublicContentList({ section, pagePath }: { section: ContentSection; pagePath?: string }) {
+export async function PublicContentList({
+  section,
+  pagePath,
+}: {
+  section: ContentSection;
+  pagePath?: string;
+}) {
   const config = contentSections[section];
   const page = await getPublicPage(pagePath ?? config.publicPath);
   if (!page) notFound();
-  const rows = await db.select({ id: posts.id, title: posts.title, slug: posts.slug, excerpt: posts.excerpt, publishedAt: posts.publishedAt, featuredImage: posts.featuredImage })
-    .from(posts).where(and(...conditions(section))).orderBy(desc(posts.publishedAt));
-  if (section === 'kegiatan') return <GenericPageTemplate path={config.publicPath} title={page.title} intro={page.intro} paragraphs={page.body ? paragraphs(page.body) : []} section="Media Mahida">
-    {rows.length ? <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-1">{rows.map((item) => <Link key={item.id} href={`${config.publicPath}/${item.slug}`} className="group block border border-mahida-200 bg-white"><EditorialImage url={item.featuredImage} label={`Gambar ${item.title}`} className="aspect-video w-full" /><div className="p-5"><h2 className="text-xl font-bold group-hover:text-emerald-rich">{item.title}</h2>{item.excerpt && <p className="mt-2 text-sm text-warm-gray-600">{item.excerpt}</p>}</div></Link>)}</div> : <p className="empty-state">Belum ada kegiatan terbit.</p>}
-  </GenericPageTemplate>;
+  const rows = await db
+    .select({
+      id: posts.id,
+      title: posts.title,
+      slug: posts.slug,
+      excerpt: posts.excerpt,
+      publishedAt: posts.publishedAt,
+      featuredImage: posts.featuredImage,
+    })
+    .from(posts)
+    .where(and(...conditions(section)))
+    .orderBy(desc(posts.publishedAt));
+  if (section === 'kegiatan')
+    return (
+      <GenericPageTemplate
+        path={config.publicPath}
+        title={page.title}
+        intro={page.intro}
+        paragraphs={page.body ? paragraphs(page.body) : []}
+        section="Media Mahida"
+      >
+        {rows.length ? (
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {rows.map((item) => (
+              <Link
+                key={item.id}
+                href={`${config.publicPath}/${item.slug}`}
+                className="group block border border-mahida-200 bg-white"
+              >
+                <EditorialImage
+                  hideFallback
+                  url={item.featuredImage}
+                  label={`Gambar ${item.title}`}
+                  className="aspect-video w-full"
+                />
+                <div className="p-5">
+                  {item.publishedAt && (
+                    <p className="mb-2 text-xs text-warm-gray-600">
+                      {new Date(item.publishedAt).toLocaleDateString('id-ID')}
+                    </p>
+                  )}
+                  <h2 className="text-xl font-bold group-hover:text-emerald-rich">
+                    {item.title}
+                  </h2>
+                  {item.excerpt && (
+                    <p className="mt-2 text-sm text-warm-gray-600">
+                      {item.excerpt}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="empty-state">Belum ada kegiatan terbit.</p>
+        )}
+      </GenericPageTemplate>
+    );
   return (
     <div className="min-h-screen bg-cream">
-      <header className="bg-emerald-forest py-14 text-white"><div className="mx-auto max-w-5xl px-4 sm:px-6"><h1 className="display-md text-white">{page.title}</h1>{page.intro && <p className="mt-4 text-white/80">{page.intro}</p>}</div></header>
+      <header className="bg-emerald-forest py-14 text-white">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <h1 className="display-md text-white">{page.title}</h1>
+          {page.intro && <p className="mt-4 text-white/80">{page.intro}</p>}
+        </div>
+      </header>
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-        {rows.length === 0 ? <div className="empty-state"><h2 className="font-serif text-xl font-bold">Belum ada konten terbit</h2><p className="mt-2 text-warm-gray-600">Publikasi akan tampil di sini setelah diterbitkan oleh admin.</p></div>
-          : <div className="grid gap-5 sm:grid-cols-2">{rows.map((item) => <SummaryCard key={item.id} href={`${config.publicPath}/${item.slug}`} title={item.title} excerpt={item.excerpt} cover={item.featuredImage} />)}</div>}
-        {page.body && <div className="mt-10 space-y-4">{paragraphs(page.body).map((paragraph, index) => <p key={index} dir="auto">{paragraph}</p>)}</div>}
+        {rows.length === 0 ? (
+          <div className="empty-state">
+            <h2 className="font-serif text-xl font-bold">
+              Belum ada konten terbit
+            </h2>
+            <p className="mt-2 text-warm-gray-600">
+              Publikasi akan tampil di sini setelah diterbitkan oleh admin.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2">
+            {rows.map((item) => (
+              <SummaryCard
+                key={item.id}
+                href={`${config.publicPath}/${item.slug}`}
+                title={item.title}
+                excerpt={item.excerpt}
+                cover={item.featuredImage}
+              />
+            ))}
+          </div>
+        )}
+        {page.body && (
+          <div className="mt-10 space-y-4">
+            {paragraphs(page.body).map((paragraph, index) => (
+              <p key={index} dir="auto">
+                {paragraph}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export async function PublicContentDetail({ section, slug }: { section: ContentSection; slug: string }) {
+export async function PublicContentDetail({
+  section,
+  slug,
+}: {
+  section: ContentSection;
+  slug: string;
+}) {
   const config = contentSections[section];
-  if (!await getPublicPage(config.publicPath)) notFound();
-  const [item] = await db.select({ id: posts.id, title: posts.title, excerpt: posts.excerpt, content: posts.content, contentRaw: posts.contentRaw, publishedAt: posts.publishedAt, featuredImage: posts.featuredImage, authorClass: posts.authorClass, authorName: authors.name, authorSlug: authors.slug })
-    .from(posts).leftJoin(authors, eq(authors.id, posts.authorId)).where(and(eq(posts.slug, slug), ...conditions(section))).limit(1);
+  if (!(await getPublicPage(config.publicPath))) notFound();
+  const [item] = await db
+    .select({
+      id: posts.id,
+      title: posts.title,
+      excerpt: posts.excerpt,
+      content: posts.content,
+      contentRaw: posts.contentRaw,
+      publishedAt: posts.publishedAt,
+      featuredImage: posts.featuredImage,
+      authorClass: posts.authorClass,
+      authorName: authors.name,
+      authorSlug: authors.slug,
+    })
+    .from(posts)
+    .leftJoin(authors, eq(authors.id, posts.authorId))
+    .where(and(eq(posts.slug, slug), ...conditions(section)))
+    .limit(1);
   if (!item) notFound();
   return (
     <article className="min-h-screen bg-cream">
-      <header className="bg-emerald-forest py-14 text-white"><div className="mx-auto max-w-4xl px-4 sm:px-6"><Link href={config.publicPath} className="text-sm text-white/75">← Semua {config.label}</Link><h1 className="display-md mt-5 text-white">{item.title}</h1><AuthorByline author={item.authorName && item.authorSlug ? { name: item.authorName, slug: item.authorSlug } : null} authorClass={item.authorClass} publishedAt={item.publishedAt} onDark />{item.excerpt && <p className="mt-4 text-lg text-white/80">{item.excerpt}</p>}</div></header>
+      <header className="bg-emerald-forest py-14 text-white">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <Link href={config.publicPath} className="text-sm text-white/75">
+            ← Semua {config.label}
+          </Link>
+          <h1 className="display-md mt-5 text-white">{item.title}</h1>
+          <AuthorByline
+            author={
+              item.authorName && item.authorSlug
+                ? { name: item.authorName, slug: item.authorSlug }
+                : null
+            }
+            authorClass={item.authorClass}
+            publishedAt={item.publishedAt}
+            onDark
+          />
+          {item.excerpt && (
+            <p className="mt-4 text-lg text-white/80">{item.excerpt}</p>
+          )}
+        </div>
+      </header>
       <div className="prose-article mx-auto max-w-4xl space-y-6 px-4 py-12 sm:px-6">
-        {item.featuredImage && <DrivePreview url={item.featuredImage} title={item.title} />}
+        {item.featuredImage && (
+          <DrivePreview url={item.featuredImage} title={item.title} />
+        )}
         <RichContent content={item.contentRaw ?? item.content ?? ''} />
       </div>
       <DetailEngagement kind="post" id={item.id}>
-        <RelatedContent kind="post" id={item.id} path={config.publicPath} category={config.category} />
+        <RelatedContent
+          kind="post"
+          id={item.id}
+          path={config.publicPath}
+          category={config.category}
+        />
       </DetailEngagement>
     </article>
   );

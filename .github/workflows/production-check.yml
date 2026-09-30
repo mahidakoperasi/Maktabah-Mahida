@@ -72,6 +72,15 @@ jobs:
       - name: Check 320–1440px layouts and keyboard navigation
         run: npm run test:responsive
 
+      - name: Upload browser verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mahida-design-browser-checks
+          path: mahida-digital-website-blueprint/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Docker build
         run: docker build --build-arg RELEASE_SHA=${{ github.event.pull_request.head.sha || github.sha }} -t mahida-digital-ci .
 

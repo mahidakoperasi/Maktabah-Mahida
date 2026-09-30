@@ -1,5 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 import { cache } from 'react';
+import { isDesignPreview } from './design-store';
 import { db } from '@/db';
 import { cmsPages, navigationItems } from '@/db/schema';
 
@@ -13,7 +14,17 @@ export type PublicMenuItem = {
 type MenuRow = Omit<PublicMenuItem, 'children'> & { parentId: number | null };
 
 export function buildPublicMenu(rows: MenuRow[]): PublicMenuItem[] {
-  const nodes = new Map(rows.map((row) => [row.id, { id: row.id, label: row.label, path: row.path, children: [] as PublicMenuItem[] }]));
+  const nodes = new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        id: row.id,
+        label: row.label,
+        path: row.path,
+        children: [] as PublicMenuItem[],
+      },
+    ]),
+  );
   const roots: PublicMenuItem[] = [];
   for (const row of rows) {
     const node = nodes.get(row.id)!;
@@ -24,10 +35,13 @@ export function buildPublicMenu(rows: MenuRow[]): PublicMenuItem[] {
 }
 
 export function validCmsPath(path: string) {
-  return path === '/' || (
-    /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*)(?:\/[a-z0-9]+(?:-[a-z0-9]+)*){0,3}$/.test(path) &&
-    !/^\/(?:admin|api|masuk|daftar)(?:\/|$)/.test(path) &&
-    !/^\/literasi\/artikel(?:\/|$)/.test(path)
+  return (
+    path === '/' ||
+    (/^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*)(?:\/[a-z0-9]+(?:-[a-z0-9]+)*){0,3}$/.test(
+      path,
+    ) &&
+      !/^\/(?:admin|api|masuk|daftar)(?:\/|$)/.test(path) &&
+      !/^\/literasi\/artikel(?:\/|$)/.test(path))
   );
 }
 
@@ -36,35 +50,80 @@ export function validCmsPath(path: string) {
 export function validNewCmsPath(path: string) {
   if (!validCmsPath(path) || path === '/') return false;
   const [, first, second] = path.split('/');
-  if (['literasi', 'maktabah', 'profil', 'agenda', 'arsip', 'berita', 'kegiatan', 'kirim-karya'].includes(first)) return false;
-  if (first === 'karya' && ['artikel', 'esai', 'terjemahan', 'manuskrip'].includes(second)) return false;
-  if (first === 'media' && ['berita', 'kegiatan', 'pengumuman', 'video', 'galeri', 'tv'].includes(second)) return false;
+  if (
+    [
+      'literasi',
+      'maktabah',
+      'profil',
+      'agenda',
+      'arsip',
+      'berita',
+      'kegiatan',
+      'kirim-karya',
+    ].includes(first)
+  )
+    return false;
+  if (
+    first === 'karya' &&
+    ['artikel', 'esai', 'terjemahan', 'manuskrip'].includes(second)
+  )
+    return false;
+  if (
+    first === 'media' &&
+    ['berita', 'kegiatan', 'pengumuman', 'video', 'galeri', 'tv'].includes(
+      second,
+    )
+  )
+    return false;
   if (first === 'koperasi' && ['buku', 'ebook'].includes(second)) return false;
   return true;
 }
 
-export const getPublicMenu = cache(async function getPublicMenu(): Promise<PublicMenuItem[]> {
+export const getPublicMenu = cache(async function getPublicMenu(): Promise<
+  PublicMenuItem[]
+> {
   if (!process.env.DATABASE_URL) return [];
   try {
-    const rows = await db.select({
-      id: navigationItems.id, parentId: navigationItems.parentId,
-      label: navigationItems.label, path: navigationItems.path,
-    }).from(navigationItems).innerJoin(cmsPages, eq(navigationItems.path, cmsPages.path))
-      .where(and(eq(navigationItems.isVisible, true), eq(cmsPages.status, 'published')))
+    const rows = await db
+      .select({
+        id: navigationItems.id,
+        parentId: navigationItems.parentId,
+        label: navigationItems.label,
+        path: navigationItems.path,
+      })
+      .from(navigationItems)
+      .innerJoin(cmsPages, eq(navigationItems.path, cmsPages.path))
+      .where(
+        and(
+          eq(navigationItems.isVisible, true),
+          eq(cmsPages.status, 'published'),
+        ),
+      )
       .orderBy(asc(navigationItems.sortOrder), asc(navigationItems.id));
     return buildPublicMenu(rows);
   } catch (error) {
-    console.error('Navigation unavailable:', error instanceof Error ? error.message : error);
+    console.error(
+      'Navigation unavailable:',
+      error instanceof Error ? error.message : error,
+    );
     return [];
   }
 });
 
 export async function getPublicPage(path: string) {
-  const [page] = await db.select().from(cmsPages)
-    .where(eq(cmsPages.path, path)).limit(1);
-  return page?.status === 'published' ? page : null;
+  const [page] = await db
+    .select()
+    .from(cmsPages)
+    .where(eq(cmsPages.path, path))
+    .limit(1);
+  return page && (page.status === 'published' || (await isDesignPreview(path)))
+    ? page
+    : null;
 }
 
 export function paragraphs(text: string) {
-  return text.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
+  return text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
 }

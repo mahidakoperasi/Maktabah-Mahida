@@ -1,8 +1,35 @@
-import { pgTable, serial, varchar, text, boolean, integer, timestamp, pgEnum, jsonb, real, uuid, uniqueIndex, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  serial,
+  varchar,
+  text,
+  boolean,
+  integer,
+  timestamp,
+  pgEnum,
+  jsonb,
+  real,
+  uuid,
+  uniqueIndex,
+  index,
+  primaryKey,
+} from 'drizzle-orm/pg-core';
 
 // Enums
-export const postTypeEnum = pgEnum('post_type', ['article', 'essay', 'news', 'work', 'story', 'announcement']);
-export const postStatusEnum = pgEnum('post_status', ['draft', 'scheduled', 'published', 'archived']);
+export const postTypeEnum = pgEnum('post_type', [
+  'article',
+  'essay',
+  'news',
+  'work',
+  'story',
+  'announcement',
+]);
+export const postStatusEnum = pgEnum('post_status', [
+  'draft',
+  'scheduled',
+  'published',
+  'archived',
+]);
 export const userRoleEnum = pgEnum('user_role', ['user', 'admin']);
 
 // Users
@@ -23,7 +50,9 @@ export const users = pgTable('users', {
 // OTP Codes
 export const otpCodes = pgTable('otp_codes', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, {
+    onDelete: 'cascade',
+  }),
   code: varchar('code', { length: 6 }).notNull(),
   type: varchar('type', { length: 50 }), // 'verification', 'password_reset', 'email_change'
   expiresAt: timestamp('expires_at').notNull(),
@@ -84,7 +113,7 @@ export const posts = pgTable('posts', {
   scheduledAt: timestamp('scheduled_at'),
   editorPick: boolean('editor_pick').default(false),
   viewCount: integer('view_count').default(0),
-  
+
   // SEO
   metaTitle: varchar('meta_title', { length: 500 }),
   metaDescription: text('meta_description'),
@@ -112,20 +141,30 @@ export const posts = pgTable('posts', {
 
 // Post Categories junction
 export const postCategories = pgTable('post_categories', {
-  postId: integer('post_id').references(() => posts.id, { onDelete: 'cascade' }),
-  categoryId: integer('category_id').references(() => categories.id, { onDelete: 'cascade' }),
+  postId: integer('post_id').references(() => posts.id, {
+    onDelete: 'cascade',
+  }),
+  categoryId: integer('category_id').references(() => categories.id, {
+    onDelete: 'cascade',
+  }),
 });
 
 // Post Tags junction
 export const postTags = pgTable('post_tags', {
-  postId: integer('post_id').references(() => posts.id, { onDelete: 'cascade' }),
+  postId: integer('post_id').references(() => posts.id, {
+    onDelete: 'cascade',
+  }),
   tagId: integer('tag_id').references(() => tags.id, { onDelete: 'cascade' }),
 });
 
 // Related posts
 export const relatedPosts = pgTable('related_posts', {
-  postId: integer('post_id').references(() => posts.id, { onDelete: 'cascade' }),
-  relatedId: integer('related_id').references(() => posts.id, { onDelete: 'cascade' }),
+  postId: integer('post_id').references(() => posts.id, {
+    onDelete: 'cascade',
+  }),
+  relatedId: integer('related_id').references(() => posts.id, {
+    onDelete: 'cascade',
+  }),
 });
 
 // Books/Kitab (Maktabah)
@@ -141,15 +180,15 @@ export const books = pgTable('books', {
   description: text('description'),
   type: varchar('type', { length: 50 }), // 'kitab', 'book', 'translation'
   postId: integer('post_id').references(() => posts.id), // Link to post if has full content
-  
+
   // Maktabah specific
   discipline: varchar('discipline', { length: 100 }), // Nahwu, Fiqh, Tafsir, etc.
-  
+
   // Koperasi info
   isAvailable: boolean('is_available').default(false),
   price: real('price'),
   purchaseLink: text('purchase_link'),
-  
+
   status: postStatusEnum('status').notNull().default('published'),
   viewCount: integer('view_count').default(0),
   createdAt: timestamp('created_at').defaultNow(),
@@ -212,7 +251,9 @@ export const galleries = pgTable('galleries', {
 // Gallery Images
 export const galleryImages = pgTable('gallery_images', {
   id: serial('id').primaryKey(),
-  galleryId: integer('gallery_id').references(() => galleries.id, { onDelete: 'cascade' }).notNull(),
+  galleryId: integer('gallery_id')
+    .references(() => galleries.id, { onDelete: 'cascade' })
+    .notNull(),
   imageUrl: text('image_url').notNull(),
   caption: text('caption'),
   sortOrder: integer('sort_order').default(0),
@@ -260,7 +301,9 @@ export const admissionSettings = pgTable('admission_settings', {
   introduction: text('introduction').notNull().default(''),
   steps: jsonb('steps').$type<string[]>().notNull().default([]),
   requirements: jsonb('requirements').$type<string[]>().notNull().default([]),
-  applicationLabel: varchar('application_label', { length: 100 }).notNull().default('Daftar Sekarang'),
+  applicationLabel: varchar('application_label', { length: 100 })
+    .notNull()
+    .default('Daftar Sekarang'),
   applicationUrl: text('application_url').notNull().default(''),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -268,12 +311,18 @@ export const admissionSettings = pgTable('admission_settings', {
 export const ebookOrders = pgTable('ebook_orders', {
   id: serial('id').primaryKey(),
   code: varchar('code', { length: 40 }).notNull().unique(),
-  productId: integer('product_id').references(() => products.id, { onDelete: 'restrict' }).notNull(),
-  productNameSnapshot: varchar('product_name_snapshot', { length: 255 }).notNull(),
+  productId: integer('product_id')
+    .references(() => products.id, { onDelete: 'restrict' })
+    .notNull(),
+  productNameSnapshot: varchar('product_name_snapshot', {
+    length: 255,
+  }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
   priceSnapshot: integer('price_snapshot').notNull(),
   fileUrlSnapshot: text('file_url_snapshot').notNull(),
-  status: varchar('status', { length: 30 }).notNull().default('awaiting_payment'),
+  status: varchar('status', { length: 30 })
+    .notNull()
+    .default('awaiting_payment'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   reportedAt: timestamp('reported_at'),
@@ -304,7 +353,9 @@ export const media = pgTable('media', {
 // Bookmarks
 export const bookmarks = pgTable('bookmarks', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
   bookmarkType: varchar('bookmark_type', { length: 50 }).notNull(), // post, book, video
   itemId: integer('item_id').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
@@ -313,7 +364,9 @@ export const bookmarks = pgTable('bookmarks', {
 // Collections
 export const collections = pgTable('collections', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   isDefault: boolean('is_default').default(false),
@@ -323,7 +376,9 @@ export const collections = pgTable('collections', {
 // Collection Items
 export const collectionItems = pgTable('collection_items', {
   id: serial('id').primaryKey(),
-  collectionId: integer('collection_id').references(() => collections.id, { onDelete: 'cascade' }).notNull(),
+  collectionId: integer('collection_id')
+    .references(() => collections.id, { onDelete: 'cascade' })
+    .notNull(),
   itemType: varchar('item_type', { length: 50 }).notNull(),
   itemId: integer('item_id').notNull(),
   addedAt: timestamp('added_at').defaultNow(),
@@ -332,7 +387,9 @@ export const collectionItems = pgTable('collection_items', {
 // Reading History
 export const readingHistory = pgTable('reading_history', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
   itemType: varchar('item_type', { length: 50 }).notNull(),
   itemId: integer('item_id').notNull(),
   progress: real('progress').default(0), // 0-100 percentage
@@ -343,7 +400,9 @@ export const readingHistory = pgTable('reading_history', {
 // Comments
 export const comments = pgTable('comments', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
   postType: varchar('post_type', { length: 50 }).notNull(),
   postId: integer('post_id').notNull(),
   content: text('content').notNull(),
@@ -372,25 +431,50 @@ export const settings = pgTable('settings', {
 });
 
 // Guest engagement is identified by a private per-browser cookie. Comments require moderation.
-export const engagementLikes = pgTable('engagement_likes', {
-  id: serial('id').primaryKey(),
-  kind: varchar('kind', { length: 20 }).notNull(),
-  entityId: integer('entity_id').notNull(),
-  visitorHash: varchar('visitor_hash', { length: 64 }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [uniqueIndex('engagement_like_unique').on(table.kind, table.entityId, table.visitorHash)]);
+export const engagementLikes = pgTable(
+  'engagement_likes',
+  {
+    id: serial('id').primaryKey(),
+    kind: varchar('kind', { length: 20 }).notNull(),
+    entityId: integer('entity_id').notNull(),
+    visitorHash: varchar('visitor_hash', { length: 64 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('engagement_like_unique').on(
+      table.kind,
+      table.entityId,
+      table.visitorHash,
+    ),
+  ],
+);
 
-export const engagementComments = pgTable('engagement_comments', {
-  id: serial('id').primaryKey(),
-  kind: varchar('kind', { length: 20 }).notNull(),
-  entityId: integer('entity_id').notNull(),
-  visitorHash: varchar('visitor_hash', { length: 64 }).notNull(),
-  author: varchar('author', { length: 80 }).notNull(),
-  body: varchar('body', { length: 1000 }).notNull(),
-  status: varchar('status', { length: 20 }).notNull().default('pending'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
-}, (table) => [index('engagement_comment_target_idx').on(table.kind, table.entityId, table.status, table.createdAt)]);
+export const engagementComments = pgTable(
+  'engagement_comments',
+  {
+    id: serial('id').primaryKey(),
+    kind: varchar('kind', { length: 20 }).notNull(),
+    entityId: integer('entity_id').notNull(),
+    visitorHash: varchar('visitor_hash', { length: 64 }).notNull(),
+    author: varchar('author', { length: 80 }).notNull(),
+    body: varchar('body', { length: 1000 }).notNull(),
+    status: varchar('status', { length: 20 }).notNull().default('pending'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  },
+  (table) => [
+    index('engagement_comment_target_idx').on(
+      table.kind,
+      table.entityId,
+      table.status,
+      table.createdAt,
+    ),
+  ],
+);
 
 // Analytics Events (simple analytics)
 export const analyticsEvents = pgTable('analytics_events', {
@@ -407,7 +491,47 @@ export const analyticsEvents = pgTable('analytics_events', {
 
 // Login attempt counters for admin accounts
 export const loginRateLimits = pgTable('login_rate_limits', {
-  userId: integer('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
   attempts: integer('attempts').notNull().default(0),
-  windowStart: timestamp('window_start', { withTimezone: true }).notNull().defaultNow(),
+  windowStart: timestamp('window_start', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const designDocuments = pgTable(
+  'design_documents',
+  {
+    path: text('path').notNull(),
+    kind: text('kind').notNull(),
+    draft: jsonb('draft'),
+    published: jsonb('published'),
+    history: jsonb('history').notNull().default([]),
+    revision: integer('revision').notNull().default(0),
+    updatedBy: integer('updated_by').references(() => users.id),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.path, t.kind] })],
+);
+export const contactMessages = pgTable('contact_messages', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  replyTo: varchar('reply_to', { length: 200 }).notNull(),
+  subject: varchar('subject', { length: 200 }).notNull(),
+  message: varchar('message', { length: 5000 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('new'),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  handledAt: timestamp('handled_at', { withTimezone: true }),
+});
+export const contactRateLimits = pgTable('contact_rate_limits', {
+  visitorHash: varchar('visitor_hash', { length: 64 }).primaryKey(),
+  attempts: integer('attempts').notNull().default(0),
+  windowStart: timestamp('window_start', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
