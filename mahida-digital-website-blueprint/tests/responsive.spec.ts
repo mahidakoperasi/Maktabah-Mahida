@@ -362,6 +362,17 @@ test('editor shortcuts and lists preserve page scroll', async ({
   await expect(
     page.getByLabel('Pratinjau tulisan').locator('ul li'),
   ).toHaveCount(2);
+  await text.fill('Judul yang dipilih');
+  await text.evaluate((field: HTMLTextAreaElement) =>
+    field.setSelectionRange(0, field.value.length),
+  );
+  await page.getByRole('button', { name: 'Heading', exact: true }).click();
+  await expect(text).toHaveValue('\n\n## Judul yang dipilih\n\n');
+  await expect(
+    page
+      .getByLabel('Pratinjau tulisan')
+      .getByRole('heading', { name: 'Judul yang dipilih' }),
+  ).toBeVisible();
 });
 
 test('news remains in the database when archived and can be restored', async ({

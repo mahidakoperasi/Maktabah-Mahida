@@ -195,7 +195,7 @@ export default function RichTextField({
           type="button"
           aria-label="Heading"
           className="min-h-11 rounded border bg-white px-3"
-          onClick={() => insert('## ', '', 'Judul bagian', true)}
+          onClick={() => insert('\n\n## ', '\n\n', 'Judul bagian')}
         >
           Heading
         </button>
