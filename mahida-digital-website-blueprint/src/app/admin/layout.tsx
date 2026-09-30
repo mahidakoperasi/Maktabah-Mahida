@@ -6,6 +6,7 @@ import { users } from '@/db/schema';
 import { PRIMARY_ADMIN_EMAIL } from '@/lib/admin-config';
 import { SESSION_COOKIE_NAME, verifyToken } from '@/lib/utils';
 import AdminShell from './AdminShell';
+import { getHomepageSettings } from '@/lib/homepage-settings';
 
 export default async function AdminLayout({
   children,
@@ -33,8 +34,12 @@ export default async function AdminLayout({
     redirect('/masuk?next=/admin');
   }
 
+  const settings = await getHomepageSettings();
   return (
-    <AdminShell isPrimaryAdmin={user.email.toLowerCase() === PRIMARY_ADMIN_EMAIL}>
+    <AdminShell
+      logoUrl={settings.siteLogoUrl}
+      isPrimaryAdmin={user.email.toLowerCase() === PRIMARY_ADMIN_EMAIL}
+    >
       {children}
     </AdminShell>
   );

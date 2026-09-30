@@ -47,9 +47,11 @@ export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   siteName: 'MAHIDA',
   siteTagline: 'Digital Pesantren',
   siteLogoUrl: '/brand/mahida-logo.webp',
-  footerDescription: 'Ruang untuk ilmu, karya, dokumentasi, dan khidmah Mahida.',
+  footerDescription:
+    'Ruang untuk ilmu, karya, dokumentasi, dan khidmah Mahida.',
   seoTitle: 'Mahida Digital — Belajar. Berkarya. Berkhidmah.',
-  seoDescription: 'Website resmi, media, literasi, arsip, dan ekosistem Mahida. Satu ruang untuk mengenal, membaca, melihat, menjaga, dan mengikuti perjalanan Mahida.',
+  seoDescription:
+    'Website resmi, media, literasi, arsip, dan ekosistem Mahida. Satu ruang untuk mengenal, membaca, melihat, menjaga, dan mengikuti perjalanan Mahida.',
   heroEyebrow: 'Belajar • Berkarya • Berkhidmah',
   heroTitleLine1: 'Mengenal,',
   heroTitleLine2: 'Membaca, Menjaga',
@@ -62,7 +64,7 @@ export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   unitsTitle: 'Temukan ruang belajar Anda.',
   unitsDescription: 'Lima unit pendidikan dalam satu lingkungan Mahida Salam.',
   newsEyebrow: 'Dari Mahida',
-  newsTitle: 'Berita & Artikel Terbaru',
+  newsTitle: 'Karya-karya Terbaru',
   homePostIds: [],
   heroPrimaryLabel: 'Mulai Membaca',
   heroPrimaryHref: '/literasi',
@@ -91,7 +93,9 @@ export async function homepageSettingsReady() {
     const result = await db.execute(sql`
       select to_regclass('public.settings') is not null as ready
     `);
-    return Boolean((result.rows?.[0] as { ready?: boolean } | undefined)?.ready);
+    return Boolean(
+      (result.rows?.[0] as { ready?: boolean } | undefined)?.ready,
+    );
   } catch {
     return false;
   }
@@ -110,19 +114,36 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
   if (!row?.value) return DEFAULT_HOMEPAGE_SETTINGS;
 
   try {
-    const parsed = JSON.parse(row.value) as Partial<HomepageSettings> & { featuredArticleIds?: number[] };
+    const parsed = JSON.parse(row.value) as Partial<HomepageSettings> & {
+      featuredArticleIds?: number[];
+    };
     return {
       ...DEFAULT_HOMEPAGE_SETTINGS,
       ...parsed,
-      heroWidgetLayout: parsed.heroWidgetLayout === 'logo' || parsed.heroWidgetLayout === 'photo'
-        ? parsed.heroWidgetLayout
-        : parsed.heroWidgetImageUrl && parsed.heroWidgetImageUrl !== DEFAULT_HOMEPAGE_SETTINGS.heroWidgetImageUrl ? 'photo' : 'logo',
-      featuredWorkIds: (Array.isArray(parsed.featuredWorkIds) ? parsed.featuredWorkIds : parsed.featuredArticleIds ?? [])
-        .filter((value): value is number => Number.isInteger(value) && value > 0)
-        .filter((value, index, values) => values.indexOf(value) === index).slice(0, 10),
+      heroWidgetLayout:
+        parsed.heroWidgetLayout === 'logo' ||
+        parsed.heroWidgetLayout === 'photo'
+          ? parsed.heroWidgetLayout
+          : parsed.heroWidgetImageUrl &&
+              parsed.heroWidgetImageUrl !==
+                DEFAULT_HOMEPAGE_SETTINGS.heroWidgetImageUrl
+            ? 'photo'
+            : 'logo',
+      featuredWorkIds: (Array.isArray(parsed.featuredWorkIds)
+        ? parsed.featuredWorkIds
+        : (parsed.featuredArticleIds ?? [])
+      )
+        .filter(
+          (value): value is number => Number.isInteger(value) && value > 0,
+        )
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .slice(0, 10),
       homePostIds: (Array.isArray(parsed.homePostIds) ? parsed.homePostIds : [])
-        .filter((value): value is number => Number.isInteger(value) && value > 0)
-        .filter((value, index, values) => values.indexOf(value) === index).slice(0, 3),
+        .filter(
+          (value): value is number => Number.isInteger(value) && value > 0,
+        )
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .slice(0, 3),
     };
   } catch {
     return DEFAULT_HOMEPAGE_SETTINGS;

@@ -10,6 +10,9 @@ export default defineConfig({
     ...devices['Desktop Chrome'],
     baseURL: 'http://127.0.0.1:3010',
     trace: 'retain-on-failure',
+    launchOptions: process.env.PW_CHROMIUM_EXECUTABLE
+      ? { executablePath: process.env.PW_CHROMIUM_EXECUTABLE }
+      : undefined,
   },
   webServer: {
     command: 'npm run start -- --hostname 127.0.0.1 --port 3010',
