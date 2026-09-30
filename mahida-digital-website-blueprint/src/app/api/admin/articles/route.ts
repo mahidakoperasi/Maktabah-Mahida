@@ -3,7 +3,10 @@ import { and, desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { getAdminUser } from '@/lib/admin-auth';
+import { createArticleInput } from '@/lib/article-input';
 import { calculateReadingTime, slugify } from '@/lib/utils';
+import { invalidDriveImages, invalidVideoMarkers } from '@/lib/rich-markers';
+import { validAuthorId } from '@/lib/author';
 
 async function uniqueSlug(title: string, currentId?: number) {
   const base = slugify(title) || 'artikel';
@@ -74,10 +77,24 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    let input: unknown;
+    try {
+      input = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Format JSON tidak valid' }, { status: 400 });
+    }
+
+    const parsed = createArticleInput.safeParse(input);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Data artikel tidak valid' }, { status: 400 });
+    }
+    const body = parsed.data;
+    if (!await validAuthorId(body.authorId ?? null)) return NextResponse.json({ error: 'Penulis tidak ditemukan' }, { status: 400 });
     const title = String(body.title ?? '').trim();
     const excerpt = String(body.excerpt ?? '').trim();
     const contentRaw = String(body.content ?? '').trim();
+    if (invalidDriveImages(contentRaw)) return NextResponse.json({ error: 'Sisipan gambar harus berupa tautan berkas Google Drive' }, { status: 400 });
+    if (invalidVideoMarkers(contentRaw)) return NextResponse.json({ error: 'Gunakan tautan video publik YouTube, Facebook, Instagram, atau TikTok yang valid' }, { status: 400 });
     const requestedStatus = String(body.status ?? 'draft');
 
     if (!title) {
@@ -101,6 +118,8 @@ export async function POST(request: NextRequest) {
       type: 'article',
       status,
       createdBy: admin.id,
+      authorId: body.authorId ?? null,
+      authorClass: body.authorId ? body.authorClass?.trim() || null : null,
       publishedAt: status === 'published' ? now : null,
       readingTime: calculateReadingTime(contentRaw),
       metaTitle: String(body.metaTitle ?? '').trim() || null,

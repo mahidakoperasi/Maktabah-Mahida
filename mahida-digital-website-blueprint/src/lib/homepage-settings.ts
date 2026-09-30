@@ -3,15 +3,33 @@ import { settings } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
 export type HomepageSettings = {
+  siteName: string;
+  siteTagline: string;
+  siteLogoUrl: string;
+  footerDescription: string;
+  seoTitle: string;
+  seoDescription: string;
   heroEyebrow: string;
   heroTitleLine1: string;
   heroTitleLine2: string;
   heroTitleAccent: string;
   heroDescription: string;
+  heroVideoUrl: string;
+  heroImageUrl: string;
+  unitsEyebrow: string;
+  unitsTitle: string;
+  unitsDescription: string;
+  newsEyebrow: string;
+  newsTitle: string;
+  homePostIds: number[];
   heroPrimaryLabel: string;
   heroPrimaryHref: string;
   heroSecondaryLabel: string;
   heroSecondaryHref: string;
+  heroWidgetImageUrl: string;
+  heroWidgetArabic: string;
+  heroWidgetSubtitle: string;
+  heroWidgetLayout: 'logo' | 'photo';
   aboutEyebrow: string;
   aboutTitle: string;
   aboutDescription: string;
@@ -22,20 +40,40 @@ export type HomepageSettings = {
   stat2Label: string;
   stat3Value: string;
   stat3Label: string;
-  featuredArticleIds: number[];
+  featuredWorkIds: number[];
 };
 
 export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
+  siteName: 'MAHIDA',
+  siteTagline: 'Digital Pesantren',
+  siteLogoUrl: '/brand/mahida-logo.webp',
+  footerDescription:
+    'Ruang untuk ilmu, karya, dokumentasi, dan khidmah Mahida.',
+  seoTitle: 'Mahida Digital — Belajar. Berkarya. Berkhidmah.',
+  seoDescription:
+    'Website resmi, media, literasi, arsip, dan ekosistem Mahida. Satu ruang untuk mengenal, membaca, melihat, menjaga, dan mengikuti perjalanan Mahida.',
   heroEyebrow: 'Belajar • Berkarya • Berkhidmah',
   heroTitleLine1: 'Mengenal,',
   heroTitleLine2: 'Membaca, Menjaga',
   heroTitleAccent: 'Mahida.',
   heroDescription:
-    'Satu ruang untuk ilmu, karya, dan kehidupan pesantren. Temukan kitab, terjemahan, esai, dokumentasi, dan perjalanan Mahida di sini.',
+    'Ruang digital untuk mengenal Mahida dan membaca publikasi yang telah diterbitkan.',
+  heroVideoUrl: '',
+  heroImageUrl: '',
+  unitsEyebrow: 'Pendidikan Mahida',
+  unitsTitle: 'Temukan ruang belajar Anda.',
+  unitsDescription: 'Lima unit pendidikan dalam satu lingkungan Mahida Salam.',
+  newsEyebrow: 'Dari Mahida',
+  newsTitle: 'Karya-karya Terbaru',
+  homePostIds: [],
   heroPrimaryLabel: 'Mulai Membaca',
   heroPrimaryHref: '/literasi',
   heroSecondaryLabel: 'Jelajahi Mahida',
   heroSecondaryHref: '/tentang/profil',
+  heroWidgetImageUrl: '/brand/mahida-logo.webp',
+  heroWidgetArabic: 'مَنْبَعُ الْهِدَايَةِ',
+  heroWidgetSubtitle: 'Sumber Petunjuk',
+  heroWidgetLayout: 'logo',
   aboutEyebrow: 'Tentang Mahida',
   aboutTitle: 'Pondok Pesantren yang Membaca Tradisi dan Zaman',
   aboutDescription:
@@ -47,7 +85,7 @@ export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = {
   stat2Label: 'Santri Aktif',
   stat3Value: '',
   stat3Label: 'Alumni',
-  featuredArticleIds: [],
+  featuredWorkIds: [],
 };
 
 export async function homepageSettingsReady() {
@@ -55,7 +93,9 @@ export async function homepageSettingsReady() {
     const result = await db.execute(sql`
       select to_regclass('public.settings') is not null as ready
     `);
-    return Boolean((result.rows?.[0] as { ready?: boolean } | undefined)?.ready);
+    return Boolean(
+      (result.rows?.[0] as { ready?: boolean } | undefined)?.ready,
+    );
   } catch {
     return false;
   }
@@ -74,13 +114,36 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
   if (!row?.value) return DEFAULT_HOMEPAGE_SETTINGS;
 
   try {
-    const parsed = JSON.parse(row.value) as Partial<HomepageSettings>;
+    const parsed = JSON.parse(row.value) as Partial<HomepageSettings> & {
+      featuredArticleIds?: number[];
+    };
     return {
       ...DEFAULT_HOMEPAGE_SETTINGS,
       ...parsed,
-      featuredArticleIds: Array.isArray(parsed.featuredArticleIds)
-        ? parsed.featuredArticleIds.filter((value): value is number => Number.isInteger(value))
-        : [],
+      heroWidgetLayout:
+        parsed.heroWidgetLayout === 'logo' ||
+        parsed.heroWidgetLayout === 'photo'
+          ? parsed.heroWidgetLayout
+          : parsed.heroWidgetImageUrl &&
+              parsed.heroWidgetImageUrl !==
+                DEFAULT_HOMEPAGE_SETTINGS.heroWidgetImageUrl
+            ? 'photo'
+            : 'logo',
+      featuredWorkIds: (Array.isArray(parsed.featuredWorkIds)
+        ? parsed.featuredWorkIds
+        : (parsed.featuredArticleIds ?? [])
+      )
+        .filter(
+          (value): value is number => Number.isInteger(value) && value > 0,
+        )
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .slice(0, 10),
+      homePostIds: (Array.isArray(parsed.homePostIds) ? parsed.homePostIds : [])
+        .filter(
+          (value): value is number => Number.isInteger(value) && value > 0,
+        )
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .slice(0, 3),
     };
   } catch {
     return DEFAULT_HOMEPAGE_SETTINGS;

@@ -3,20 +3,22 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { getHomepageSettings } from '@/lib/homepage-settings';
+import { publicImageUrl } from '@/lib/media-links';
 
-export const metadata: Metadata = {
-  title: {
-    default: "Mahida Digital — Belajar. Berkarya. Berkhidmah.",
-    template: "%s | Mahida Digital",
-  },
-  description: "Website resmi, media, literasi, arsip, dan ekosistem Mahida. Satu ruang untuk mengenal, membaca, melihat, menjaga, dan mengikuti perjalanan Mahida.",
-  keywords: ["Mahida", "pesantren", "pondok pesantren", "literasi", "kitab", "karya", "maktabah"],
-  openGraph: {
-    type: "website",
-    locale: "id_ID",
-    siteName: "Mahida Digital",
-  },
-};
+export const dynamic = 'force-dynamic';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getHomepageSettings();
+  const icon = publicImageUrl(settings.siteLogoUrl) ?? '/brand/mahida-logo.webp';
+  return {
+    metadataBase: new URL('https://mahida.my.id'),
+    title: { default: settings.seoTitle, template: `%s | ${settings.siteName}` },
+    description: settings.seoDescription,
+    icons: { icon, shortcut: icon, apple: icon },
+    openGraph: { type: 'website', locale: 'id_ID', siteName: settings.siteName },
+  };
+}
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -31,7 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="bg-cream text-charcoal antialiased min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 pt-[88px]">
+        <main className="min-w-0 flex-1">
           {children}
         </main>
         <Footer />

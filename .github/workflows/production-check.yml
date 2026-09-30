@@ -1,0 +1,97 @@
+name: Production Check
+
+on:
+  pull_request:
+    paths:
+      - "mahida-digital-website-blueprint/**"
+      - ".github/workflows/production-check.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "mahida-digital-website-blueprint/**"
+      - ".github/workflows/production-check.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mahida_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mahida_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: mahida-digital-website-blueprint
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mahida_ci
+      JWT_SECRET: ci-only-secret-not-used-in-production-please-replace
+      RESEND_API_KEY: re_ci-placeholder
+      EMAIL_FROM: Mahida Digital <ci@example.invalid>
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run database migrations
+        run: npm run db:migrate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
+      - name: Install browser for responsive checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Check 320–1440px layouts and keyboard navigation
+        run: npm run test:responsive
+
+      - name: Upload browser verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mahida-design-browser-checks
+          path: mahida-digital-website-blueprint/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Docker build
+        run: docker build --build-arg RELEASE_SHA=${{ github.event.pull_request.head.sha || github.sha }} -t mahida-digital-ci .
+
+      - name: Export image for VPS
+        run: docker save mahida-digital-ci | gzip -1 > mahida-editorial-image.tar.gz
+
+      - name: Upload image for VPS
+        uses: actions/upload-artifact@v4
+        with:
+          name: mahida-editorial-image
+          path: mahida-digital-website-blueprint/mahida-editorial-image.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

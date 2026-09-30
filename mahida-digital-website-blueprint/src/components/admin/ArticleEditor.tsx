@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye, Save, Send, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import RichTextField from './RichTextField';
+import ImageUrlPreview from './ImageUrlPreview';
+import AuthorFields from './AuthorFields';
 
 type ArticleData = {
   id: number;
@@ -16,6 +19,8 @@ type ArticleData = {
   featuredImage: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
+  authorId: number | null;
+  authorClass: string | null;
 };
 
 export default function ArticleEditor({ articleId }: { articleId?: number }) {
@@ -26,7 +31,9 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
   const [featuredImage, setFeaturedImage] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
-  const [status, setStatus] = useState<'draft' | 'published'>('draft');
+  const [authorId, setAuthorId] = useState<number | null>(null);
+  const [authorClass, setAuthorClass] = useState('');
+  const [status, setStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   const [slug, setSlug] = useState('');
   const [isLoading, setIsLoading] = useState(Boolean(articleId));
   const [isSaving, setIsSaving] = useState(false);
@@ -58,7 +65,9 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
         setFeaturedImage(article.featuredImage ?? '');
         setMetaTitle(article.metaTitle ?? '');
         setMetaDescription(article.metaDescription ?? '');
-        setStatus(article.status === 'published' ? 'published' : 'draft');
+        setAuthorId(article.authorId ?? null);
+        setAuthorClass(article.authorClass ?? '');
+        setStatus(article.status === 'published' ? 'published' : article.status === 'archived' ? 'archived' : 'draft');
         setSlug(article.slug ?? '');
       } catch (err) {
         if (active) {
@@ -105,6 +114,8 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
             featuredImage,
             metaTitle,
             metaDescription,
+            authorId,
+            authorClass,
             status: nextStatus,
           }),
         }
@@ -134,7 +145,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
 
   async function deleteArticle() {
     if (!articleId) return;
-    if (!window.confirm('Hapus artikel ini secara permanen?')) return;
+    if (!window.confirm('Arsipkan artikel ini? Anda dapat memulihkannya dari daftar artikel.')) return;
 
     setIsSaving(true);
     setError('');
@@ -176,7 +187,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
             {articleId ? 'Edit Artikel' : 'Artikel Baru'}
           </h1>
           <p className="mt-1 text-sm text-warm-gray-500">
-            {status === 'published' ? 'Artikel sudah diterbitkan' : 'Artikel masih berupa draft'}
+            {status === 'published' ? 'Artikel sudah diterbitkan' : status === 'archived' ? 'Artikel diarsipkan' : 'Artikel masih berupa draft'}
             {slug ? ` • /${slug}` : ''}
           </p>
         </div>
@@ -184,7 +195,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
         <div className="flex flex-wrap gap-2">
           {articleId && slug && status === 'published' && (
             <Link
-              href={`/literasi/artikel/${slug}`}
+              href={`/karya/artikel/${slug}`}
               target="_blank"
               className="btn-secondary"
             >
@@ -200,7 +211,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
               className="inline-flex items-center gap-2 border border-red-200 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
             >
               <Trash2 size={16} />
-              Hapus
+              Arsipkan
             </button>
           )}
           <button
@@ -266,32 +277,25 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
                 {content.trim() ? content.trim().split(/\s+/).length : 0} kata
               </span>
             </div>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Mulai menulis artikel di sini..."
-              rows={22}
-              className="w-full resize-y border border-warm-gray-300 px-4 py-4 font-serif text-[16px] leading-8 outline-none focus:border-emerald-forest"
-            />
-            <p className="mt-2 text-xs text-warm-gray-400">
-              Untuk tahap pertama editor menyimpan teks secara aman. Editor visual/format kaya akan kita tingkatkan setelah alur CMS inti stabil.
-            </p>
+            <RichTextField label="Isi Artikel" value={content} onChange={setContent} />
+            <p className="mt-3 text-xs text-warm-gray-500">Gunakan tombol Sisipkan video untuk menambahkan YouTube, Facebook, Instagram, atau TikTok. Video dimuat saat pengunjung menekan tombol putar.</p>
           </div>
         </div>
 
         <aside className="space-y-5">
+          <AuthorFields authorId={authorId} authorClass={authorClass} onChange={(id, classValue) => { setAuthorId(id); setAuthorClass(classValue); }} />
           <div className="bg-white border border-warm-gray-200 p-5">
             <h2 className="mb-4 font-semibold text-charcoal">Publikasi</h2>
             <dl className="space-y-3 text-sm">
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-warm-gray-500">Status</dt>
                 <dd className={status === 'published' ? 'font-semibold text-emerald-700' : 'font-semibold text-warm-gray-700'}>
-                  {status === 'published' ? 'Terbit' : 'Draft'}
+                  {status === 'published' ? 'Terbit' : status === 'archived' ? 'Arsip' : 'Draft'}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-warm-gray-500">Slug</dt>
-                <dd className="max-w-[180px] truncate text-right text-warm-gray-700">
+                <dd className="max-w-[180px] break-all text-right text-warm-gray-700">
                   {slug || 'dibuat otomatis'}
                 </dd>
               </div>
@@ -303,10 +307,11 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
             <input
               value={featuredImage}
               onChange={(e) => setFeaturedImage(e.target.value)}
-              placeholder="https://..."
+              placeholder="https://drive.google.com/file/d/.../view"
               className="w-full border border-warm-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-forest"
             />
-            <p className="mt-2 text-xs text-warm-gray-400">Masukkan URL gambar. Upload media akan dibuat di modul Media.</p>
+            <p className="mt-2 text-xs text-warm-gray-400">Tempel tautan foto Google Drive yang dapat dilihat siapa pun yang memiliki tautan. Foto akan tampil di beranda, daftar artikel, dan halaman artikel.</p>
+            <ImageUrlPreview url={featuredImage} />
           </div>
 
           <div className="bg-white border border-warm-gray-200 p-5">
