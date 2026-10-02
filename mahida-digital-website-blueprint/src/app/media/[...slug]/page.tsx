@@ -18,6 +18,7 @@ import { socialMetadata } from '@/lib/social-metadata';
 import GenericPageTemplate from '@/components/GenericPageTemplate';
 import EditorialImage from '@/components/EditorialImage';
 import GalleryLightbox from '@/components/GalleryLightbox';
+import { publicGallery } from '@/lib/gallery-store';
 import { getDesign } from '@/lib/design-store';
 
 export async function generateMetadata({
@@ -270,6 +271,7 @@ export default async function MediaSection({
       .from(galleryImages)
       .where(eq(galleryImages.galleryId, album.id))
       .orderBy(asc(galleryImages.sortOrder));
+    const curated = await publicGallery(album.id);
     return (
       <div className="min-h-screen bg-cream">
         <header className="bg-emerald-forest py-14 text-white">
@@ -282,7 +284,7 @@ export default async function MediaSection({
         </header>
         <div className="mx-auto max-w-[1280px] px-5 py-12">
           {photos.length ? (
-            <GalleryLightbox photos={photos} title={album.title} />
+            <GalleryLightbox photos={curated?.photos ?? photos} title={album.title} layout={curated?.layout} />
           ) : (
             <p className="empty-state">Belum ada foto dalam galeri ini.</p>
           )}

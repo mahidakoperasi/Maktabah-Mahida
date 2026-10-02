@@ -22,7 +22,9 @@ export function driveIdFromUrl(input: string): string | null {
 
 export function driveThumbnailUrl(input: string): string | null {
   const id = driveIdFromUrl(input);
-  return id ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200` : null;
+  if (!id) return null;
+  const resourceKey = new URL(input).searchParams.get('resourcekey');
+  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200${resourceKey && /^[\w-]{1,200}$/.test(resourceKey) ? `&resourcekey=${encodeURIComponent(resourceKey)}` : ''}`;
 }
 
 export function publicImageUrl(input: string): string | null {

@@ -28,11 +28,12 @@ export async function GET() {
         to_regclass('public.products') is not null as products_table,
         to_regclass('public.videos') is not null as videos_table,
         to_regclass('public.galleries') is not null as galleries_table,
-        to_regclass('public.ebook_orders') is not null as ebook_orders_table
+        to_regclass('public.ebook_orders') is not null as ebook_orders_table,
+        to_regclass('public.gallery_documents') is not null as gallery_documents_table
     `);
 
     const row = schema.rows?.[0] as
-      | { users_table?: boolean; otp_codes_table?: boolean; posts_table?: boolean; cms_pages_table?: boolean; navigation_items_table?: boolean; products_table?: boolean; videos_table?: boolean; galleries_table?: boolean; ebook_orders_table?: boolean }
+      | { users_table?: boolean; otp_codes_table?: boolean; posts_table?: boolean; cms_pages_table?: boolean; navigation_items_table?: boolean; products_table?: boolean; videos_table?: boolean; galleries_table?: boolean; ebook_orders_table?: boolean; gallery_documents_table?: boolean }
       | undefined;
 
     const usersTable = Boolean(row?.users_table);
@@ -44,6 +45,7 @@ export async function GET() {
       database: "connected",
       authSchemaReady: usersTable && otpCodesTable,
       articleCmsReady: postsTable,
+      galleryFolderReady: Boolean(row?.gallery_documents_table),
       stage2CmsReady: Boolean(row?.cms_pages_table && row?.navigation_items_table && row?.products_table && row?.videos_table && row?.galleries_table && row?.ebook_orders_table),
       tables: {
         users: usersTable,
@@ -55,6 +57,7 @@ export async function GET() {
         videos: Boolean(row?.videos_table),
         galleries: Boolean(row?.galleries_table),
         ebookOrders: Boolean(row?.ebook_orders_table),
+        galleryDocuments: Boolean(row?.gallery_documents_table),
       },
     });
   } catch (error) {

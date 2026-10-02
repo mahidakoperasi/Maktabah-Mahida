@@ -95,9 +95,9 @@ test('server validates media, embeds, permissions, and page scope', async ({
   context,
 }) => {
   expect(
-    (await request.get('/api/admin/design?path=/&kind=media')).status(),
+    (await request.get('/api/admin/design?path=/tentang/profil&kind=media')).status(),
   ).toBe(403);
-  expect((await request.put('/api/admin/design', { data: {} })).status()).toBe(
+  expect((await request.put('/api/admin/design', { data: { path: profile, kind: 'media', action: 'draft', revision: 0, data: { clips: [] } } })).status()).toBe(
     403,
   );
   expect((await request.get('/api/admin/contact')).status()).toBe(403);

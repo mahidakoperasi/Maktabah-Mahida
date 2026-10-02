@@ -545,6 +545,18 @@ export const designDocuments = pgTable(
   },
   (t) => [primaryKey({ columns: [t.path, t.kind] })],
 );
+export const galleryDocuments = pgTable('gallery_documents', {
+  galleryId: integer('gallery_id').primaryKey().references(() => galleries.id, { onDelete: 'cascade' }),
+  draft: jsonb('draft').notNull(),
+  published: jsonb('published'),
+  candidates: jsonb('candidates').notNull().default([]),
+  history: jsonb('history').notNull().default([]),
+  revision: integer('revision').notNull().default(0),
+  syncedAt: timestamp('synced_at', { withTimezone: true }),
+  updatedBy: integer('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const contactMessages = pgTable('contact_messages', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),

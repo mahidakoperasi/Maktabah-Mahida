@@ -408,12 +408,12 @@ test('news remains in the database when archived and can be restored', async ({
   expect(archived.ok()).toBe(true);
   const listing = await page.request.get('/api/admin/content/berita');
   const archivedItem = (await listing.json()).items.find(
-    (row: { id: number }) => row.id === item.id,
+    (row: { id: number; revision: number }) => row.id === item.id,
   );
   expect(archivedItem.status).toBe('archived');
 
   const restored = await page.request.patch('/api/admin/content/berita', {
-    data: { ...payload, id: item.id },
+    data: { ...payload, id: item.id, revision: archivedItem.revision },
   });
   expect(restored.ok()).toBe(true);
   expect((await restored.json()).item.publishedAt).toBe(item.publishedAt);

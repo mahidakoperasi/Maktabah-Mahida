@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { db } from '@/db';
-import { galleries, galleryImages, videos } from '@/db/schema';
+import { db, pool } from '@/db';
+import { galleries, galleryImages, galleryDocuments, videos } from '@/db/schema';
 import { requireAdminAccess } from '@/lib/admin-auth';
 import { logActivity } from '@/lib/activity-log';
 import { saveRevision } from '@/lib/revision-log';
@@ -40,6 +40,10 @@ async function save(request: NextRequest, context: Context, edit: boolean) {
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success || (edit && !parsed.data?.id)) return NextResponse.json({ error: 'Data media tidak valid' }, { status: 400 });
   const { id, title, description, url, images, status } = parsed.data;
+  if (kind.kind === 'galeri' && edit && id) {
+    const managed = await pool.query('SELECT 1 FROM gallery_documents WHERE gallery_id=$1', [id]);
+    if (managed.rowCount) return NextResponse.json({ error: 'Album ini memakai draft terpisah. Kelola melalui formulir Galeri Foto terbaru.' }, { status: 409 });
+  }
   const videoId = kind.kind === 'video' ? youtubeIdFromUrl(url) : null;
   if (kind.kind === 'video' && !videoId) return NextResponse.json({ error: 'Tautan YouTube tidak valid' }, { status: 400 });
   if (kind.kind === 'galeri' && images.some((image) => !driveIdFromUrl(image.url))) return NextResponse.json({ error: 'Foto harus memakai tautan berkas Google Drive' }, { status: 400 });
@@ -60,6 +64,11 @@ async function save(request: NextRequest, context: Context, edit: boolean) {
       return NextResponse.json({ item }, { status: edit ? 200 : 201 });
     }
     const item = await db.transaction(async (tx) => {
+      if (edit && id) {
+        await tx.execute(sql`SELECT id FROM galleries WHERE id=${id} FOR UPDATE`);
+        const [document] = await tx.select({ id: galleryDocuments.galleryId }).from(galleryDocuments).where(eq(galleryDocuments.galleryId, id));
+        if (document) throw new Error('Album memakai draft terpisah; gunakan formulir Galeri Foto terbaru.');
+      }
       const values = { title, slug, description, status };
       const [row] = edit && id ? await tx.update(galleries).set(values).where(eq(galleries.id, id)).returning() : await tx.insert(galleries).values(values).returning();
       if (!row) throw new Error('Galeri tidak ditemukan');
@@ -83,9 +92,19 @@ export async function DELETE(request: NextRequest, context: Context) {
   const parsed = z.object({ id: z.number().int().positive() }).safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 });
   const { id } = parsed.data;
+  if (kind.kind === 'galeri') {
+    const managed = await pool.query('SELECT 1 FROM gallery_documents WHERE gallery_id=$1', [id]);
+    if (managed.rowCount) return NextResponse.json({ error: 'Arsipkan album ini melalui formulir Galeri Foto terbaru agar versi draft terlindungi.' }, { status: 409 });
+  }
   const archived = kind.kind === 'video'
     ? await db.update(videos).set({ status: 'archived', updatedAt: new Date() }).where(eq(videos.id, id)).returning()
-    : await db.update(galleries).set({ status: 'archived', updatedAt: new Date() }).where(eq(galleries.id, id)).returning();
+    : await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM galleries WHERE id=${id} FOR UPDATE`);
+      const [document] = await tx.select({ id: galleryDocuments.galleryId }).from(galleryDocuments).where(eq(galleryDocuments.galleryId, id));
+      if (document) return [];
+      return tx.update(galleries).set({ status: 'archived', updatedAt: new Date() }).where(eq(galleries.id, id)).returning();
+    });
+  if (!archived.length && kind.kind === 'galeri') return NextResponse.json({ error: 'Album tidak ditemukan atau sudah memakai draft terpisah. Gunakan formulir Galeri Foto terbaru.' }, { status: 409 });
   if (archived[0]) await logActivity({ actorId: kind.admin.id, action: 'archived', targetType: kind.kind, targetId: id, summary: `Mengarsipkan ${kind.kind === 'video' ? 'video' : 'galeri'}: ${archived[0].title}` });
   return NextResponse.json({ ok: archived.length > 0 });
 }
