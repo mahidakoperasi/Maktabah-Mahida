@@ -5,6 +5,7 @@ import PublicationFrame, { PublicationHeader } from '@/components/PublicationFra
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PublicAnalytics from '@/components/PublicAnalytics';
+import PublicPromotion from '@/components/PublicPromotion';
 import { getHomepageSettings } from '@/lib/homepage-settings';
 import { publicImageUrl } from '@/lib/media-links';
 
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="bg-cream text-charcoal antialiased min-h-screen flex flex-col">
         <PublicAnalytics />
+        <PublicPromotion />
         <PublicationHeader />
         <Navbar />
         <main className="min-w-0 flex-1">

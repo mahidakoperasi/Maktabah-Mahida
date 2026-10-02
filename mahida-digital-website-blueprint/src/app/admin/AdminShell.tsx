@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
   {
     label: 'Tampilan Website',
     children: [
+      { label: 'Proteksi & Promosi', icon: FileText, href: '/admin/tampilan/promosi', access: 'primary' },
       {
         label: 'Header & Penerbitan',
         icon: FileText,

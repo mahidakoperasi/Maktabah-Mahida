@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import ArabicText from './ArabicText';
 import VideoEmbedBlock from './VideoEmbedBlock';
 import { driveThumbnailUrl, videoEmbedFromUrl } from '@/lib/media-links';
 import { safeArticleLink } from '@/lib/rich-links';
@@ -27,7 +28,7 @@ function inline(text: string): ReactNode[] {
               rel="noopener noreferrer"
               className="break-all text-emerald-forest underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-              {link[1]}
+              <ArabicText text={link[1]} />
             </a>
           );
       }
@@ -50,12 +51,12 @@ function inline(text: string): ReactNode[] {
           );
       }
       if (part.startsWith('**') && part.endsWith('**'))
-        return <strong key={index}>{part.slice(2, -2)}</strong>;
+        return <strong key={index}><ArabicText text={part.slice(2, -2)} /></strong>;
       if (part.startsWith('*') && part.endsWith('*'))
-        return <em key={index}>{part.slice(1, -1)}</em>;
+        return <em key={index}><ArabicText text={part.slice(1, -1)} /></em>;
       if (part.startsWith('++') && part.endsWith('++'))
-        return <u key={index}>{part.slice(2, -2)}</u>;
-      return part;
+        return <u key={index}><ArabicText text={part.slice(2, -2)} /></u>;
+      return <ArabicText key={index} text={part} />;
     });
 }
 
@@ -114,11 +115,11 @@ export default function RichContent({ content }: { content: string }) {
         if (heading) {
           nodes.push(
             heading[1].length === 2 ? (
-              <h2 key={key++} className="text-2xl font-bold">
+              <h2 key={key++} dir="auto" className="text-2xl font-bold">
                 {inline(heading[2])}
               </h2>
             ) : (
-              <h3 key={key++} className="text-xl font-bold">
+              <h3 key={key++} dir="auto" className="text-xl font-bold">
                 {inline(heading[2])}
               </h3>
             ),
@@ -127,7 +128,7 @@ export default function RichContent({ content }: { content: string }) {
           nodes.push(
             <ol key={key++} dir="auto" className="list-decimal space-y-1 pl-6">
               {lines.map((line, index) => (
-                <li key={index}>{inline(line.replace(/^\d+\.\s+/, ''))}</li>
+                <li key={index} dir="auto">{inline(line.replace(/^\d+\.\s+/, ''))}</li>
               ))}
             </ol>,
           );
@@ -135,7 +136,7 @@ export default function RichContent({ content }: { content: string }) {
           nodes.push(
             <ul key={key++} dir="auto" className="list-disc space-y-1 pl-6">
               {lines.map((line, index) => (
-                <li key={index}>{inline(line.replace(/^-\s+/, ''))}</li>
+                <li key={index} dir="auto">{inline(line.replace(/^-\s+/, ''))}</li>
               ))}
             </ul>,
           );
@@ -148,5 +149,5 @@ export default function RichContent({ content }: { content: string }) {
         }
       });
   });
-  return <>{nodes}</>;
+  return <div className="reading-text">{nodes}</div>;
 }

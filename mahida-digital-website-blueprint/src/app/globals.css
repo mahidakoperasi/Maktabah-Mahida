@@ -464,11 +464,15 @@ body:has([data-admin-shell]) > main {
   text-justify: inter-word;
 }
 
-@media (max-width: 640px) {
-  .prose-article p {
-    text-align: left;
-  }
-}
+.reading-text { display: contents; }
+.reading-text > p { text-align: justify; text-justify: inter-word; overflow-wrap: break-word; }
+.reading-text :where(h1,h2,h3,h4,h5,h6) { text-align: start; }
+.arabic-inline { font-family: var(--font-arabic); line-height: 1.9; direction: rtl; unicode-bidi: isolate; }
+.protected-reading { display: contents; user-select: none; -webkit-user-select: none; }
+.protected-reading :where(input,textarea,select,[contenteditable="true"],[role="textbox"],[data-reading-control]) { user-select: text; -webkit-user-select: text; }
+.promotion-dialog { margin: auto; padding: 0; width: min(94vw, 620px); max-height: 92svh; overflow-y: auto; border: 1px solid var(--color-mahida-200); border-radius: 12px; background: var(--color-cream); color: var(--color-charcoal); box-shadow: 0 24px 80px #0005; }
+.promotion-dialog::backdrop { background: #051c14b3; }
+.promotion-dialog:not([open]) { display: none; }
 
 .prose-article a {
   color: var(--color-emerald-forest);
