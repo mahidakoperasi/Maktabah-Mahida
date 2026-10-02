@@ -15,7 +15,7 @@ export default async function DesignHero({
   children: ReactNode;
   className?: string;
 }) {
-  const preview = await isDesignPreview(path);
+  const preview = await isDesignPreview(path, 'media');
   const design = await getDesign(path, 'media');
   const legacy: Clip | null =
     video || image
@@ -43,7 +43,7 @@ export default async function DesignHero({
           Area media: hero
         </span>
       )}
-      {hero && <VisualItem key={hero.url} clip={hero} hero fallback={image} />}
+      {hero && <VisualItem key={`${hero.url}-${hero.type}-${hero.poster}`} clip={hero} hero fallback={image} />}
       {hero?.type === 'image' && (
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#092d21]/35 via-[#0d3528]/25 to-transparent" />
       )}

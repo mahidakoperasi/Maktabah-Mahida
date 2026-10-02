@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import jwt from 'jsonwebtoken';
 import pg from 'pg';
 import {
@@ -106,7 +106,7 @@ test('server validates media, embeds, permissions, and page scope', async ({
     (
       await api.put('/api/admin/design', {
         data: {
-          path: '/tentang/visi-misi',
+          path: '/admin/unsupported',
           kind: 'media',
           action: 'publish',
           revision: 0,

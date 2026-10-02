@@ -2,6 +2,8 @@ import { BookOpen, Users, MapPin, Award } from 'lucide-react';
 import { isDesignPreview, getDesign } from '@/lib/design-store';
 import RichContent from './RichContent';
 import VisualGrid from './VisualMedia';
+import { BODY_SECTION, defaultSectionLayout } from '@/lib/design-schema';
+import { TextMediaBlock } from './DesignTextBlock';
 export default async function DesignSections({ path }: { path: string }) {
   const [content, media] = await Promise.all([
     getDesign(path, 'content'),
@@ -17,7 +19,10 @@ export default async function DesignSections({ path }: { path: string }) {
     location: MapPin,
     award: Award,
   };
-  const visibleIds = new Set(content?.sections.map((s) => s.id) || []);
+  const visibleIds = new Set([
+    ...(path === '/' ? [] : [BODY_SECTION]),
+    ...(content?.sections.map((s) => s.id) || []),
+  ]);
   const unplaced =
     media?.clips.filter(
       (c) =>
@@ -38,20 +43,26 @@ export default async function DesignSections({ path }: { path: string }) {
         const Icon = s.icon === 'none' ? null : icons[s.icon];
         return (
           <section key={s.id} className="space-y-5" id={`section-${s.id}`}>
-            <h2 className="flex min-w-0 items-center gap-3 break-words text-2xl font-bold md:text-3xl">
-              {Icon && <Icon aria-hidden size={24} />}
-              <span className="min-w-0 break-words">{s.title}</span>
-            </h2>
-            <div className="prose-article space-y-4 break-words">
-              <RichContent content={s.body} />
-            </div>
-            <VisualGrid
+            <TextMediaBlock
+              sectionId={s.id}
               clips={
                 media?.clips.filter(
                   (c) => c.area === 'inline' && c.afterSection === s.id,
-                ) || []
+                ) ?? []
               }
-            />
+              layout={
+                media?.sectionLayouts?.find((v) => v.sectionId === s.id)
+                  ?.layout ?? defaultSectionLayout(path, s.title)
+              }
+            >
+              <h2 className="flex min-w-0 items-center gap-3 break-words text-2xl font-bold md:text-3xl">
+                {Icon && <Icon aria-hidden size={24} />}
+                <span className="min-w-0 break-words">{s.title}</span>
+              </h2>
+              <div className="prose-article space-y-4 break-words">
+                <RichContent content={s.body} />
+              </div>
+            </TextMediaBlock>
           </section>
         );
       })}

@@ -3,6 +3,7 @@ import { ArrowUpRight } from 'lucide-react';
 import EditorialImage from './EditorialImage';
 import DesignSections from './DesignSections';
 import DesignHero from './DesignHero';
+import DesignTextBlock from './DesignTextBlock';
 import RichContent from './RichContent';
 import { getDesign } from '@/lib/design-store';
 
@@ -89,35 +90,42 @@ export default async function UnitTemplate({
           )}
         </dl>
       </div>
-      {aboutVisible && (description || (!clipping && images[0])) && (
-        <section
-          aria-labelledby="about-unit"
-          className="mx-auto grid max-w-[1280px] items-center gap-10 px-5 py-16 md:px-8 md:py-24 lg:grid-cols-2 lg:gap-20 lg:px-12"
-        >
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-rich">
-              Mengenal unit
-            </p>
-            <h2
-              id="about-unit"
-              className="mt-3 text-3xl font-black tracking-tight md:text-5xl"
-            >
-              {aboutHeading || 'Tentang Unit'}
-            </h2>
-            <div className="prose-article mt-7 max-w-prose space-y-4 text-base leading-8 text-warm-gray-600 md:text-lg">
-              <RichContent content={description || ''} />
-            </div>
-          </div>
-          {!clipping && images[0] && (
-            <EditorialImage
-              hideFallback
-              url={images[0]}
-              label={`Gambar ${title}`}
-              className="aspect-[4/3] w-full"
-            />
-          )}
-        </section>
-      )}
+      {aboutVisible &&
+        (description ||
+          clipping?.clips.some(
+            (c) => c.area === 'inline' && c.afterSection === 'page-body',
+          ) ||
+          (!clipping && images[0])) && (
+          <section
+            aria-labelledby="about-unit"
+            className={`mx-auto grid max-w-[1280px] items-center gap-10 px-5 py-16 md:px-8 md:py-24 lg:gap-20 lg:px-12 ${!clipping && images[0] ? 'lg:grid-cols-2' : ''}`}
+          >
+            <DesignTextBlock path={path} hasText={Boolean(description)}>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-rich">
+                  Mengenal unit
+                </p>
+                <h2
+                  id="about-unit"
+                  className="mt-3 text-3xl font-black tracking-tight md:text-5xl"
+                >
+                  {aboutHeading || 'Tentang Unit'}
+                </h2>
+                <div className="prose-article mt-7 max-w-prose space-y-4 text-base leading-8 text-warm-gray-600 md:text-lg">
+                  <RichContent content={description || ''} />
+                </div>
+              </div>
+            </DesignTextBlock>
+            {!clipping && images[0] && (
+              <EditorialImage
+                hideFallback
+                url={images[0]}
+                label={`Gambar ${title}`}
+                className="aspect-[4/3] w-full"
+              />
+            )}
+          </section>
+        )}
       <div className="mx-auto max-w-[1280px] space-y-8 px-5 pb-12 md:px-8 lg:px-12">
         <DesignSections path={path} />
         {!clipping && images.slice(1).some(Boolean) && (

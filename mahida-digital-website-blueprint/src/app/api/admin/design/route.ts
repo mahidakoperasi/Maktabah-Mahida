@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { pool } from '@/db';
 import { sameOrigin } from '@/lib/request-origin';
 import { requireAdminAccess } from '@/lib/admin-auth';
-import { logActivity } from '@/lib/activity-log';
 import { designPath, mediaSchema, contentSchema } from '@/lib/design-schema';
 const requestSchema = z.object({
   path: z.string().refine(designPath),
@@ -21,8 +20,22 @@ export async function GET(request: NextRequest) {
       { error: 'Halaman tidak didukung' },
       { status: 400 },
     );
-  if (!(await requireAdminAccess(request, kind === 'media' ? 'media' : 'content')))
+  if (
+    !(await requireAdminAccess(request, kind === 'media' ? 'media' : 'content'))
+  )
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  if (
+    !(
+      await pool.query(
+        "SELECT 1 FROM cms_pages WHERE path=$1 AND status<>'archived'",
+        [path],
+      )
+    ).rowCount
+  )
+    return NextResponse.json(
+      { error: 'Halaman tidak ditemukan' },
+      { status: 404 },
+    );
   const { rows } = await pool.query(
     'SELECT draft,published,history,revision FROM design_documents WHERE path=$1 AND kind=$2',
     [path, kind],
@@ -44,8 +57,24 @@ export async function PUT(request: NextRequest) {
   if (!parsed.success)
     return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 });
   const { path, kind, action, revision, version } = parsed.data;
-  const admin = await requireAdminAccess(request, kind === 'media' ? 'media' : 'content');
-  if (!admin) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  const admin = await requireAdminAccess(
+    request,
+    kind === 'media' ? 'media' : 'content',
+  );
+  if (!admin)
+    return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  if (
+    !(
+      await pool.query(
+        "SELECT 1 FROM cms_pages WHERE path=$1 AND status<>'archived'",
+        [path],
+      )
+    ).rowCount
+  )
+    return NextResponse.json(
+      { error: 'Halaman tidak ditemukan' },
+      { status: 404 },
+    );
   const data = (kind === 'media' ? mediaSchema : contentSchema).safeParse(
     parsed.data.data,
   );
@@ -146,8 +175,24 @@ export async function PUT(request: NextRequest) {
         admin.id,
       ],
     );
+    await client.query(
+      'INSERT INTO activity_logs(actor_id,action,target_type,target_id,summary) VALUES($1,$2,$3,$4,$5)',
+      [
+        admin.id,
+        action === 'restore'
+          ? 'restored'
+          : action === 'publish'
+            ? 'published'
+            : 'updated',
+        `design_${kind}`,
+        path.slice(0, 80),
+        `${action === 'restore' ? 'Memulihkan' : action === 'publish' ? 'Menerbitkan' : 'Menyimpan draft'} desain ${path}`.slice(
+          0,
+          500,
+        ),
+      ],
+    );
     await client.query('COMMIT');
-    await logActivity({ actorId: admin.id, action: action === 'restore' ? 'restored' : action === 'publish' ? 'published' : 'updated', targetType: `design_${kind}`, targetId: path, summary: `${action === 'restore' ? 'Memulihkan' : action === 'publish' ? 'Menerbitkan' : 'Menyimpan draft'} desain ${path}` });
     return NextResponse.json(result[0]);
   } catch (error) {
     await client.query('ROLLBACK');

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import pg from 'pg';
 import jwt from 'jsonwebtoken';
 import { readFile } from 'node:fs/promises';

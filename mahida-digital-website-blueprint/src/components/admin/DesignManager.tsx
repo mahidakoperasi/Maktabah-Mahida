@@ -1,65 +1,31 @@
 'use client';
 import { useEffect, useState } from 'react';
 import {
-  designPaths,
   emptyContent,
   sectionSuggestions,
-  type Clip,
-  type MediaDesign,
   type PageContent,
 } from '@/lib/design-schema';
 import RichTextField from './RichTextField';
-import VisualGrid from '@/components/VisualMedia';
+import ClippingManager from './ClippingManager';
 type Document = {
-  draft: MediaDesign | PageContent | null;
-  published: MediaDesign | PageContent | null;
+  draft: PageContent | null;
+  published: PageContent | null;
   history: { at: string; data: unknown }[];
   revision: number;
 };
 const field = 'mt-1 w-full min-w-0 border p-2';
 export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
-  const [library, setLibrary] = useState<
-    { label: string; type: 'image' | 'video'; url: string }[]
-  >([]);
-  useEffect(() => {
-    Promise.all(
-      ['/api/admin/media/galeri', '/api/admin/media/video'].map((url) =>
-        fetch(url, { cache: 'no-store' }),
-      ),
-    )
-      .then(async (responses) => {
-        if (responses.some((r) => !r.ok))
-          throw Error('Pustaka media gagal dimuat');
-        const [g, v] = await Promise.all(responses.map((r) => r.json()));
-        setLibrary([
-          ...g.items
-            .filter((a: { status: string }) => a.status === 'published')
-            .flatMap((a: { title: string; images: { imageUrl: string }[] }) =>
-              a.images.map((i, n) => ({
-                label: `${a.title} / ${n + 1}`,
-                type: 'image' as const,
-                url: i.imageUrl,
-              })),
-            ),
-          ...v.items
-            .filter((a: { status: string }) => a.status === 'published')
-            .map((a: { title: string; youtubeId: string }) => ({
-              label: a.title,
-              type: 'video' as const,
-              url: `https://www.youtube.com/watch?v=${a.youtubeId}`,
-            })),
-        ]);
-      })
-      .catch(() => {});
-  }, []);
+  return kind === 'media' ? <ClippingManager /> : <ContentDesignManager />;
+}
+function ContentDesignManager() {
+  const kind = 'content';
   const [path, setPath] = useState('/tentang/profil'),
     [doc, setDoc] = useState<Document | null>(null),
-    [data, setData] = useState<MediaDesign | PageContent | null>(null),
+    [data, setData] = useState<PageContent | null>(null),
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
     [width, setWidth] = useState(375),
-    [preview, setPreview] = useState(false),
-    [drag, setDrag] = useState<number | null>(null);
+    [preview, setPreview] = useState(false);
   useEffect(() => {
     let active = true;
     fetch(`/api/admin/design?path=${encodeURIComponent(path)}&kind=${kind}`, {
@@ -70,11 +36,7 @@ export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
         if (!r.ok) throw Error(d.error);
         if (active) {
           setDoc(d);
-          setData(
-            d.draft ||
-              d.published ||
-              (kind === 'media' ? { clips: [] } : emptyContent),
-          );
+          setData(d.draft || d.published || emptyContent);
         }
       })
       .catch((e) => {
@@ -84,15 +46,16 @@ export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
       active = false;
     };
   }, [path, kind]);
-  const [sections, setSections] = useState<{ id: string; title: string }[]>([]);
+  const [pages, setPages] = useState<{ path: string; title: string }[]>([]);
   const [titles, setTitles] = useState<Record<string, string>>({});
   useEffect(() => {
     let active = true;
-    fetch('/api/admin/cms/pages', { cache: 'no-store' })
+    fetch('/api/admin/design/pages', { cache: 'no-store' })
       .then(async (r) => {
         if (!r.ok) return;
         const d = await r.json();
-        if (active)
+        if (active) {
+          setPages(d.pages);
           setTitles(
             Object.fromEntries(
               d.pages.map((p: { path: string; title: string }) => [
@@ -101,49 +64,16 @@ export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
               ]),
             ),
           );
+        }
       })
       .catch(() => {});
     return () => {
       active = false;
     };
   }, []);
-  useEffect(() => {
-    let active = true;
-    fetch(`/api/admin/design?path=${encodeURIComponent(path)}&kind=content`, {
-      cache: 'no-store',
-    })
-      .then(async (r) => {
-        if (!r.ok) return;
-        const d = await r.json();
-        if (active) setSections((d.draft || d.published)?.sections || []);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [path]);
-  const media = kind === 'media' ? (data as MediaDesign) : null,
-    content = kind === 'content' ? (data as PageContent) : null;
+  const content = data as PageContent | null;
   const updateContent = (patch: Partial<PageContent>) =>
     setData({ ...content!, ...patch });
-  const updateClip = (index: number, patch: Partial<Clip>) =>
-    setData({
-      clips: media!.clips.map((c, i) => (i === index ? { ...c, ...patch } : c)),
-    });
-  function move(from: number, to: number) {
-    if (
-      !media ||
-      from < 0 ||
-      from >= media.clips.length ||
-      to < 0 ||
-      to >= media.clips.length ||
-      from === to
-    )
-      return;
-    const clips = [...media.clips];
-    clips.splice(to, 0, clips.splice(from, 1)[0]);
-    setData({ clips });
-  }
   async function save(
     action: 'draft' | 'publish' | 'restore',
     version?: number,
@@ -167,7 +97,7 @@ export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
       const d = await r.json();
       if (!r.ok) throw Error(d.error);
       setDoc(d);
-      setData(d.draft || (kind === 'media' ? { clips: [] } : emptyContent));
+      setData(d.draft || emptyContent);
       setMessage(
         action === 'draft'
           ? 'Draf tersimpan. Pengunjung tetap melihat versi terbit.'
@@ -189,13 +119,10 @@ export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
   }
   return (
     <div className="min-w-0 max-w-6xl space-y-5">
-      <h1 className="text-3xl font-bold">
-        {kind === 'media' ? 'Kliping Visual' : 'Bagian Konten Resmi'}
-      </h1>
+      <h1 className="text-3xl font-bold">Bagian Konten Resmi</h1>
       <p className="text-sm">
-        {kind === 'media'
-          ? 'Hanya foto/video yang dapat diatur. Teks, tombol, Navbar dan Footer dikunci; gunakan formulir konten untuk mengubahnya.'
-          : 'Isi hanya informasi yang sudah disetujui. Bagian kosong atau dinonaktifkan tidak tampil. Setiap unit memiliki data sendiri.'}
+        Isi hanya informasi yang sudah disetujui. Bagian kosong atau
+        dinonaktifkan tidak tampil. Setiap unit memiliki data sendiri.
       </p>
       <label className="block">
         Halaman
@@ -211,7 +138,8 @@ export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
             setMessage('');
           }}
         >
-          {designPaths.map((p) => (
+          {!pages.length && <option value={path}>Memuat halaman…</option>}
+          {pages.map(({ path: p }) => (
             <option key={p} value={p}>
               {titles[p] || (p === '/' ? 'Beranda' : p)} — {p}
             </option>
@@ -222,248 +150,6 @@ export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
         <p role="status" className="border bg-white p-3">
           {message}
         </p>
-      )}
-      {media && (
-        <>
-          <p className="text-sm">
-            MP4 HTTPS dapat autoplay di hero bila browser dan sumber mendukung.
-            Drive tampil dengan poster/tombol Putar, tidak autoplay. Berkas
-            harus dapat diakses publik. URL tidak diunduh ke server.
-          </p>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() =>
-              setData({
-                clips: [
-                  ...media.clips,
-                  {
-                    id: crypto.randomUUID(),
-                    area: 'inline',
-                    afterSection: '',
-                    type: 'image',
-                    url: '',
-                    alt: '',
-                    poster: '',
-                    size: 'medium',
-                    ratio: 'landscape',
-                    focalX: 50,
-                    focalY: 50,
-                  },
-                ],
-              })
-            }
-          >
-            Tambah foto/video
-          </button>
-          <div className="grid gap-4 lg:grid-cols-2">
-            {media.clips.map((c, i) => (
-              <fieldset
-                key={c.id}
-                className="min-w-0 space-y-3 border bg-white p-4"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const source = media.clips.findIndex(
-                    (clip) => clip.id === e.dataTransfer.getData('text/plain'),
-                  );
-                  if (source >= 0) move(source, i);
-                  else if (drag !== null) move(drag, i);
-                  setDrag(null);
-                }}
-              >
-                <legend>Media {i + 1}</legend>
-                <button
-                  type="button"
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('text/plain', c.id);
-                    e.dataTransfer.effectAllowed = 'move';
-                    setDrag(i);
-                  }}
-                  onDragEnd={() => setDrag(null)}
-                  className="cursor-grab border px-3 py-2"
-                >
-                  Seret untuk memindah
-                </button>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={i === 0}
-                    className="btn-secondary"
-                    onClick={() => move(i, i - 1)}
-                  >
-                    Naik
-                  </button>
-                  <button
-                    type="button"
-                    disabled={i === media.clips.length - 1}
-                    className="btn-secondary"
-                    onClick={() => move(i, i + 1)}
-                  >
-                    Turun
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() =>
-                      setData({ clips: media.clips.filter((_, n) => n !== i) })
-                    }
-                  >
-                    Hapus
-                  </button>
-                </div>
-                <label className="block">
-                  Area
-                  <select
-                    className={field}
-                    value={c.area}
-                    onChange={(e) =>
-                      updateClip(i, { area: e.target.value as Clip['area'] })
-                    }
-                  >
-                    {[
-                      'hero',
-                      'inline',
-                      'gallery',
-                      ...(path === '/media'
-                        ? ['card-kegiatan', 'card-video', 'card-galeri']
-                        : []),
-                    ].map((a) => (
-                      <option key={a}>{a}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  Pustaka media terbit
-                  <select
-                    className={field}
-                    value=""
-                    onChange={(e) => {
-                      const item = library[Number(e.target.value)];
-                      if (item)
-                        updateClip(i, {
-                          url: item.url,
-                          type: item.type,
-                          alt: item.label,
-                        });
-                    }}
-                  >
-                    <option value="">Pilih dari galeri/video</option>
-                    {library.map((item, n) => (
-                      <option key={n} value={n}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  Jenis
-                  <select
-                    className={field}
-                    value={c.type}
-                    onChange={(e) =>
-                      updateClip(i, { type: e.target.value as Clip['type'] })
-                    }
-                  >
-                    <option value="image">Foto</option>
-                    <option value="video">Video</option>
-                  </select>
-                </label>
-                {(['url', 'alt', 'poster'] as const).map((key) => (
-                  <label key={key} className="block">
-                    {
-                      {
-                        url: 'URL media HTTPS',
-                        alt: 'Teks alternatif / judul video',
-                        poster: 'URL poster video',
-                        afterSection:
-                          'ID bagian teks (kosong = sebelum bagian)',
-                      }[key]
-                    }
-                    <input
-                      className={field}
-                      value={c[key]}
-                      onChange={(e) => updateClip(i, { [key]: e.target.value })}
-                    />
-                  </label>
-                ))}
-                {c.area === 'inline' && (
-                  <label className="block">
-                    Letakkan foto/video setelah bagian
-                    <select
-                      className={field}
-                      value={c.afterSection}
-                      onChange={(e) =>
-                        updateClip(i, { afterSection: e.target.value })
-                      }
-                    >
-                      <option value="">Sebelum bagian teks</option>
-                      {sections.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.title || 'Bagian tanpa judul'}
-                        </option>
-                      ))}
-                      {c.afterSection &&
-                        !sections.some((s) => s.id === c.afterSection) && (
-                          <option value={c.afterSection}>
-                            Bagian sebelumnya (tidak ditemukan)
-                          </option>
-                        )}
-                    </select>
-                  </label>
-                )}
-                <label className="block">
-                  Ukuran
-                  <select
-                    className={field}
-                    value={c.size}
-                    onChange={(e) =>
-                      updateClip(i, { size: e.target.value as Clip['size'] })
-                    }
-                  >
-                    {['small', 'medium', 'wide'].map((v) => (
-                      <option key={v}>{v}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  Rasio crop
-                  <select
-                    className={field}
-                    value={c.ratio}
-                    onChange={(e) =>
-                      updateClip(i, { ratio: e.target.value as Clip['ratio'] })
-                    }
-                  >
-                    {['square', 'portrait', 'landscape', 'original'].map(
-                      (v) => (
-                        <option key={v}>{v}</option>
-                      ),
-                    )}
-                  </select>
-                </label>
-                {(['focalX', 'focalY'] as const).map((key) => (
-                  <label key={key} className="block">
-                    Titik fokus {key === 'focalX' ? 'horizontal' : 'vertikal'}:{' '}
-                    {c[key]}%
-                    <input
-                      type="range"
-                      className="w-full"
-                      min="0"
-                      max="100"
-                      value={c[key]}
-                      onChange={(e) =>
-                        updateClip(i, { [key]: Number(e.target.value) })
-                      }
-                    />
-                  </label>
-                ))}
-                <VisualGrid clips={[c]} />
-              </fieldset>
-            ))}
-          </div>
-        </>
       )}
       {content && (
         <>
@@ -860,8 +546,8 @@ export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
             <div className="max-w-full overflow-x-auto border">
               <iframe
                 key={`${path}-${doc?.revision}`}
-                title="Pratinjau halaman publik: hanya area media dapat diubah melalui formulir"
-                src={`${path}?designPreview=1`}
+                title="Pratinjau halaman publik: draf konten privat"
+                src={`${path}?designPreview=1&designKind=${kind}`}
                 style={{ width, maxWidth: 'none', height: 850 }}
                 className="border-0 bg-white"
               />
@@ -869,16 +555,6 @@ export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
           )}
           <section className="space-y-2">
             <h2 className="text-xl font-bold">Pulihkan Versi</h2>
-            {kind === 'media' && doc?.published && (
-              <button
-                type="button"
-                className="btn-secondary"
-                disabled={busy}
-                onClick={() => save('restore', -1)}
-              >
-                Pulihkan media lama sebelum Kliping
-              </button>
-            )}
             {doc?.history.length ? (
               doc.history.map((h, i) => (
                 <button

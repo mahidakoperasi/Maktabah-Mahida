@@ -1,3 +1,6 @@
+import DesignHero from '@/components/DesignHero';
+import DesignSections from '@/components/DesignSections';
+import DesignTextBlock from '@/components/DesignTextBlock';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { and, desc, eq } from 'drizzle-orm';
@@ -47,7 +50,7 @@ export async function PublicContentList({
   if (section === 'kegiatan')
     return (
       <GenericPageTemplate
-        path={config.publicPath}
+        path={page.path}
         title={page.title}
         intro={page.intro}
         paragraphs={page.body ? paragraphs(page.body) : []}
@@ -92,12 +95,15 @@ export async function PublicContentList({
     );
   return (
     <div className="min-h-screen bg-cream">
-      <header className="bg-emerald-forest py-14 text-white">
+      <DesignHero
+        path={page.path}
+        className="bg-emerald-forest py-14 text-white"
+      >
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <h1 className="display-md text-white">{page.title}</h1>
           {page.intro && <p className="mt-4 text-white/80">{page.intro}</p>}
         </div>
-      </header>
+      </DesignHero>
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         {rows.length === 0 ? (
           <div className="empty-state">
@@ -121,15 +127,20 @@ export async function PublicContentList({
             ))}
           </div>
         )}
-        {page.body && (
-          <div className="mt-10 space-y-4">
-            {paragraphs(page.body).map((paragraph, index) => (
-              <p key={index} dir="auto">
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        )}
+        <DesignTextBlock path={page.path} hasText={Boolean(page.body)}>
+          {page.body && (
+            <div className="mt-10 space-y-4">
+              {paragraphs(page.body).map((paragraph, index) => (
+                <p key={index} dir="auto">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          )}
+        </DesignTextBlock>
+        <div className="mt-10">
+          <DesignSections path={page.path} />
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import DesignHero from '@/components/DesignHero';
 import DesignSections from '@/components/DesignSections';
 import { VisualItem } from '@/components/VisualMedia';
 import RichContent from '@/components/RichContent';
+import DesignTextBlock from '@/components/DesignTextBlock';
 export const dynamic = 'force-dynamic';
 export default async function MediaPage() {
   const page = await getPublicPage('/media');
@@ -29,26 +30,34 @@ export default async function MediaPage() {
         </div>
       </DesignHero>
       <div className="mx-auto max-w-[1280px] space-y-12 px-5 py-14">
-        <div className="prose-article space-y-4">
-          <RichContent content={page.body || ''} />
-        </div>
-        <nav aria-label="Jelajahi media" className="grid gap-5 md:grid-cols-3">
+        <DesignTextBlock path="/media" hasText={Boolean(page.body)}>
+          <div className="prose-article space-y-4">
+            <RichContent content={page.body || ''} />
+          </div>
+        </DesignTextBlock>
+        <nav
+          aria-label="Jelajahi media"
+          className="grid grid-cols-1 gap-5 sm:grid-cols-6 lg:grid-cols-12"
+        >
           {cards.map(([path, area]) => {
             const item = menu.find((i) => i.path === path);
             if (!item) return null;
             const clip = visual?.clips.find((c) => c.area === area);
             return (
-              <Link
+              <article
                 key={path}
-                href={path}
-                className="group overflow-hidden border border-mahida-200 bg-white transition hover:-translate-y-1 hover:shadow-lg focus-visible:outline-2"
+                data-media-card={area}
+                className={`min-w-0 overflow-hidden border border-mahida-200 bg-white ${clip?.size === 'wide' ? 'sm:col-span-6 lg:col-span-12' : clip?.size === 'medium' ? 'sm:col-span-3 lg:col-span-6' : 'sm:col-span-2 lg:col-span-4'}`}
               >
                 {clip && <VisualItem clip={clip} />}
-                <span className="flex min-h-16 items-center justify-between p-5 text-xl font-bold">
+                <Link
+                  href={path}
+                  className="flex min-h-16 items-center justify-between gap-3 p-5 text-xl font-bold hover:text-emerald-rich focus-visible:outline-2"
+                >
                   {item.label}
                   <span aria-hidden>↗</span>
-                </span>
-              </Link>
+                </Link>
+              </article>
             );
           })}
         </nav>

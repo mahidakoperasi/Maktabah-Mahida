@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { educationUnits, unitHref } from './design-pages';
+import { validNewCmsPath } from './cms-paths';
 import {
   driveIdFromUrl,
   publicImageUrl,
@@ -15,8 +16,52 @@ export const designPaths = [
   '/media/kegiatan',
   '/media/video',
   '/media/galeri',
+  '/pesantren',
+  '/pesantren/sejarah',
+  '/pesantren/pendidikan',
+  '/pesantren/kehidupan',
+  '/tentang',
+  '/tentang/sejarah',
+  '/tentang/pengasuh',
+  '/tentang/fasilitas',
+  '/tentang/visi-misi',
+  '/tentang/pendidikan',
+  '/karya',
+  '/karya/artikel',
+  '/karya/esai',
+  '/karya/terjemahan',
+  '/karya/manuskrip',
+  '/koperasi',
+  '/koperasi/buku',
+  '/koperasi/ebook',
+  '/media/berita',
+  '/media/pengumuman',
+  '/literasi',
+  '/maktabah',
+  '/kegiatan',
+  '/berita',
+  '/agenda',
+  '/arsip',
 ];
-export const designPath = (path: string) => designPaths.includes(path);
+export const designPath = (path: string) =>
+  designPaths.includes(path) ||
+  (validNewCmsPath(path) && !path.startsWith('/tentang/unit-pendidikan/'));
+export const sectionLayoutSchema = z.enum([
+  'stacked',
+  'text-left',
+  'text-right',
+]);
+export type SectionLayout = z.infer<typeof sectionLayoutSchema>;
+export const BODY_SECTION = 'page-body';
+export function defaultSectionLayout(
+  path: string,
+  title: string,
+): SectionLayout {
+  return ['/tentang/sejarah', '/pesantren/sejarah'].includes(path) ||
+    /sejarah|muassis/i.test(title)
+    ? 'text-left'
+    : 'stacked';
+}
 export function safeUrl(value: string) {
   if (!value) return true;
   try {
@@ -72,6 +117,7 @@ export const clipSchema = z
     ratio: z.enum(['square', 'portrait', 'landscape', 'original']),
     focalX: z.number().min(0).max(100),
     focalY: z.number().min(0).max(100),
+    crop: z.boolean().optional(), // Old snapshots retain cover behavior.
   })
   .refine(
     (v) =>
@@ -83,20 +129,37 @@ export const clipSchema = z
     'Video harus MP4 HTTPS, Drive, atau YouTube',
   );
 export const mediaSchema = z
-  .object({ clips: z.array(clipSchema).max(40) })
+  .object({
+    clips: z.array(clipSchema).max(40),
+    sectionLayouts: z
+      .array(
+        z.object({
+          sectionId: z.string().min(1).max(80),
+          layout: sectionLayoutSchema,
+        }),
+      )
+      .max(31)
+      .optional(),
+  })
   .superRefine((v, c) => {
     const ids = v.clips.map((x) => x.id);
     if (new Set(ids).size !== ids.length)
       c.addIssue({ code: 'custom', message: 'ID media harus unik' });
     for (const area of ['card-kegiatan', 'card-video', 'card-galeri']) {
-      if (
-        v.clips.filter((x) => x.area === area).length > 1 ||
-        v.clips.some((x) => x.area === area && x.type !== 'image')
-      )
-        c.addIssue({ code: 'custom', message: 'Satu foto per kartu Media' });
+      if (v.clips.filter((x) => x.area === area).length > 1)
+        c.addIssue({
+          code: 'custom',
+          message: 'Satu foto/video per kartu Media',
+        });
     }
     if (v.clips.filter((x) => x.area === 'hero').length > 1)
       c.addIssue({ code: 'custom', message: 'Pilih satu media hero' });
+    const sections = v.sectionLayouts?.map((s) => s.sectionId) ?? [];
+    if (new Set(sections).size !== sections.length)
+      c.addIssue({
+        code: 'custom',
+        message: 'Pengaturan layout bagian harus unik',
+      });
   });
 export const contentSchema = z
   .object({

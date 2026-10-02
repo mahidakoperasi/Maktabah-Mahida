@@ -38,11 +38,12 @@ export function VisualItem({
             : ''
           : 'aspect-video';
   const style = { objectPosition: `${clip.focalX}% ${clip.focalY}%` };
+  const fit = clip.crop === false ? 'object-contain' : 'object-cover';
   const imageClass = hero
-    ? 'absolute inset-0 h-full w-full object-cover'
+    ? `absolute inset-0 h-full w-full ${fit}`
     : clip.ratio === 'original'
       ? 'h-auto w-full'
-      : 'h-full w-full object-cover';
+      : `h-full w-full ${fit}`;
   const photo = (url: string | null) =>
     url && !imageFailed ? (
       <img
@@ -61,6 +62,8 @@ export function VisualItem({
     youtube = youtubeIdFromUrl(clip.url);
   return (
     <div
+      data-visual-id={clip.id}
+      data-visual-type={clip.type}
       className={
         hero
           ? 'absolute inset-0 bg-[#123d2b]'
@@ -143,34 +146,45 @@ export function VisualItem({
 export default function VisualGrid({
   clips,
   carousel = false,
+  besideText = false,
 }: {
   clips: Clip[];
   carousel?: boolean;
+  besideText?: boolean;
 }) {
   return clips.length ? (
     <div
+      data-visual-grid
       aria-label={carousel ? 'Foto kegiatan dan fasilitas' : 'Kliping visual'}
       tabIndex={carousel ? 0 : undefined}
       className={
         carousel
           ? 'flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4'
-          : 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'
+          : besideText
+            ? 'grid min-w-0 grid-cols-1 gap-4'
+            : 'grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-6 lg:grid-cols-12'
       }
     >
       {clips.map((clip) => (
         <figure
           key={clip.id}
+          data-clip-id={clip.id}
           className={
             carousel
-              ? 'w-[85%] shrink-0 snap-center sm:w-[55%]'
-              : clip.size === 'wide'
-                ? 'sm:col-span-2 lg:col-span-3'
-                : clip.size === 'medium'
-                  ? 'lg:col-span-2'
-                  : ''
+              ? `min-w-0 shrink-0 snap-center ${clip.size === 'wide' ? 'w-full sm:w-[85%]' : clip.size === 'small' ? 'w-[70%] sm:w-[40%]' : 'w-[85%] sm:w-[55%]'}`
+              : besideText
+                ? `min-w-0 mx-auto ${clip.size === 'small' ? 'w-3/4' : clip.size === 'medium' ? 'w-[90%]' : 'w-full'}`
+                : clip.size === 'wide'
+                  ? 'min-w-0 sm:col-span-6 lg:col-span-12'
+                  : clip.size === 'medium'
+                    ? 'min-w-0 sm:col-span-3 lg:col-span-6'
+                    : 'min-w-0 sm:col-span-2 lg:col-span-3'
           }
         >
-          <VisualItem key={clip.url} clip={clip} />
+          <VisualItem
+            key={`${clip.url}-${clip.type}-${clip.poster}`}
+            clip={clip}
+          />
         </figure>
       ))}
     </div>
