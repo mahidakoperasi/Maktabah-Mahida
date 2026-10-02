@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import PublicationFrame from '@/components/PublicationFrame';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { getHomepageSettings } from '@/lib/homepage-settings';
@@ -34,7 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="bg-cream text-charcoal antialiased min-h-screen flex flex-col">
         <Navbar />
         <main className="min-w-0 flex-1">
-          {children}
+          <PublicationFrame>{children}</PublicationFrame>
         </main>
         <Footer />
       </body>

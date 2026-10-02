@@ -131,6 +131,8 @@ export const clipSchema = z
 export const mediaSchema = z
   .object({
     clips: z.array(clipSchema).max(40),
+    useLegacyMedia: z.boolean().optional(),
+    headerLogoUrl: z.string().trim().max(2048).refine(v => !v || (safeUrl(v) && Boolean(driveIdFromUrl(v))), 'Gunakan URL berkas logo Google Drive').optional(),
     sectionLayouts: z
       .array(
         z.object({
@@ -142,6 +144,7 @@ export const mediaSchema = z
       .optional(),
   })
   .superRefine((v, c) => {
+    if (v.useLegacyMedia && v.clips.length) c.addIssue({ code: 'custom', message: 'Aktifkan kliping sebelum menambah media.' });
     const ids = v.clips.map((x) => x.id);
     if (new Set(ids).size !== ids.length)
       c.addIssue({ code: 'custom', message: 'ID media harus unik' });

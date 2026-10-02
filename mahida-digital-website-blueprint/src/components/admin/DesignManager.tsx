@@ -5,6 +5,8 @@ import {
   sectionSuggestions,
   type PageContent,
 } from '@/lib/design-schema';
+import { contentSchema } from '@/lib/design-schema';
+import useDraftAutosave from './useDraftAutosave';
 import RichTextField from './RichTextField';
 import ClippingManager from './ClippingManager';
 type Document = {
@@ -14,18 +16,20 @@ type Document = {
   revision: number;
 };
 const field = 'mt-1 w-full min-w-0 border p-2';
-export default function DesignManager({ kind }: { kind: 'media' | 'content' }) {
-  return kind === 'media' ? <ClippingManager /> : <ContentDesignManager />;
+export default function DesignManager({ kind, initialPath }: { kind: 'media' | 'content'; initialPath?: string }) {
+  return kind === 'media' ? <ClippingManager initialPath={initialPath} /> : <ContentDesignManager initialPath={initialPath} />;
 }
-function ContentDesignManager() {
+function ContentDesignManager({ initialPath = '/tentang/profil' }: { initialPath?: string }) {
   const kind = 'content';
-  const [path, setPath] = useState('/tentang/profil'),
+  const [path, setPath] = useState(initialPath),
     [doc, setDoc] = useState<Document | null>(null),
     [data, setData] = useState<PageContent | null>(null),
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
     [width, setWidth] = useState(375),
     [preview, setPreview] = useState(false);
+  const [baseline, setBaseline] = useState('');
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     let active = true;
     fetch(`/api/admin/design?path=${encodeURIComponent(path)}&kind=${kind}`, {
@@ -37,6 +41,8 @@ function ContentDesignManager() {
         if (active) {
           setDoc(d);
           setData(d.draft || d.published || emptyContent);
+          setBaseline(JSON.stringify(d.draft || d.published || emptyContent));
+          setFailed(false);
         }
       })
       .catch((e) => {
@@ -98,6 +104,8 @@ function ContentDesignManager() {
       if (!r.ok) throw Error(d.error);
       setDoc(d);
       setData(d.draft || emptyContent);
+      setBaseline(JSON.stringify(d.draft || emptyContent));
+      setFailed(false);
       setMessage(
         action === 'draft'
           ? 'Draf tersimpan. Pengunjung tetap melihat versi terbit.'
@@ -105,11 +113,13 @@ function ContentDesignManager() {
       );
       setPreview(false);
     } catch (e) {
+      setFailed(true);
       setMessage(e instanceof Error ? e.message : 'Gagal menyimpan');
     } finally {
       setBusy(false);
     }
   }
+  useDraftAutosave(Boolean(data && JSON.stringify(data) !== baseline), busy || !doc || failed, contentSchema.safeParse(data).success, () => save('draft'));
   function sectionMove(index: number, direction: number) {
     const sections = [...content!.sections],
       to = index + direction;
@@ -131,6 +141,7 @@ function ContentDesignManager() {
           className={field}
           disabled={busy}
           onChange={(e) => {
+            if (data && JSON.stringify(data) !== baseline && !confirm('Ada perubahan belum tersimpan. Pindah halaman?')) return;
             setPath(e.target.value);
             setData(null);
             setDoc(null);
@@ -152,7 +163,7 @@ function ContentDesignManager() {
         </p>
       )}
       {content && (
-        <>
+        <fieldset disabled={busy} className="space-y-5">
           <button
             type="button"
             className="btn-secondary"
@@ -494,7 +505,7 @@ function ContentDesignManager() {
               </button>
             </section>
           )}
-        </>
+        </fieldset>
       )}
       {data && (
         <>

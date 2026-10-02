@@ -35,6 +35,12 @@ const navItems: NavItem[] = [
     label: 'Tampilan Website',
     children: [
       {
+        label: 'Header & Penerbitan',
+        icon: FileText,
+        href: '/admin/tampilan/penerbitan',
+        access: 'primary',
+      },
+      {
         label: 'Beranda',
         icon: LayoutDashboard,
         href: '/admin/tampilan/beranda',

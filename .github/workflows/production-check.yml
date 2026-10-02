@@ -39,6 +39,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mahida_ci
       JWT_SECRET: ci-only-secret-not-used-in-production-please-replace
+      GOOGLE_DRIVE_API_KEY: test-only-key
       RESEND_API_KEY: re_ci-placeholder
       EMAIL_FROM: Mahida Digital <ci@example.invalid>
 
@@ -70,7 +71,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Check 320–1440px layouts and keyboard navigation
-        run: npm run test:responsive
+        run: NODE_OPTIONS="--import ./tests/mock-drive.mjs" npm run test:responsive
 
       - name: Upload browser verification evidence
         if: always()

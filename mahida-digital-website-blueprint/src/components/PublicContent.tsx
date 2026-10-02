@@ -1,3 +1,4 @@
+import { getPublicationPreview } from '@/lib/publication-store';
 import DesignHero from '@/components/DesignHero';
 import DesignSections from '@/components/DesignSections';
 import DesignTextBlock from '@/components/DesignTextBlock';
@@ -130,11 +131,7 @@ export async function PublicContentList({
         <DesignTextBlock path={page.path} hasText={Boolean(page.body)}>
           {page.body && (
             <div className="mt-10 space-y-4">
-              {paragraphs(page.body).map((paragraph, index) => (
-                <p key={index} dir="auto">
-                  {paragraph}
-                </p>
-              ))}
+              <RichContent content={page.body} />
             </div>
           )}
         </DesignTextBlock>
@@ -155,7 +152,7 @@ export async function PublicContentDetail({
 }) {
   const config = contentSections[section];
   if (!(await getPublicPage(config.publicPath))) notFound();
-  const [item] = await db
+  const [stored] = await db
     .select({
       id: posts.id,
       title: posts.title,
@@ -170,9 +167,12 @@ export async function PublicContentDetail({
     })
     .from(posts)
     .leftJoin(authors, eq(authors.id, posts.authorId))
-    .where(and(eq(posts.slug, slug), ...conditions(section)))
+    .where(and(eq(posts.slug, slug), eq(posts.type, config.type)))
     .limit(1);
-  if (!item) notFound();
+  if (!stored) notFound();
+  const preview = section === 'pengumuman' ? await getPublicationPreview(`announcement:${stored.id}`) : null;
+  if (!preview && !(await db.select({ id: posts.id }).from(posts).where(and(eq(posts.id, stored.id), ...conditions(section))).limit(1)).length) notFound();
+  const item = preview?.type === 'announcement' ? { ...stored, title: preview.title, excerpt: preview.excerpt, content: preview.content, contentRaw: preview.content, featuredImage: preview.featuredImage } : stored;
   return (
     <article className="min-h-screen bg-cream">
       <header className="bg-emerald-forest py-14 text-white">

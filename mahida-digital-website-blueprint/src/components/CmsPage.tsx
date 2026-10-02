@@ -1,3 +1,4 @@
+import RichContent from './RichContent';
 import { notFound } from 'next/navigation';
 import { getPublicPage, paragraphs } from '@/lib/cms';
 import DailyHighlight from './DailyHighlight';
@@ -42,11 +43,7 @@ export default async function CmsPage({ path }: { path: string }) {
         <DesignTextBlock path={path} hasText={Boolean(page.body?.trim())}>
           {page.body?.trim() ? (
             <div className="prose-article space-y-5 border border-mahida-200 bg-white p-6 sm:p-10">
-              {paragraphs(page.body).map((paragraph, index) => (
-                <p key={index} dir="auto">
-                  {paragraph}
-                </p>
-              ))}
+              <RichContent content={page.body} />
             </div>
           ) : (
             <div className="empty-state">

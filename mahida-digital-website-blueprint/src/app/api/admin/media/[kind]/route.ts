@@ -7,6 +7,7 @@ import { requireAdminAccess } from '@/lib/admin-auth';
 import { logActivity } from '@/lib/activity-log';
 import { saveRevision } from '@/lib/revision-log';
 import { driveIdFromUrl, youtubeIdFromUrl } from '@/lib/media-links';
+import { checkDriveImages } from '@/lib/drive-image-check';
 import { slugify } from '@/lib/utils';
 
 const schema = z.object({
@@ -47,6 +48,10 @@ async function save(request: NextRequest, context: Context, edit: boolean) {
   const videoId = kind.kind === 'video' ? youtubeIdFromUrl(url) : null;
   if (kind.kind === 'video' && !videoId) return NextResponse.json({ error: 'Tautan YouTube tidak valid' }, { status: 400 });
   if (kind.kind === 'galeri' && images.some((image) => !driveIdFromUrl(image.url))) return NextResponse.json({ error: 'Foto harus memakai tautan berkas Google Drive' }, { status: 400 });
+  if (kind.kind === 'galeri' && status === 'published') {
+    try { await checkDriveImages(images.map(p => p.url)); }
+    catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : 'Periksa foto Drive' }, { status: 400 }); }
+  }
   try {
     const table = kind.kind === 'video' ? videos : galleries;
     const base = slugify(title) || 'media';

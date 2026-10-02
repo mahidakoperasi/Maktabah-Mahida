@@ -1,6 +1,7 @@
 import { and, asc, eq } from 'drizzle-orm';
 import { cache } from 'react';
 import { isDesignPreview } from './design-store';
+import { flushScheduledPublications, getPublicationPreview } from './publication-store';
 import { db } from '@/db';
 import { cmsPages, navigationItems } from '@/db/schema';
 
@@ -40,6 +41,7 @@ export const getPublicMenu = cache(async function getPublicMenu(): Promise<
   PublicMenuItem[]
 > {
   if (!process.env.DATABASE_URL) return [];
+  await flushScheduledPublications();
   try {
     const rows = await db
       .select({
@@ -68,11 +70,14 @@ export const getPublicMenu = cache(async function getPublicMenu(): Promise<
 });
 
 export async function getPublicPage(path: string) {
+  await flushScheduledPublications();
+  const preview = await getPublicationPreview(`page:${path}`);
   const [page] = await db
     .select()
     .from(cmsPages)
     .where(eq(cmsPages.path, path))
     .limit(1);
+  if (page && preview?.type === 'page') return { ...page, title: preview.title, intro: preview.intro, body: preview.body };
   return page &&
     (page.status === 'published' || (await isDesignPreview(path, 'content')))
     ? page

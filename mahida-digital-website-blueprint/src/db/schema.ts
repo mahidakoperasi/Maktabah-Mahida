@@ -576,3 +576,15 @@ export const contactRateLimits = pgTable('contact_rate_limits', {
     .notNull()
     .defaultNow(),
 });
+
+export const publicationDocuments = pgTable('publication_documents', {
+  target: text('target').primaryKey(),
+  draft: jsonb('draft'),
+  history: jsonb('history').notNull().default([]),
+  revision: integer('revision').notNull().default(0),
+  scheduled: jsonb('scheduled'),
+  scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
+  scheduledBy: integer('scheduled_by').references(() => users.id, { onDelete: 'set null' }),
+  scheduledError: text('scheduled_error'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});

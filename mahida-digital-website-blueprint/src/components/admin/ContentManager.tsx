@@ -63,6 +63,7 @@ export default function ContentManager({ section, label, publicPath }: { section
         <div className="flex items-center justify-between"><h2 className="font-serif text-xl font-bold">{form.id ? 'Edit konten' : 'Konten baru'}</h2><button className="text-sm text-emerald-forest" type="button" onClick={() => setForm(blank)}>Baru</button></div>
         {error && <p role="alert" className="bg-red-50 p-3 text-red-700">{error}</p>}
         {notice && <p role="status" className="bg-emerald-50 p-3 text-emerald-800">{notice}</p>}
+        {section === 'pengumuman' && form.id && <Link className="block text-sm underline" href={`/admin/tampilan/penerbitan?target=announcement:${form.id}`}>Draf otomatis, pratinjau lengkap, jadwal & riwayat pengumuman</Link>}
         {section === 'berita' && <p className="text-sm text-warm-gray-600">Berita terbit tampil di <Link href="/media/berita" target="_blank" className="font-semibold text-emerald-forest underline">Media → Berita</Link>.</p>}
         <label className="block text-sm">Judul<input required maxLength={500} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1 w-full border p-3" /></label>
         <label className="block text-sm">Ringkasan<textarea value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} className="mt-1 w-full border p-3" rows={3} /></label>

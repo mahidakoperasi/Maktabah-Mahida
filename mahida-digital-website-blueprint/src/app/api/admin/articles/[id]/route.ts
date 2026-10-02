@@ -8,6 +8,7 @@ import { saveRevision } from '@/lib/revision-log';
 import { updateArticleInput } from '@/lib/article-input';
 import { calculateReadingTime, slugify } from '@/lib/utils';
 import { invalidDriveImages, invalidVideoMarkers } from '@/lib/rich-markers';
+import { checkDriveImages, markerImages } from '@/lib/drive-image-check';
 import { validAuthorId } from '@/lib/author';
 
 async function uniqueSlug(title: string, currentId: number) {
@@ -112,6 +113,10 @@ export async function PATCH(
           ? 'archived'
           : 'draft';
 
+    if (status === 'published') {
+      try { await checkDriveImages([body.featuredImage ?? existing.featuredImage ?? '', ...markerImages(contentRaw)]); }
+      catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : 'Periksa foto Drive' }, { status: 400 }); }
+    }
     const slug = await uniqueSlug(title, articleId);
     const now = new Date();
 

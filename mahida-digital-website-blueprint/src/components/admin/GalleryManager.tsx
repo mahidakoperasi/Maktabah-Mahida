@@ -1,5 +1,6 @@
 'use client';
 /* eslint-disable @next/next/no-img-element -- Drive thumbnails curated by admin. */
+import useDraftAutosave from './useDraftAutosave';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import GalleryLightbox from '@/components/GalleryLightbox';
@@ -71,6 +72,7 @@ export default function GalleryManager() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Gagal menyimpan'); }
     finally { setBusy(false); }
   }
+  useDraftAutosave(dirty, busy || loading || conflict || Boolean(error), gallerySchema.safeParse(form).success, () => submit('draft'));
   async function reload() {
     if (dirty && !confirm('Muat versi terbaru dari server? Perubahan lokal yang belum disimpan akan ditinggalkan.')) return;
     setBusy(true);
@@ -120,7 +122,7 @@ export default function GalleryManager() {
       <aside className="space-y-3"><label className="block text-sm">Cari album<input className={field} value={search} onChange={(e) => setSearch(e.target.value)} /></label>{loading && <p>Memuat album…</p>}{albums.filter((p) => p.draft.title.toLocaleLowerCase('id').includes(search.toLocaleLowerCase('id'))).map((p) => <button type="button" disabled={busy} key={p.id} onClick={() => open(p)} className={`block w-full break-words border p-3 text-left text-sm ${album?.id === p.id ? 'border-emerald-forest bg-mahida-50' : 'bg-white'}`}><strong>{p.draft.title}</strong><span className="mt-1 block text-xs">{p.status === 'published' ? 'Terbit • draft terpisah' : p.status === 'archived' ? 'Arsip' : 'Draft'}</span></button>)}</aside>
       <fieldset disabled={busy || loading} className="min-w-0 space-y-5 disabled:opacity-70">
         <section className="space-y-4 border bg-white p-4 sm:p-5">
-          <h2 className="font-semibold">{album ? 'Kelola album' : 'Buat album'}</h2>
+          <h2 className="font-semibold">{album ? 'Kelola album' : 'Buat album'}</h2>{album && <Link className="text-sm underline" href={`/admin/tampilan/penerbitan?target=gallery:${album.id}`}>Pratinjau halaman lengkap, jadwal & riwayat terbit</Link>}
           <label className="block text-sm">Judul album<input required maxLength={500} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={field} /></label>
           <label className="block text-sm">Keterangan album<textarea maxLength={5000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={field} /></label>
           <label className="block text-sm">Tautan folder Google Drive<input type="url" value={form.folderUrl} onChange={(e) => setForm({ ...form, folderUrl: e.target.value })} className={field} placeholder="https://drive.google.com/drive/folders/..." /></label>

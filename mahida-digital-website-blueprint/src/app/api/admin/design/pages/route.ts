@@ -18,13 +18,14 @@ export async function GET(request: NextRequest) {
     )
   )
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  const canReviewText = canAccess(admin.adminAccess as StoredAdminAccess, 'content', admin.email.toLowerCase() === PRIMARY_ADMIN_EMAIL);
   const { rows } = await pool.query(
-    "SELECT p.path,p.title,p.status,p.body,d.published FROM cms_pages p LEFT JOIN design_documents d ON d.path=p.path AND d.kind='content' WHERE p.status<>'archived' ORDER BY p.path",
+    "SELECT p.path,p.title,p.status,p.body,d.draft,d.published FROM cms_pages p LEFT JOIN design_documents d ON d.path=p.path AND d.kind='content' WHERE p.status<>'archived' ORDER BY p.path",
   );
   const pages = rows
     .filter((p) => designPath(p.path))
     .map((p) => {
-      const parsed = contentSchema.safeParse(p.published);
+      const parsed = contentSchema.safeParse(canReviewText ? p.draft ?? p.published : p.published);
       return {
         path: p.path,
         title: p.title,
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
         ],
       };
     });
-  // Metadata only: media staff never receive unpublished content or its body.
+  // Only combined/full reviewers receive draft section metadata; media-only staff see published text.
   return NextResponse.json(
     { pages },
     { headers: { 'Cache-Control': 'private, no-store' } },

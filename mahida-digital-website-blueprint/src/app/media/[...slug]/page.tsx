@@ -1,3 +1,4 @@
+import { getPublicationPreview } from '@/lib/publication-store';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -262,29 +263,32 @@ export default async function MediaSection({
       .select()
       .from(galleries)
       .where(
-        and(eq(galleries.slug, slug[1]), eq(galleries.status, 'published')),
+        eq(galleries.slug, slug[1]),
       )
       .limit(1);
-    if (!album) notFound();
+    const preview = album ? await getPublicationPreview(`gallery:${album.id}`) : null;
+    if (!album || (!preview && album.status !== 'published')) notFound();
     const photos = await db
       .select()
       .from(galleryImages)
       .where(eq(galleryImages.galleryId, album.id))
       .orderBy(asc(galleryImages.sortOrder));
-    const curated = await publicGallery(album.id);
+    const curated = preview?.type === 'gallery' ? preview.data : await publicGallery(album.id);
+    const title = curated?.title ?? album.title;
+    const description = curated?.description ?? album.description;
     return (
       <div className="min-h-screen bg-cream">
         <header className="bg-emerald-forest py-14 text-white">
           <div className="mx-auto max-w-5xl px-4">
-            <h1 className="display-md text-white">{album.title}</h1>
-            {album.description && (
-              <p className="mt-3 text-white/80">{album.description}</p>
+            <h1 className="display-md text-white">{title}</h1>
+            {description && (
+              <p className="mt-3 text-white/80">{description}</p>
             )}
           </div>
         </header>
         <div className="mx-auto max-w-[1280px] px-5 py-12">
-          {photos.length ? (
-            <GalleryLightbox photos={curated?.photos ?? photos} title={album.title} layout={curated?.layout} />
+          {(curated?.photos ?? photos).length ? (
+            <GalleryLightbox photos={curated?.photos ?? photos} title={title} layout={curated?.layout} />
           ) : (
             <p className="empty-state">Belum ada foto dalam galeri ini.</p>
           )}

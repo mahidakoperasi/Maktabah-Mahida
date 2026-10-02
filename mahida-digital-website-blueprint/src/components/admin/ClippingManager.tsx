@@ -8,6 +8,9 @@ import {
   type MediaDesign,
   type SectionLayout,
 } from '@/lib/design-schema';
+import Link from 'next/link';
+import ImageUrlPreview from './ImageUrlPreview';
+import useDraftAutosave from './useDraftAutosave';
 import VisualGrid from '@/components/VisualMedia';
 
 type Document = {
@@ -39,10 +42,10 @@ const layouts: { value: SectionLayout; label: string }[] = [
   { value: 'text-right', label: 'Foto/video kiri · teks kanan' },
 ];
 
-export default function ClippingManager() {
+export default function ClippingManager({ initialPath = '/tentang/profil' }: { initialPath?: string }) {
   const [pages, setPages] = useState<Page[]>([]);
   const [library, setLibrary] = useState<LibraryItem[]>([]);
-  const [path, setPath] = useState('/tentang/profil');
+  const [path, setPath] = useState(initialPath);
   const [doc, setDoc] = useState<Document | null>(null);
   const [form, setForm] = useState<MediaDesign>({ clips: [] });
   const [baseline, setBaseline] = useState(JSON.stringify({ clips: [] }));
@@ -117,7 +120,7 @@ export default function ClippingManager() {
 
   function accept(next: Document) {
     const data = mediaSchema.parse(
-      next.draft ?? next.published ?? { clips: [] },
+      next.draft ?? next.published ?? { clips: [], useLegacyMedia: true },
     );
     setDoc(next);
     setForm(data);
@@ -249,6 +252,7 @@ export default function ClippingManager() {
       setBusy(false);
     }
   }
+  useDraftAutosave(dirty, busy || loading || Boolean(error) || conflict, mediaSchema.safeParse(form).success, () => save('draft'));
   async function reload() {
     if (
       dirty &&
@@ -326,6 +330,10 @@ export default function ClippingManager() {
       {loading && <p>Memuat kliping…</p>}
       {doc && (
         <>
+          <label className="block text-sm">URL Drive logo header<input className={field} disabled={busy} value={form.headerLogoUrl ?? ''} onChange={e => setForm({ ...form, headerLogoUrl: e.target.value })} /></label>
+          <p className="text-xs">Kosongkan untuk menyembunyikan header. Logo ikut bergulir; menu galeri tetap tersedia.</p>
+          <ImageUrlPreview url={form.headerLogoUrl ?? ''} />
+          <Link className="text-sm underline" href={`/admin/tampilan/penerbitan?target=${encodeURIComponent(`page:${path}`)}`}>Tinjau teks dan media bersama (Admin Utama)</Link>
           <p className="text-sm">
             Seret pegangan untuk menyusun media di desktop; gunakan Naik/Turun
             di HP. Urutan berlaku di area yang sama. MP4 HTTPS, Drive publik dan
@@ -338,6 +346,7 @@ export default function ClippingManager() {
             onClick={() =>
               setForm({
                 ...form,
+                useLegacyMedia: false,
                 clips: [
                   ...form.clips,
                   {

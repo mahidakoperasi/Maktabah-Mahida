@@ -2,6 +2,7 @@ import { cache } from 'react';
 import { cookies, headers } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { pool } from '@/db';
+import { getPublicationPreview } from './publication-store';
 import { getAdminUser } from './admin-auth';
 import { canAccess, type StoredAdminAccess } from './admin-permissions';
 import { PRIMARY_ADMIN_EMAIL } from './admin-config';
@@ -38,8 +39,14 @@ export const isDesignPreview = cache(async function isDesignPreview(
 export async function getDesign<K extends 'media' | 'content'>(
   path: string,
   kind: K,
+  includeHeader = false,
 ): Promise<(K extends 'media' ? MediaDesign : PageContent) | null> {
   if (!designPath(path) || !process.env.DATABASE_URL) return null;
+  const full = await getPublicationPreview(`page:${path}`);
+  if (full?.type === 'page') {
+    if (kind === 'media' && full.media?.useLegacyMedia && !includeHeader) return null;
+    return full[kind] as (K extends 'media' ? MediaDesign : PageContent) | null;
+  }
   const preview = await isDesignPreview(path, kind);
   const { rows } = await pool.query(
     'SELECT draft,published FROM design_documents WHERE path=$1 AND kind=$2',
@@ -51,6 +58,7 @@ export async function getDesign<K extends 'media' | 'content'>(
   const parsed = (kind === 'media' ? mediaSchema : contentSchema).safeParse(
     raw,
   );
+  if (parsed.success && kind === 'media' && 'useLegacyMedia' in parsed.data && parsed.data.useLegacyMedia && !includeHeader) return null;
   return parsed.success
     ? (parsed.data as K extends 'media' ? MediaDesign : PageContent)
     : null;

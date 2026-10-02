@@ -1,4 +1,6 @@
 import DesignManager from '@/components/admin/DesignManager';
-export default function Page() {
-  return <DesignManager kind="media" />;
+import { designPath } from '@/lib/design-schema';
+export default async function Page({ searchParams }: { searchParams: Promise<{ path?: string }> }) {
+  const { path } = await searchParams;
+  return <DesignManager kind="media" initialPath={path && designPath(path) ? path : undefined} />;
 }

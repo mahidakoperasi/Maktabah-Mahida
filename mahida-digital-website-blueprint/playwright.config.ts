@@ -15,7 +15,7 @@ export default defineConfig({
         ? { executablePath: process.env.PW_CHROMIUM_EXECUTABLE }
         : {}),
       ...(process.env.PW_SINGLE_PROCESS === '1'
-        ? { args: ['--single-process', '--no-zygote'] }
+        ? { args: ['--single-process', '--no-zygote', '--use-gl=angle', '--use-angle=swiftshader'] }
         : {}),
     },
   },

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { pool } from '@/db';
 import { sameOrigin } from '@/lib/request-origin';
 import { requireAdminAccess } from '@/lib/admin-auth';
+import { checkDriveImages, markerImages } from '@/lib/drive-image-check';
 import { designPath, mediaSchema, contentSchema } from '@/lib/design-schema';
 const requestSchema = z.object({
   path: z.string().refine(designPath),
@@ -114,6 +115,7 @@ export async function PUT(request: NextRequest) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    await client.query('SELECT path FROM cms_pages WHERE path=$1 FOR UPDATE', [path]);
     await client.query(
       'INSERT INTO design_documents(path,kind) VALUES($1,$2) ON CONFLICT DO NOTHING',
       [path, kind],
@@ -149,6 +151,15 @@ export async function PUT(request: NextRequest) {
       : action === 'restore'
         ? checked.data
         : data.data;
+    if (action !== 'draft' && next) {
+      try {
+        const images = kind === 'media' && 'clips' in next ? [next.headerLogoUrl ?? '', ...next.clips.flatMap(c => [c.type === 'image' ? c.url : '', c.poster])] : 'sections' in next ? next.sections.filter(s => s.enabled).flatMap(s => markerImages(s.body)) : [];
+        await checkDriveImages(images);
+      } catch (error) {
+        await client.query('ROLLBACK');
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Periksa foto Drive' }, { status: 400 });
+      }
+    }
     const history =
       action === 'draft'
         ? row.history

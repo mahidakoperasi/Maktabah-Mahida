@@ -6,6 +6,7 @@ import { sameOrigin } from '@/lib/request-origin';
 import { gallerySchema, mergeCandidates, visibleGalleryPhotos, type DriveCandidate } from '@/lib/gallery-schema';
 import { legacyGallery } from '@/lib/gallery-store';
 import { listDrivePhotos, DriveFolderError } from '@/lib/drive-folder';
+import { checkDriveImages } from '@/lib/drive-image-check';
 import { slugify } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -29,6 +30,10 @@ async function save(request: NextRequest, create: boolean) {
   if (['sync', 'archive'].includes(action) && data) return NextResponse.json({ error: 'Sinkronisasi dan arsip tidak menerima perubahan isi album.' }, { status: 400 });
   if ((create && (id || !data || !['draft', 'publish'].includes(action))) || (!create && !id) || (['draft', 'publish'].includes(action) && !data)) return NextResponse.json({ error: 'Data album tidak lengkap' }, { status: 400 });
   if (action === 'publish' && data && !visibleGalleryPhotos(data).length) return NextResponse.json({ error: 'Pilih dan tampilkan minimal satu foto sebelum menerbitkan album.' }, { status: 400 });
+  if (action === 'publish' && data) {
+    try { await checkDriveImages(visibleGalleryPhotos(data).map(p => p.imageUrl)); }
+    catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : 'Periksa foto Drive' }, { status: 400 }); }
+  }
   let incoming: Awaited<ReturnType<typeof listDrivePhotos>> | null = null;
   let syncedFolder = '';
   if (action === 'sync') {
