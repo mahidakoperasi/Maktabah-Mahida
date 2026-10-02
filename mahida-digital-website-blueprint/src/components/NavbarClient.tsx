@@ -69,8 +69,14 @@ export default function NavbarClient({
   const [childOpen, setChildOpen] = useState<number | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLElement>(null);
+  const navigation = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!open) return;
+    const fitPanel = () => {
+      const bottom = navigation.current?.getBoundingClientRect().bottom ?? 76;
+      navigation.current?.style.setProperty('--site-nav-bottom', `${bottom}px`);
+    };
+    fitPanel();
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     panel.current?.querySelector<HTMLElement>('a')?.focus();
@@ -106,16 +112,23 @@ export default function NavbarClient({
       if (wide.matches) setOpen(false);
     };
     document.addEventListener('keydown', keydown);
+    window.addEventListener('scroll', fitPanel, { passive: true });
+    window.addEventListener('resize', fitPanel);
+    window.visualViewport?.addEventListener('resize', fitPanel);
     wide.addEventListener('change', resize);
     return () => {
       document.body.style.overflow = previous;
       document.removeEventListener('keydown', keydown);
+      window.removeEventListener('scroll', fitPanel);
+      window.removeEventListener('resize', fitPanel);
+      window.visualViewport?.removeEventListener('resize', fitPanel);
       wide.removeEventListener('change', resize);
     };
   }, [open]);
 
   return (
     <header
+      ref={navigation}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           setDesktopOpen(null);
@@ -247,13 +260,13 @@ export default function NavbarClient({
             tabIndex={-1}
             aria-label="Tutup menu"
             onClick={() => setOpen(false)}
-            className="fixed inset-x-0 top-[76px] h-[calc(100dvh-76px)] bg-black/50 lg:hidden"
+            className="absolute inset-x-0 top-full h-[max(0px,calc(100dvh-var(--site-nav-bottom,76px)))] bg-black/50 lg:hidden"
           />
           <nav
             ref={panel}
             id="mobile-site-menu"
             aria-label="Navigasi ponsel"
-            className="fixed inset-x-0 top-[76px] max-h-[calc(100dvh-76px)] overflow-y-auto bg-white px-4 py-3 shadow-xl md:left-auto md:w-[420px] lg:hidden"
+            className="absolute inset-x-0 top-full max-h-[max(0px,calc(100dvh-var(--site-nav-bottom,76px)))] overflow-y-auto bg-white px-4 py-3 shadow-xl md:left-auto md:w-[420px] lg:hidden"
           >
             <Link
               href="/"

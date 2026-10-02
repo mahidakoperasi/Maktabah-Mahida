@@ -424,18 +424,34 @@ test('gallery sidebar stays within content, optional logo scrolls away, mobile d
     await page.setViewportSize({ width, height: 850 });
     await page.goto('/media/galeri');
     await expect(page.locator('[data-publication-header]')).toBeVisible();
+    const header = (await page.locator('[data-publication-header]').boundingBox())!;
+    const navigation = (await page.locator('header.site-nav').boundingBox())!;
+    expect(header.y + header.height).toBeLessThanOrEqual(navigation.y + 1);
+    expect(await page.locator('main [data-publication-header]').count()).toBe(0);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
     ).toBeTruthy();
+    if (width === 1440)
+      await page.screenshot({ path: 'test-results/header-above-navigation.png' });
     if (width >= 1024) {
       await page.evaluate(() => scrollTo(0, 600));
       expect(
         (await page.locator('[data-publication-header]').boundingBox())!.y,
       ).toBeLessThan(0);
+      expect((await page.locator('header.site-nav').boundingBox())!.y).toBe(0);
       expect(
         (await page.locator('[data-gallery-sidebar]').boundingBox())!.y,
       ).toBeGreaterThanOrEqual(80);
     } else {
+      const menuTrigger = page.getByRole('button', { name: 'Buka menu', exact: true });
+      await menuTrigger.click();
+      const mobileMenu = page.getByRole('navigation', { name: 'Navigasi ponsel' });
+      await expect(mobileMenu).toBeVisible();
+      const menuBounds = (await mobileMenu.boundingBox())!;
+      expect(Math.abs(menuBounds.y - navigation.y - navigation.height)).toBeLessThanOrEqual(1);
+      expect(menuBounds.y + menuBounds.height).toBeLessThanOrEqual(851);
+      await page.keyboard.press('Escape');
+      await expect(menuTrigger).toBeFocused();
       const trigger = page.getByRole('button', { name: 'Buka menu galeri' });
       await trigger.click();
       await expect(
@@ -451,6 +467,7 @@ test('gallery sidebar stays within content, optional logo scrolls away, mobile d
   );
   await page.goto('/media/galeri');
   await expect(page.locator('[data-publication-header]')).toHaveCount(0);
+  expect((await page.locator('header.site-nav').boundingBox())!.y).toBe(0);
 });
 
 test('revoked publisher and archived album cancel due schedules without restoring hidden content', async ({
