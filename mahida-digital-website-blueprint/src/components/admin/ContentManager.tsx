@@ -1,4 +1,5 @@
 'use client';
+import RoutineLink from './RoutineLink';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -55,7 +56,7 @@ export default function ContentManager({ section, label, publicPath }: { section
   return (
     <div className="grid gap-8 xl:grid-cols-[1fr_1.1fr]">
       <section className="space-y-4">
-        <div><h1 className="font-serif text-3xl font-bold">{label}</h1><p className="mt-1 text-sm text-warm-gray-600">{items.length} konten dalam modul ini.</p></div>
+        <div><h1 className="font-serif text-3xl font-bold">{label}</h1><RoutineLink /><p className="mt-1 text-sm text-warm-gray-600">{items.length} konten dalam modul ini.</p></div>
         {items.length === 0 && <p className="empty-state text-sm">Belum ada konten. Tulis dan terbitkan dari formulir ini.</p>}
         {items.map((item) => <button key={item.id} onClick={() => { setNotice(''); setForm({ id: item.id, title: item.title, excerpt: item.excerpt ?? '', content: item.content ?? '', featuredImage: item.featuredImage ?? '', status: item.status, authorId: item.authorId, authorClass: item.authorClass ?? '', revision: item.revision }); }} className="block w-full border border-mahida-200 bg-white p-4 text-left hover:bg-mahida-50"><span className="font-semibold">{item.title}</span><span className="ml-2 text-xs text-warm-gray-500">{item.status}</span></button>)}
       </section>

@@ -26,6 +26,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  {label:'Pengelolaan Harian',icon:FileText,href:'/admin/pengelolaan'},
   {
     label: 'Dashboard',
     icon: LayoutDashboard,

@@ -13,6 +13,8 @@ import {
   uniqueIndex,
   index,
   primaryKey,
+  date,
+  bigint,
 } from 'drizzle-orm/pg-core';
 
 // Enums
@@ -587,4 +589,20 @@ export const publicationDocuments = pgTable('publication_documents', {
   scheduledBy: integer('scheduled_by').references(() => users.id, { onDelete: 'set null' }),
   scheduledError: text('scheduled_error'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const analyticsDaily = pgTable('analytics_daily', {
+  day: date('day').notNull(), path: varchar('path',{length:255}).notNull(),
+  event: varchar('event',{length:50}).notNull(), count: bigint('count',{mode:'number'}).notNull().default(0),
+},t=>[primaryKey({columns:[t.day,t.path,t.event]}),index('analytics_daily_event_day_idx').on(t.event,t.day)]);
+export const qualityReports = pgTable('quality_reports', {
+  target:text('target').notNull(), version:varchar('version',{length:12}).notNull(),
+  snapshotHash:varchar('snapshot_hash',{length:64}).notNull(), report:jsonb('report').notNull(),
+  checkedBy:integer('checked_by').references(()=>users.id,{onDelete:'set null'}),
+  checkedAt:timestamp('checked_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>[primaryKey({columns:[t.target,t.version]})]);
+export const publicationChecklists = pgTable('publication_checklists', {
+  target:text('target').primaryKey(), snapshotHash:varchar('snapshot_hash',{length:64}).notNull(),
+  checks:jsonb('checks').notNull(), reviewedBy:integer('reviewed_by').references(()=>users.id,{onDelete:'set null'}),
+  reviewedAt:timestamp('reviewed_at',{withTimezone:true}).notNull().defaultNow(),
 });

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { pool } from '@/db';
 import { sameOrigin } from '@/lib/request-origin';
+import { checklistSchema } from '@/lib/quality-schema';
+import { snapshotHash } from '@/lib/quality-store';
 import { requireAdminAccess } from '@/lib/admin-auth';
 import {
   publicationSchema,
@@ -24,6 +26,7 @@ const schema = z.object({
   action: z.enum(['draft', 'publish', 'schedule', 'cancel']),
   data: publicationSchema.optional(),
   scheduledAt: z.string().datetime({ offset: true }).optional(),
+  checklist: checklistSchema.optional(),
 });
 const privateHeaders = { 'Cache-Control': 'private, no-store' };
 export async function GET(request: NextRequest) {
@@ -113,9 +116,11 @@ export async function PUT(request: NextRequest) {
       { error: parsed.error.issues[0]?.message ?? 'Data tidak valid' },
       { status: 400 },
     );
-  const { target, revision, source, action, data, scheduledAt } = parsed.data;
+  const { target, revision, source, action, data, scheduledAt, checklist } = parsed.data;
   const admin = await requireAdminAccess(request, requiredScope(target));
   if (!admin) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  if ((action === 'publish' || action === 'schedule') && !checklist)
+    return NextResponse.json({ error: 'Selesaikan lima item checklist sebelum menerbitkan atau menjadwalkan.' }, { status: 400 });
   if (action !== 'cancel' && (!data || publicationTarget(data) !== target))
     return NextResponse.json({ error: 'Isi tidak sesuai target' }, { status: 400 });
   if (
@@ -209,6 +214,11 @@ export async function PUT(request: NextRequest) {
         ],
       );
     }
+    if ((action === 'publish' || action === 'schedule') && checklist)
+      await client.query(
+        'INSERT INTO publication_checklists(target,snapshot_hash,checks,reviewed_by) VALUES($1,$2,$3::jsonb,$4) ON CONFLICT(target) DO UPDATE SET snapshot_hash=$2,checks=$3::jsonb,reviewed_by=$4,reviewed_at=now()',
+        [target, snapshotHash(data), JSON.stringify(checklist), admin.id],
+      );
     const result = (
       await client.query('SELECT * FROM publication_documents WHERE target=$1', [target])
     ).rows[0];

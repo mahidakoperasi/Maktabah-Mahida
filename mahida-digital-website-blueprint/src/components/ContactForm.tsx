@@ -65,7 +65,7 @@ export default function ContactForm() {
           <input name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
-      <button type="submit" disabled={busy} className="btn-primary">
+      <button type="submit" data-analytics-action="contact-submit" disabled={busy} className="btn-primary">
         {busy ? 'Mengirim...' : 'Kirim Pesan'}
       </button>
       {message && <p role="status">{message}</p>}

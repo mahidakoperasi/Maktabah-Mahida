@@ -18,6 +18,8 @@ globalThis.fetch = async (input, init) => {
           id,
           mimeType: id.startsWith('notimage') ? 'application/pdf' : 'image/jpeg',
           trashed: id.startsWith('trashed'),
+          size: '512000',
+          parents: id.startsWith('removed') ? [] : ['folder12345678'],
         });
   }
   return original(input, init);

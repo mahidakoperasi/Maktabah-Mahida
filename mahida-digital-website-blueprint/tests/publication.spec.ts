@@ -81,6 +81,7 @@ async function save(
       data,
       action,
       scheduledAt,
+      checklist: action === 'publish' || action === 'schedule' ? {status:true,photos:true,buttons:true,mobile:true,privacy:true} : undefined,
     },
   });
 }
@@ -404,6 +405,7 @@ test('autosave, full preview, optional header and page publication work through 
     .poll(async () => (await read(context.request)).draft.media?.headerLogoUrl)
     .toContain('publicfile12345');
   page.on('dialog', (dialog) => dialog.accept());
+  for (const checkbox of await page.getByRole('region', {name:'Checklist sebelum terbit'}).getByRole('checkbox').all()) await checkbox.check();
   await page.getByRole('button', { name: 'Terbitkan teks & media' }).click();
   await expect(page.getByRole('status')).toContainText('diterbitkan bersama');
   await page.goto(path);

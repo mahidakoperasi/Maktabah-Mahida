@@ -1,4 +1,5 @@
 'use client';
+import RoutineLink from './RoutineLink';
 /* eslint-disable @next/next/no-img-element -- Drive thumbnails curated by admin. */
 import useDraftAutosave from './useDraftAutosave';
 import { useEffect, useState } from 'react';
@@ -115,7 +116,7 @@ export default function GalleryManager() {
   }
   const candidates = (album?.candidates ?? []).filter((p) => !form.photos.some((photo) => driveIdFromUrl(photo.imageUrl) === p.id) && p.name.toLocaleLowerCase('id').includes(candidateSearch.toLocaleLowerCase('id')));
   return <div className="space-y-6">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="font-serif text-3xl font-bold">Galeri Foto</h1><p className="mt-2 text-sm text-warm-gray-600">Satu album dari satu folder Drive. Sinkronisasi hanya menambah kandidat; terbitkan setelah kurasi dan pratinjau.</p></div><button type="button" disabled={busy} className="btn-secondary" onClick={() => open(null)}>Album baru</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="font-serif text-3xl font-bold">Galeri Foto</h1><RoutineLink /><p className="mt-2 text-sm text-warm-gray-600">Satu album dari satu folder Drive. Sinkronisasi hanya menambah kandidat; terbitkan setelah kurasi dan pratinjau.</p></div><button type="button" disabled={busy} className="btn-secondary" onClick={() => open(null)}>Album baru</button></div>
     {error && <p role="alert" className="border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error} {conflict && <button type="button" className="underline" onClick={reload}>Muat versi terbaru</button>}</p>}
     {notice && <p role="status" className="border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
     <div className="grid min-w-0 gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">

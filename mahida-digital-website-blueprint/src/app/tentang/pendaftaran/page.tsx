@@ -25,6 +25,7 @@ export default async function AdmissionsPage() {
         settings.applicationUrl && (
           <a
             href={settings.applicationUrl}
+            data-analytics-action="admissions"
             className="btn-primary"
             target={
               settings.applicationUrl.startsWith('/') ? undefined : '_blank'
@@ -90,6 +91,7 @@ export default async function AdmissionsPage() {
       {content?.brochureUrl && (
         <a
           href={content.brochureUrl}
+          data-analytics-action="brochure"
           target="_blank"
           rel="noopener noreferrer"
           className="btn-secondary"
@@ -155,6 +157,7 @@ export default async function AdmissionsPage() {
             {settings.applicationUrl && (
               <a
                 href={settings.applicationUrl}
+                data-analytics-action="admissions"
                 target={
                   settings.applicationUrl.startsWith('/') ? undefined : '_blank'
                 }

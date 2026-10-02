@@ -1,4 +1,5 @@
 'use client';
+import RoutineLink from './RoutineLink';
 import { useEffect, useState } from 'react';
 import {
   defaultSectionLayout,
@@ -281,6 +282,7 @@ export default function ClippingManager({ initialPath = '/tentang/profil' }: { i
   return (
     <div className="min-w-0 max-w-6xl space-y-5">
       <h1 className="text-3xl font-bold">Kliping Visual</h1>
+      <RoutineLink />
       <p className="text-sm">
         Atur foto/video pada area halaman yang tersedia. Isi teks tetap dikelola
         melalui halaman dan Bagian Konten Resmi. Draf media terpisah dari versi

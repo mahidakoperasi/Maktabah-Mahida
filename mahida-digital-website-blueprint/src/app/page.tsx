@@ -114,6 +114,7 @@ export default async function HomePage() {
             {settings.heroPrimaryLabel && (
               <Link
                 href={settings.heroPrimaryHref || '/tentang/pendaftaran'}
+                data-analytics-action="hero-primary"
                 className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#e4c72f] px-6 py-3 text-sm font-bold text-[#123d2b] transition hover:bg-[#f3da60]"
               >
                 {settings.heroPrimaryLabel}{' '}
@@ -123,6 +124,7 @@ export default async function HomePage() {
             {settings.heroSecondaryLabel && (
               <Link
                 href={settings.heroSecondaryHref || '/tentang/profil'}
+                data-analytics-action="hero-secondary"
                 className="inline-flex min-h-12 items-center justify-center gap-2 border border-white/70 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
               >
                 {settings.heroSecondaryLabel}{' '}

@@ -5,6 +5,14 @@ import { publicationSchema, type Publication } from '@/lib/publication-schema';
 import RichTextField from './RichTextField';
 import ImageUrlPreview from './ImageUrlPreview';
 import useDraftAutosave from './useDraftAutosave';
+import {
+  emptyChecklist,
+  checklistSchema,
+  type Checklist,
+  type QualityReport,
+} from '@/lib/quality-schema';
+import PrepublishChecklist from './PrepublishChecklist';
+import QualityReportView from './QualityReportView';
 type Target = { target: string; title: string; url: string };
 type Document = {
   draft: Publication;
@@ -16,6 +24,11 @@ type Document = {
   scheduled_error?: string;
   history: { at: string; by: number; status: string; data: Publication }[];
 };
+// Schema order stays stable when PostgreSQL JSONB reorders object keys.
+function publicationFingerprint(data: Publication | null) {
+  const parsed = publicationSchema.safeParse(data);
+  return JSON.stringify(parsed.success ? parsed.data : data);
+}
 const field = 'mt-1 w-full min-w-0 border bg-white p-3';
 export default function PublicationManager() {
   const [targets, setTargets] = useState<Target[]>([]);
@@ -30,6 +43,18 @@ export default function PublicationManager() {
   const [preview, setPreview] = useState(false);
   const [width, setWidth] = useState(375);
   const [when, setWhen] = useState('');
+  const [review, setReview] = useState<{
+    fingerprint: string;
+    checks: Checklist;
+  }>({ fingerprint: '', checks: emptyChecklist });
+  const [quality, setQuality] = useState<{
+    fingerprint: string;
+    report: QualityReport;
+  } | null>(null);
+  const fingerprint = publicationFingerprint(data);
+  const checklist =
+    review.fingerprint === fingerprint ? review.checks : emptyChecklist;
+  const reviewed = checklistSchema.safeParse(checklist).success;
   const dirty = Boolean(data && JSON.stringify(data) !== baseline);
   useEffect(() => {
     let active = true;
@@ -39,7 +64,9 @@ export default function PublicationManager() {
         if (!r.ok) throw Error(result.error);
         if (active) {
           setTargets(result.items);
-          const requested = new URLSearchParams(window.location.search).get('target');
+          const requested = new URLSearchParams(window.location.search).get(
+            'target',
+          );
           setTarget(
             result.items.find((p: Target) => p.target === requested)?.target ??
               result.items[0]?.target ??
@@ -58,8 +85,17 @@ export default function PublicationManager() {
       active = false;
     };
   }, []);
+  function updateData(next: Publication | null) {
+    setReview({ fingerprint: '', checks: emptyChecklist });
+    setData(next);
+  }
   function accept(next: Document) {
     setDoc(next);
+    setReview((current) =>
+      current.fingerprint === publicationFingerprint(next.draft)
+        ? current
+        : { fingerprint: '', checks: emptyChecklist },
+    );
     setData(next.draft);
     setBaseline(JSON.stringify(next.draft));
   }
@@ -97,7 +133,14 @@ export default function PublicationManager() {
     openPreview = false,
   ) {
     if (!doc || !data || busy) return;
-    if (action === 'publish' && !confirm('Terbitkan teks dan media terkait bersama?'))
+    if ((action === 'publish' || action === 'schedule') && !reviewed) {
+      setError('Selesaikan checklist sebelum terbit.');
+      return;
+    }
+    if (
+      action === 'publish' &&
+      !confirm('Terbitkan teks dan media terkait bersama?')
+    )
       return;
     if (
       action === 'schedule' &&
@@ -111,7 +154,9 @@ export default function PublicationManager() {
     setError('');
     try {
       const scheduledAt =
-        action === 'schedule' ? new Date(`${when}:00+07:00`).toISOString() : undefined;
+        action === 'schedule'
+          ? new Date(`${when}:00+07:00`).toISOString()
+          : undefined;
       const r = await fetch('/api/admin/publication', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -122,11 +167,17 @@ export default function PublicationManager() {
           action,
           data,
           scheduledAt,
+          checklist:
+            action === 'publish' || action === 'schedule'
+              ? checklist
+              : undefined,
         }),
       });
       const result = await r.json();
       if (!r.ok) throw Error(result.error);
       accept(result);
+      if (action === 'publish' || action === 'schedule')
+        setReview({ fingerprint: '', checks: emptyChecklist });
       setPreview(openPreview);
       setNotice(
         action === 'draft'
@@ -174,12 +225,31 @@ export default function PublicationManager() {
       setBusy(false);
     }
   }
+  async function runQuality() {
+    if (!data || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const response = await fetch('/api/admin/quality', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target, version: 'draft', data }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw Error(result.error);
+      setQuality({ fingerprint, report: result.report });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Pemeriksaan gagal');
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <div className="min-w-0 max-w-6xl space-y-5">
       <h1 className="text-3xl font-bold">Header & Penerbitan</h1>
       <p className="text-sm">
-        Tinjau teks dan media pada satu halaman lengkap, simpan sebagai draf, lalu
-        terbitkan bersama. Menu aktif mengikuti Halaman & Menu.
+        Tinjau teks dan media pada satu halaman lengkap, simpan sebagai draf,
+        lalu terbitkan bersama. Menu aktif mengikuti Halaman & Menu.
       </p>
       {error && (
         <p
@@ -187,7 +257,12 @@ export default function PublicationManager() {
           className="border border-red-200 bg-red-50 p-3 text-sm text-red-700"
         >
           {error}{' '}
-          <button type="button" disabled={busy} className="underline" onClick={reload}>
+          <button
+            type="button"
+            disabled={busy}
+            className="underline"
+            onClick={reload}
+          >
             Muat versi terbaru
           </button>
         </p>
@@ -205,15 +280,20 @@ export default function PublicationManager() {
           value={target}
           className={field}
           onChange={(e) => {
-            if (dirty && !confirm('Ada perubahan belum tersimpan. Pindah publikasi?'))
+            if (
+              dirty &&
+              !confirm('Ada perubahan belum tersimpan. Pindah publikasi?')
+            )
               return;
             setTarget(e.target.value);
             setDoc(null);
-            setData(null);
+            updateData(null);
             setLoading(true);
             setError('');
             setNotice('');
             setPreview(false);
+            setQuality(null);
+            setReview({ fingerprint: '', checks: emptyChecklist });
           }}
         >
           {targets.map((p) => (
@@ -230,7 +310,11 @@ export default function PublicationManager() {
           className="min-w-0 space-y-5 disabled:opacity-70"
         >
           <p className="text-sm" data-autosave-status>
-            {busy ? 'Menyimpan…' : dirty ? 'Menunggu simpan otomatis…' : 'Draf tersimpan'}{' '}
+            {busy
+              ? 'Menyimpan…'
+              : dirty
+                ? 'Menunggu simpan otomatis…'
+                : 'Draf tersimpan'}{' '}
             • Terbitan: {doc.status}
           </p>
           {data.type === 'page' && (
@@ -241,7 +325,7 @@ export default function PublicationManager() {
                   className={field}
                   value={data.media?.headerLogoUrl ?? ''}
                   onChange={(e) =>
-                    setData({
+                    updateData({
                       ...data,
                       media: {
                         ...(data.media ?? { clips: [], useLegacyMedia: true }),
@@ -257,7 +341,10 @@ export default function PublicationManager() {
               </p>
               <ImageUrlPreview url={data.media?.headerLogoUrl ?? ''} />
               {data.path === '/' ? (
-                <Link className="text-sm underline" href="/admin/tampilan/beranda">
+                <Link
+                  className="text-sm underline"
+                  href="/admin/tampilan/beranda"
+                >
                   Atur teks dan tombol Beranda
                 </Link>
               ) : (
@@ -268,7 +355,9 @@ export default function PublicationManager() {
                       maxLength={255}
                       className={field}
                       value={data.title}
-                      onChange={(e) => setData({ ...data, title: e.target.value })}
+                      onChange={(e) =>
+                        updateData({ ...data, title: e.target.value })
+                      }
                     />
                   </label>
                   <label className="block text-sm">
@@ -277,25 +366,30 @@ export default function PublicationManager() {
                       maxLength={2000}
                       className={field}
                       value={data.intro}
-                      onChange={(e) => setData({ ...data, intro: e.target.value })}
+                      onChange={(e) =>
+                        updateData({ ...data, intro: e.target.value })
+                      }
                     />
                   </label>
                   <RichTextField
                     label="Teks utama halaman"
                     value={data.body}
-                    onChange={(body) => setData({ ...data, body })}
+                    onChange={(body) => updateData({ ...data, body })}
                   />
                 </>
               )}
               {data.content?.sections.map((section, i) => (
-                <section key={section.id} className="space-y-3 border bg-white p-4">
+                <section
+                  key={section.id}
+                  className="space-y-3 border bg-white p-4"
+                >
                   <label className="block text-sm">
                     Judul bagian
                     <input
                       className={field}
                       value={section.title}
                       onChange={(e) =>
-                        setData({
+                        updateData({
                           ...data,
                           content: {
                             ...data.content!,
@@ -311,7 +405,7 @@ export default function PublicationManager() {
                     label={`Isi ${section.title || 'bagian'}`}
                     value={section.body}
                     onChange={(body) =>
-                      setData({
+                      updateData({
                         ...data,
                         content: {
                           ...data.content!,
@@ -327,7 +421,7 @@ export default function PublicationManager() {
                       type="checkbox"
                       checked={section.enabled}
                       onChange={(e) =>
-                        setData({
+                        updateData({
                           ...data,
                           content: {
                             ...data.content!,
@@ -368,8 +462,8 @@ export default function PublicationManager() {
               <h2 className="text-xl font-bold">{data.data.title}</h2>
               <p className="text-sm">
                 Teks, keterangan dan{' '}
-                {data.data.photos.filter((p) => p.selected && p.visible).length} foto
-                tampil akan diterbitkan sebagai satu album.
+                {data.data.photos.filter((p) => p.selected && p.visible).length}{' '}
+                foto tampil akan diterbitkan sebagai satu album.
               </p>
               <Link href="/admin/media/galeri" className="underline">
                 Atur foto dan keterangan di Galeri Foto
@@ -386,7 +480,9 @@ export default function PublicationManager() {
                 <input
                   className={field}
                   value={data.title}
-                  onChange={(e) => setData({ ...data, title: e.target.value })}
+                  onChange={(e) =>
+                    updateData({ ...data, title: e.target.value })
+                  }
                 />
               </label>
               <label className="block text-sm">
@@ -394,27 +490,67 @@ export default function PublicationManager() {
                 <textarea
                   className={field}
                   value={data.excerpt}
-                  onChange={(e) => setData({ ...data, excerpt: e.target.value })}
+                  onChange={(e) =>
+                    updateData({ ...data, excerpt: e.target.value })
+                  }
                 />
               </label>
               <RichTextField
                 label="Isi pengumuman"
                 value={data.content}
-                onChange={(content) => setData({ ...data, content })}
+                onChange={(content) => updateData({ ...data, content })}
               />
               <label className="block text-sm">
                 URL foto Drive
                 <input
                   className={field}
                   value={data.featuredImage}
-                  onChange={(e) => setData({ ...data, featuredImage: e.target.value })}
+                  onChange={(e) =>
+                    updateData({ ...data, featuredImage: e.target.value })
+                  }
                 />
               </label>
               <ImageUrlPreview url={data.featuredImage} />
             </>
           )}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={runQuality}
+              disabled={!publicationSchema.safeParse(data).success}
+            >
+              Periksa kualitas draf
+            </button>
+            <Link
+              className="text-sm underline"
+              href={`/admin/pengelolaan?target=${encodeURIComponent(target)}`}
+            >
+              Pemeriksaan, ekspor & panduan
+            </Link>
+          </div>
+          {quality && (
+            <QualityReportView
+              report={quality.report}
+              stale={quality.fingerprint !== fingerprint}
+            />
+          )}
+          <PrepublishChecklist
+            value={checklist}
+            onChange={(checks) => setReview({ fingerprint, checks })}
+          />
+          {!reviewed && (
+            <p className="text-sm">
+              Selesaikan kelima item checklist untuk mengaktifkan penerbitan dan
+              jadwal.
+            </p>
+          )}
           <div className="flex flex-wrap gap-3">
-            <button type="button" className="btn-secondary" onClick={() => save('draft')}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => save('draft')}
+            >
               Simpan Draf
             </button>
             <button
@@ -424,7 +560,12 @@ export default function PublicationManager() {
             >
               Pratinjau halaman lengkap
             </button>
-            <button type="button" className="btn-primary" onClick={() => save('publish')}>
+            <button
+              type="button"
+              disabled={!reviewed}
+              className="btn-primary disabled:opacity-50"
+              onClick={() => save('publish')}
+            >
               Terbitkan teks & media
             </button>
             <Link
@@ -451,6 +592,7 @@ export default function PublicationManager() {
                 type="button"
                 className="btn-secondary"
                 onClick={() => save('schedule')}
+                disabled={!reviewed}
               >
                 Jadwalkan versi ini
               </button>
@@ -463,7 +605,11 @@ export default function PublicationManager() {
                 timeZone: 'Asia/Jakarta',
               })}{' '}
               WIB.{' '}
-              <button type="button" className="underline" onClick={() => save('cancel')}>
+              <button
+                type="button"
+                className="underline"
+                onClick={() => save('cancel')}
+              >
                 Batalkan jadwal
               </button>
             </p>
@@ -522,7 +668,7 @@ export default function PublicationManager() {
                             'Pulihkan teks dan media versi ini ke draf? Publik tetap melihat terbitan saat ini.',
                           )
                         ) {
-                          setData(version.data);
+                          updateData(version.data);
                           setPreview(false);
                           setNotice(
                             'Versi dipulihkan ke draf. Tinjau sebelum menerbitkan kembali.',

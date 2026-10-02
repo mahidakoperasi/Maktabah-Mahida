@@ -36,6 +36,7 @@ export default function RichTextField({
   ) {
     const field = ref.current;
     if (!field) return;
+    const scroll = { left: window.scrollX, top: window.scrollY };
     const start = field.selectionStart;
     const end = field.selectionEnd;
     const selected = block ? '' : value.slice(start, end) || placeholder;
@@ -59,12 +60,14 @@ export default function RichTextField({
         start + prefix.length + before.length,
         start + prefix.length + before.length + selected.length,
       );
+      window.scrollTo({ ...scroll, behavior: 'instant' });
     });
   }
 
   function addList(ordered: boolean) {
     const field = ref.current;
     if (!field) return;
+    const scroll = { left: window.scrollX, top: window.scrollY };
     const start = value.lastIndexOf('\n', field.selectionStart - 1) + 1;
     const nextNewline = value.indexOf('\n', field.selectionEnd);
     const end = nextNewline === -1 ? value.length : nextNewline;
@@ -86,6 +89,7 @@ export default function RichTextField({
         start + before.length,
         start + before.length + listed.length,
       );
+      window.scrollTo({ ...scroll, behavior: 'instant' });
     });
   }
 

@@ -1,4 +1,5 @@
 'use client';
+import RoutineLink from './RoutineLink';
 import { useEffect, useState } from 'react';
 import {
   emptyContent,
@@ -130,6 +131,7 @@ function ContentDesignManager({ initialPath = '/tentang/profil' }: { initialPath
   return (
     <div className="min-w-0 max-w-6xl space-y-5">
       <h1 className="text-3xl font-bold">Bagian Konten Resmi</h1>
+      <RoutineLink />
       <p className="text-sm">
         Isi hanya informasi yang sudah disetujui. Bagian kosong atau
         dinonaktifkan tidak tampil. Setiap unit memiliki data sendiri.

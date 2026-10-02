@@ -31,7 +31,10 @@ export async function GET() {
         to_regclass('public.ebook_orders') is not null as ebook_orders_table,
         to_regclass('public.gallery_documents') is not null as gallery_documents_table,
         to_regclass('public.design_documents') is not null as design_documents_table,
-        to_regclass('public.publication_documents') is not null as publication_documents_table
+        to_regclass('public.publication_documents') is not null as publication_documents_table,
+        to_regclass('public.analytics_daily') is not null as analytics_daily_table,
+        to_regclass('public.quality_reports') is not null as quality_reports_table,
+        to_regclass('public.publication_checklists') is not null as publication_checklists_table
     `);
 
     const row = schema.rows?.[0] as
@@ -48,6 +51,9 @@ export async function GET() {
           gallery_documents_table?: boolean;
           design_documents_table?: boolean;
           publication_documents_table?: boolean;
+          analytics_daily_table?: boolean;
+          quality_reports_table?: boolean;
+          publication_checklists_table?: boolean;
         }
       | undefined;
 
@@ -63,6 +69,7 @@ export async function GET() {
       galleryFolderReady: Boolean(row?.gallery_documents_table),
       visualClippingReady: Boolean(row?.design_documents_table),
       publicationReady: Boolean(row?.publication_documents_table),
+      qualityReady: Boolean(row?.analytics_daily_table && row?.quality_reports_table && row?.publication_checklists_table),
       stage2CmsReady: Boolean(
         row?.cms_pages_table &&
           row?.navigation_items_table &&
@@ -84,6 +91,9 @@ export async function GET() {
         galleryDocuments: Boolean(row?.gallery_documents_table),
         designDocuments: Boolean(row?.design_documents_table),
         publicationDocuments: Boolean(row?.publication_documents_table),
+        analyticsDaily: Boolean(row?.analytics_daily_table),
+        qualityReports: Boolean(row?.quality_reports_table),
+        publicationChecklists: Boolean(row?.publication_checklists_table),
       },
     });
   } catch (error) {
