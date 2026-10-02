@@ -5,7 +5,10 @@ export const PROMOTION_KEY = "content_promotion";
 export const promotionSchema = z
   .object({
     id: z.string().uuid(),
+    // Defaults keep campaigns saved before these fields were added readable.
+    name: z.string().trim().max(160).default(""),
     title: z.string().trim().max(160),
+    posterAlt: z.string().trim().max(500).default(""),
     description: z.string().trim().max(600),
     posterUrl: z
       .string()
@@ -41,10 +44,54 @@ export type PromotionSettings = {
   draft: Promotion | null;
   published: Promotion | null;
 };
+export function readPromotionSettings(
+  value: Record<string, unknown>,
+): PromotionSettings {
+  const read = (raw: unknown, details: unknown) => {
+    if (!raw || typeof raw !== "object") return null;
+    const extra =
+      details && typeof details === "object"
+        ? (details as Record<string, unknown>)
+        : {};
+    const stored = raw as Record<string, unknown>;
+    return (
+      promotionSchema.safeParse({
+        ...stored,
+        name: extra.name ?? stored.name,
+        posterAlt: extra.posterAlt ?? stored.posterAlt,
+      }).data ?? null
+    );
+  };
+  return {
+    protectionEnabled: value.protectionEnabled !== false,
+    draft: read(value.draft, value.draftDetails),
+    published: read(value.published, value.publishedDetails),
+  };
+}
+export function storedPromotionSettings(value: PromotionSettings) {
+  const split = (promotion: Promotion | null) => {
+    if (!promotion) return { campaign: null, details: null };
+    const { name, posterAlt, ...campaign } = promotion;
+    return { campaign, details: { name, posterAlt } };
+  };
+  const draft = split(value.draft),
+    published = split(value.published);
+  // The deployed 76ef2e1 parser is strict on campaign fields. Keeping additions
+  // beside the campaigns lets that image still display promotions after rollback.
+  return {
+    protectionEnabled: value.protectionEnabled,
+    draft: draft.campaign,
+    published: published.campaign,
+    draftDetails: draft.details,
+    publishedDetails: published.details,
+  };
+}
 export function emptyPromotion(id: string): Promotion {
   return {
     id,
+    name: "",
     title: "",
+    posterAlt: "",
     description: "",
     posterUrl: "",
     buttonLabel: "Daftar Sekarang",

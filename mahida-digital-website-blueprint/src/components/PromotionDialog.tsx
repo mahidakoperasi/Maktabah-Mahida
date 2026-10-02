@@ -30,15 +30,16 @@ export default function PromotionDialog({
     const element = dialog.current;
     if (!element || !(preview || loaded) || (failed && !preview)) return;
     element.showModal();
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const body = element.ownerDocument.body;
+    const previous = body.style.overflow;
+    body.style.overflow = "hidden";
     if (loaded && !viewed.current) {
       viewed.current = true;
       callbacks.current.onView?.();
     }
     return () => {
       element.close();
-      document.body.style.overflow = previous;
+      body.style.overflow = previous;
     };
   }, [loaded, failed, preview]);
   const href = promotionHref(promotion.buttonUrl);
@@ -79,7 +80,7 @@ export default function PromotionDialog({
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={src}
-              alt={promotion.title || "Poster promosi"}
+              alt={promotion.posterAlt || promotion.title || "Poster promosi"}
               className="mx-auto max-h-[58svh] w-full object-contain"
               onLoad={() => setLoaded(true)}
               onError={() => {

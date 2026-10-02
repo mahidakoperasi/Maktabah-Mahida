@@ -9,6 +9,8 @@ import {
   PROMOTION_KEY,
   emptyPromotion,
   promotionSchema,
+  readPromotionSettings,
+  storedPromotionSettings,
   type PromotionSettings,
 } from "@/lib/promotion-schema";
 import {
@@ -114,7 +116,7 @@ export async function PUT(request: NextRequest) {
       ])
     ).rows[0];
     const stored = old
-      ? (JSON.parse(old.value) as PromotionSettings)
+      ? readPromotionSettings(JSON.parse(old.value))
       : { published: null };
     const published =
       action === "publish"
@@ -125,7 +127,7 @@ export async function PUT(request: NextRequest) {
     const value: PromotionSettings = { protectionEnabled, draft, published };
     await client.query(
       "INSERT INTO settings(key,type,value,updated_at) VALUES($1,'json',$2,now()) ON CONFLICT(key) DO UPDATE SET value=excluded.value,type='json',updated_at=now()",
-      [PROMOTION_KEY, JSON.stringify(value)],
+      [PROMOTION_KEY, JSON.stringify(storedPromotionSettings(value))],
     );
     await client.query("COMMIT");
     return NextResponse.json(

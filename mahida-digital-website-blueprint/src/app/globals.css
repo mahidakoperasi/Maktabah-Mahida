@@ -473,6 +473,9 @@ body:has([data-admin-shell]) > main {
 .promotion-dialog { margin: auto; padding: 0; width: min(94vw, 620px); max-height: 92svh; overflow-y: auto; border: 1px solid var(--color-mahida-200); border-radius: 12px; background: var(--color-cream); color: var(--color-charcoal); box-shadow: 0 24px 80px #0005; }
 .promotion-dialog::backdrop { background: #051c14b3; }
 .promotion-dialog:not([open]) { display: none; }
+.promotion-preview-dialog { margin: auto; padding: 0; width: min(96vw, 1360px); max-height: 94svh; overflow-y: auto; border: 1px solid var(--color-mahida-200); border-radius: 12px; background: white; color: var(--color-charcoal); }
+.promotion-preview-dialog::backdrop { background: #051c14b3; }
+.promotion-preview-dialog:not([open]) { display: none; }
 
 .prose-article a {
   color: var(--color-emerald-forest);

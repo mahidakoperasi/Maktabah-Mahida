@@ -5,7 +5,8 @@ import {
   type Promotion,
   type PromotionSettings,
 } from "@/lib/promotion-schema";
-import PromotionDialog from "../PromotionDialog";
+import PromotionPreview from "./PromotionPreview";
+import Link from "next/link";
 import ImageUrlPreview from "./ImageUrlPreview";
 type Response = PromotionSettings & {
   observedAt: number;
@@ -153,6 +154,20 @@ export default function PromotionManager() {
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
               <label className="text-sm sm:col-span-2">
+                Nama promosi
+                <input
+                  aria-label="Nama promosi"
+                  className={input}
+                  maxLength={160}
+                  value={data.draft.name}
+                  onChange={(e) => patch({ name: e.target.value })}
+                />
+                <span className="mt-1 block text-xs text-warm-gray-500">
+                  Untuk pengelolaan admin, misalnya SPMB 2027/2028. Jika kosong,
+                  memakai judul promosi.
+                </span>
+              </label>
+              <label className="text-sm sm:col-span-2">
                 Judul promosi
                 <input
                   aria-label="Judul promosi"
@@ -183,6 +198,20 @@ export default function PromotionManager() {
                   onChange={(e) => patch({ posterUrl: e.target.value })}
                 />
                 <ImageUrlPreview url={data.draft.posterUrl} />
+              </label>
+              <label className="text-sm sm:col-span-2">
+                Teks alternatif poster
+                <input
+                  aria-label="Teks alternatif poster"
+                  className={input}
+                  maxLength={500}
+                  value={data.draft.posterAlt}
+                  onChange={(e) => patch({ posterAlt: e.target.value })}
+                />
+                <span className="mt-1 block text-xs text-warm-gray-500">
+                  Jelaskan informasi utama pada poster untuk pembaca layar. Jika
+                  kosong, memakai judul promosi.
+                </span>
               </label>
               <label className="text-sm">
                 Teks tombol
@@ -284,7 +313,7 @@ export default function PromotionManager() {
             <h2 className="font-semibold">Promosi terbit &amp; statistik</h2>
             <p className="text-sm">
               {data.published
-                ? `${data.published.title} — ${!data.published.enabled ? "Dijeda" : data.published.endsAt && Date.parse(data.published.endsAt) <= data.observedAt ? "Selesai" : data.published.startsAt && Date.parse(data.published.startsAt) > data.observedAt ? "Terjadwal" : "Aktif"}`
+                ? `${data.published.name || data.published.title} — ${!data.published.enabled ? "Dijeda" : data.published.endsAt && Date.parse(data.published.endsAt) <= data.observedAt ? "Selesai" : data.published.startsAt && Date.parse(data.published.startsAt) > data.observedAt ? "Terjadwal" : "Aktif"}`
                 : "Belum ada promosi terbit."}
             </p>
             <dl className="grid grid-cols-3 gap-3">
@@ -304,10 +333,17 @@ export default function PromotionManager() {
               ))}
             </dl>
             <p className="text-sm text-warm-gray-600">
-              Pop-up muncul pada halaman publik pertama yang dikunjungi. Setelah
-              ditutup, navigasi internal tidak memunculkannya lagi. Refresh
-              memulai kunjungan baru.
+              Pop-up muncul sekitar satu detik setelah halaman publik pertama
+              siap dan poster berhasil dimuat. Formulir yang mulai diisi tidak
+              diganggu. Setelah ditutup, navigasi internal tidak memunculkannya
+              lagi. Refresh memulai kunjungan baru.
             </p>
+            <Link
+              href="/admin/pengelolaan?tab=statistik"
+              className="inline-block text-sm text-emerald-forest underline"
+            >
+              Lihat statistik promosi di Pengelolaan Rutin
+            </Link>
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
@@ -348,10 +384,9 @@ export default function PromotionManager() {
             </div>
           </section>
           {preview && (
-            <PromotionDialog
+            <PromotionPreview
               key={data.draft.id}
               promotion={data.draft}
-              preview
               onDismiss={() => setPreview(false)}
             />
           )}

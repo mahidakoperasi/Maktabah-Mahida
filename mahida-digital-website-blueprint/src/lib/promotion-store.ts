@@ -3,7 +3,7 @@ import { cache } from "react";
 import { pool } from "@/db";
 import {
   PROMOTION_KEY,
-  promotionSchema,
+  readPromotionSettings,
   type PromotionSettings,
 } from "./promotion-schema";
 
@@ -16,19 +16,18 @@ export const getPromotionSettings = cache(
     ).rows[0];
     if (!row) return { protectionEnabled: true, draft: null, published: null };
     const value = JSON.parse(row.value);
-    return {
-      protectionEnabled: value.protectionEnabled !== false,
-      draft: promotionSchema.safeParse(value.draft).data ?? null,
-      published: promotionSchema.safeParse(value.published).data ?? null,
-    };
+    return readPromotionSettings(value);
   },
 );
-export async function promotionStatistics(id: string | undefined) {
+export async function promotionStatistics(id: string | undefined, days = 180) {
   if (!id) return { view: 0, close: 0, click: 0 };
   const rows = (
     await pool.query(
-      "SELECT event,sum(count)::text AS total FROM analytics_daily WHERE event=ANY($1::varchar[]) AND day >= (now() AT TIME ZONE 'Asia/Jakarta')::date-179 GROUP BY event",
-      [["p:" + id + ":view", "p:" + id + ":close", "p:" + id + ":click"]],
+      "SELECT event,sum(count)::text AS total FROM analytics_daily WHERE event=ANY($1::varchar[]) AND day >= (now() AT TIME ZONE 'Asia/Jakarta')::date-($2::integer-1) GROUP BY event",
+      [
+        ["p:" + id + ":view", "p:" + id + ":close", "p:" + id + ":click"],
+        Math.max(1, Math.min(180, Math.trunc(days))),
+      ],
     )
   ).rows;
   return Object.fromEntries(

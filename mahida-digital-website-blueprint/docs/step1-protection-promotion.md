@@ -1,6 +1,6 @@
 # Langkah 1 — Proteksi, format teks dan promosi
 
-Dasar implementasi: Rilis 5, commit `a94cba2`. VPS tidak diubah.
+Dasar implementasi: Rilis 5, commit `a94cba2`. Versi awal `76ef2e1` telah dirilis oleh pengguna. Penyempurnaan promosi berikut masih membutuhkan rilis baru; pengerjaan kode ini tidak mengubah VPS.
 
 ## Perilaku publik
 
@@ -8,17 +8,19 @@ Dasar implementasi: Rilis 5, commit `a94cba2`. VPS tidak diubah.
 - Teks Arab di isi, judul detail dan ringkasan detail memakai Amiri, termasuk di tengah kalimat Indonesia. Paragraf memakai `dir="auto"`, sehingga arah mengikuti huruf kuat pertama. Judul tetap rata awal; paragraf isi justify di HP maupun desktop.
 - Proteksi ini hanya menghambat penyalinan biasa; sumber yang sudah dikirim ke browser tetap dapat diambil secara teknis, termasuk melalui tangkapan layar/OCR.
 - Promosi terbit dimuat pada kunjungan pertama ke halaman publik, termasuk tautan langsung ke detail. Penutupan dan klik tombol berlaku sepanjang umur dokumen browser, tanpa cookie/localStorage/sessionStorage. Navigasi internal mempertahankannya; refresh memulai kunjungan baru.
-- Pop-up tampil sesudah poster berhasil dimuat. Kegagalan poster tidak menghalangi halaman. Tombol tutup, Escape, fokus modal dan pengguliran ditangani dengan elemen dialog native.
+- Pop-up tampil paling cepat sekitar satu detik setelah halaman publik pertama siap, dan setelah poster berhasil dimuat. Kegagalan poster tidak menghalangi halaman. Tombol tutup, Escape, fokus modal dan pengguliran ditangani dengan elemen dialog native.
 - Halaman admin, login dan pratinjau publik tidak memunculkan promosi otomatis.
+- Jika pengunjung mulai mengisi formulir publik sebelum pop-up tampil, penayangan dibatalkan untuk kunjungan dokumen tersebut, termasuk selama navigasi internal berikutnya. Fokus, input/perubahan, nilai yang dipulihkan, serta formulir yang muncul saat poster dimuat diperiksa tanpa mengirim atau menyimpan nilai isian. Pencarian (`type="search"`/`role="search"`) tetap dapat digunakan.
+- Formulir pendaftaran yang ditanam di halaman dikecualikan melalui wrapper `data-registration-form` atau `data-promotion-exclude`; iframe Google Forms dikenali otomatis. Pendaftaran Mahida saat ini berupa tautan ke formulir eksternal, sehingga isi formulir tetap berada di layanan penyedianya.
 
 ## Pengelolaan admin
 
 Menu: **Tampilan Website → Proteksi & Promosi** (`/admin/tampilan/promosi`). Akses mengikuti izin pengaturan utama yang sudah ada: admin utama atau akses penuh.
 
-1. Isi judul, keterangan, tautan **berkas gambar** Drive, teks dan tujuan tombol.
+1. Isi nama kampanye untuk admin, judul publik, keterangan, tautan **berkas gambar** Drive, teks alternatif poster, teks dan tujuan tombol. Nama kampanye dan teks alternatif kosong menggunakan judul sebagai fallback; kampanye lama yang belum memiliki kolom baru tetap terbaca.
 2. Jadwal memakai WIB. Kolom kosong berarti tidak ada batas pada sisi tersebut. Waktu mulai inklusif; waktu selesai eksklusif.
 3. **Simpan Draf & Proteksi** menyimpan draf kampanye dan toggle proteksi. Versi promosi tayang tetap terpisah.
-4. **Pratinjau Pop-up** menampilkan draf tanpa navigasi tombol dan tanpa statistik.
+4. **Pratinjau Pop-up** menampilkan draf tanpa navigasi tombol dan tanpa statistik. Pilihan **HP** (390 × 844) dan **Desktop** (1280 × 800) memakai viewport iframe tersendiri dengan komponen/CSS yang sama seperti publik; tampilan diperkecil bila layar admin lebih sempit.
 5. **Terbitkan Promosi** memeriksa akses/MIME poster melalui konfigurasi Google Drive API yang sudah ada sebelum mengganti versi tayang. Tidak perlu konfigurasi API baru untuk menyimpan draf.
 6. **Jeda Promosi Tayang** menghentikan penayangan pada kunjungan/refresh berikutnya. **Kampanye Baru** membuat ID baru dan statistik kampanye baru; belum mengganti versi tayang.
 
@@ -27,17 +29,19 @@ Tautan tujuan menerima rute publik internal atau HTTPS tanpa kredensial. Jadwal 
 ## Penyimpanan dan statistik
 
 - Tidak ada migrasi atau perubahan skema: konfigurasi memakai key `content_promotion` di tabel `settings`; hitungan memakai tabel `analytics_daily` dari Rilis 5.
+- Nama kampanye dan teks alternatif disimpan di `draftDetails`/`publishedDetails`, terpisah dari objek kampanye lama. Pembacaan menggabungkannya untuk admin/publik; struktur kampanye tetap dapat dibaca parser ketat image `76ef2e1` jika image tersebut dipakai kembali.
 - Statistik: jumlah pop-up berhasil tampil, penutupan tanpa klik, serta klik tombol. Klik tombol tidak ikut dihitung sebagai penutupan.
 - Agregasi harian WIB, jendela 180 hari, bukan jumlah pengunjung unik. Kampanye baru memiliki hitungan sendiri; penyuntingan kampanye mempertahankan ID-nya.
 - Statistik promosi memiliki toggle sendiri. Pratinjau, trafik admin yang terautentikasi, bot, Do Not Track dan Global Privacy Control tidak dihitung.
+- **Pengelolaan Harian → Statistik** (`/admin/pengelolaan?tab=statistik`, menu Pengelolaan Rutin) menampilkan kampanye terbit saat ini beserta jumlah tampil/tutup/klik sesuai periode 7/30/90 hari. Kampanye dijeda/selesai tetap memiliki hitungan historis. ID event internal promosi tidak ikut masuk tabel kunjungan/klik umum. Ringkasan 180 hari di pengaturan promosi tetap tersedia.
 - Endpoint menolak asal lintas situs, memvalidasi ID kampanye aktif dan rute publik, membatasi ukuran request/laju kirim, dan menghindari event ganda dalam satu proses selama 30 menit. IP hanya di-hash dengan salt sementara untuk pembatasan laju; tidak disimpan di database. Angka tetap perkiraan dan bukan catatan transaksi; restart/multi-instance dapat membatasi deduplikasi.
 
 ## Verifikasi
 
 - Typecheck, build produksi dan lint tanpa error. Dua warning lint lama tetap ada pada dashboard/font layout.
-- Delapan tes browser/API pada database sementara: jadwal/URL, proteksi empat jenis tulisan di HP/desktop, font campuran dan RTL, input/editor, toggle, izin admin, draf terpisah, kegagalan pemeriksaan Drive, terbit/jeda, navigasi/refresh, Escape, pratinjau dan statistik.
+- Tes browser/API pada database sementara memeriksa jadwal/URL, proteksi empat jenis tulisan di HP/desktop, font campuran dan RTL, input/editor, toggle, izin admin, draf terpisah, kegagalan pemeriksaan Drive, terbit/jeda, navigasi/refresh, Escape, pratinjau dan statistik. Penyempurnaan menambah skenario data lama, penyimpanan kolom baru, viewport HP/desktop, jeda tampil, tab baru, formulir aktif/ditanam, periode statistik serta pemisahan kampanye.
 - Tes regresi Rilis 4 memeriksa editor, gambar, reaksi tamu, moderasi, rekomendasi dan hero mobile.
-- Drive API dan poster menggunakan fixture saat pengujian. Poster dan jadwal nyata perlu diuji melalui admin ketika versi ini dirilis. Produksi/VPS belum disentuh.
+- Drive API dan poster menggunakan fixture saat pengujian. Poster dan jadwal nyata perlu diuji melalui admin ketika penyempurnaan ini dirilis. Tidak ada migrasi baru atau dependensi aplikasi baru.
 
 ## Batas langkah berikutnya
 

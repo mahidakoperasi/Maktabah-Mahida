@@ -1,5 +1,15 @@
 export const adminGuideSections = [
   {
+    title: 'Promosi Mahida',
+    steps: [
+      'Buka Tampilan Website → Proteksi & Promosi. Isi nama kampanye untuk admin, judul publik, poster Google Drive, teks alternatif, deskripsi, serta tombol dan tujuan pendaftaran.',
+      'Atur aktif/nonaktif dan tanggal mulai/selesai menurut WIB. Simpan Draf tidak mengganti promosi tayang. Terbitkan Promosi memeriksa poster sebelum mengganti versi tayang; Jeda Promosi Tayang menghentikan penayangan berikutnya.',
+      'Buka Pratinjau Pop-up, lalu pilih HP atau Desktop. Ukuran layar pratinjau tetap sesuai pilihan dan diperkecil bila perlu. Tombol tujuan dinonaktifkan dan pratinjau tidak mencatat statistik.',
+      'Pop-up muncul sekitar satu detik setelah halaman publik siap dan poster dimuat. ×, Esc, atau tombol pendaftaran menutupnya. Navigasi internal mempertahankan penutupan; refresh dan tab baru memulai kunjungan baru. Formulir publik yang mulai diisi tidak diganggu; formulir pendaftaran eksternal berada di layanan penyedianya.',
+      'Pengelolaan Harian → Statistik menampilkan jumlah tampil, ditutup, dan klik kampanye terbit untuk 7/30/90 hari. Pengaturan pencatatan promosi terpisah dari statistik kunjungan website. Kampanye Baru memulai ID dan hitungan baru; menyunting kampanye yang sama mempertahankan hitungannya.',
+    ],
+  },
+  {
     title: 'Mulai setiap hari',
     steps: [
       'Buka Pengelolaan Harian → Pemeriksaan. Pilih versi terbit untuk memeriksa halaman yang sedang dilihat pengunjung.',
