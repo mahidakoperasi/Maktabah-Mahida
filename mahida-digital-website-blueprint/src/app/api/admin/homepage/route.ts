@@ -3,7 +3,7 @@ import { db } from '@/db';
 import { settings } from '@/db/schema';
 import { posts } from '@/db/schema';
 import { and, desc, eq, inArray } from 'drizzle-orm';
-import { getAdminUser } from '@/lib/admin-auth';
+import { requireAdminAccess } from '@/lib/admin-auth';
 import { driveIdFromUrl, publicImageUrl } from '@/lib/media-links';
 import {
   DEFAULT_HOMEPAGE_SETTINGS,
@@ -145,7 +145,7 @@ function sanitizeHomepageSettings(input: unknown): HomepageSettings {
 }
 
 export async function GET(request: NextRequest) {
-  const admin = await getAdminUser(request);
+  const admin = await requireAdminAccess(request, 'primary');
   if (!admin) {
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   }
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const admin = await getAdminUser(request);
+  const admin = await requireAdminAccess(request, 'primary');
   if (!admin) {
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   }

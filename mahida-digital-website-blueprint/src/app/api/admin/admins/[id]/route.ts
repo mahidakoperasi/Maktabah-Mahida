@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { users } from '@/db/schema';
 import { PRIMARY_ADMIN_EMAIL } from '@/lib/admin-config';
 import { SESSION_COOKIE_NAME, verifyToken } from '@/lib/utils';
+import { logActivity } from '@/lib/activity-log';
 
 async function requirePrimaryAdmin(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -67,6 +68,14 @@ export async function DELETE(
     .update(users)
     .set({ role: 'user', updatedAt: new Date() })
     .where(eq(users.id, targetId));
+
+  await logActivity({
+    actorId: requester.id,
+    action: 'access_revoked',
+    targetType: 'admin',
+    targetId,
+    summary: `Mencabut akses admin dari ${target.email}`,
+  });
 
   return NextResponse.json({ message: 'Akses admin berhasil dicabut.' });
 }

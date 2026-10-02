@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { desc, eq, sql } from 'drizzle-orm';
-import { FileText, Clock, Users, CheckCircle2, Plus } from 'lucide-react';
+import { FileText, Clock, Users, CheckCircle2, Plus, Image, ShoppingBag, Settings, ListChecks } from 'lucide-react';
 import { db } from '@/db';
-import { posts } from '@/db/schema';
+import { activityLogs, posts } from '@/db/schema';
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard | Mahida Digital',
@@ -67,6 +67,11 @@ export default async function AdminDashboard() {
         .where(eq(posts.type, 'article'))
         .orderBy(desc(posts.updatedAt))
         .limit(6)
+    : [];
+
+  const recentActivity = usersReady
+    ? await db.select({ id: activityLogs.id, summary: activityLogs.summary, action: activityLogs.action, createdAt: activityLogs.createdAt })
+      .from(activityLogs).orderBy(desc(activityLogs.createdAt)).limit(8)
     : [];
 
   const stats = [
@@ -162,7 +167,15 @@ export default async function AdminDashboard() {
                 <span>Kelola Artikel</span>
                 <span>→</span>
               </Link>
+              <Link href="/admin/media/galeri" className="flex items-center justify-between bg-mahida-50 p-3 text-sm font-medium text-charcoal hover:bg-mahida-100"><span className="inline-flex items-center gap-2"><Image size={15} /> Galeri &amp; Video</span><span>→</span></Link>
+              <Link href="/admin/koperasi/produk" className="flex items-center justify-between bg-mahida-50 p-3 text-sm font-medium text-charcoal hover:bg-mahida-100"><span className="inline-flex items-center gap-2"><ShoppingBag size={15} /> Produk Koperasi</span><span>→</span></Link>
+              <Link href="/admin/tampilan/halaman" className="flex items-center justify-between bg-mahida-50 p-3 text-sm font-medium text-charcoal hover:bg-mahida-100"><span className="inline-flex items-center gap-2"><Settings size={15} /> Halaman &amp; Pengaturan</span><span>→</span></Link>
             </div>
+          </div>
+
+          <div className="bg-white rounded-sm border border-warm-gray-200 p-5">
+            <div className="mb-3 flex items-center gap-2"><ListChecks size={17} className="text-emerald-forest" /><h2 className="font-semibold text-charcoal">Aktivitas Terbaru</h2></div>
+            {recentActivity.length === 0 ? <p className="text-sm text-warm-gray-500">Belum ada aktivitas tercatat.</p> : <ul className="space-y-3">{recentActivity.map((item) => <li key={item.id} className="text-xs text-warm-gray-600"><p>{item.summary}</p><time className="text-warm-gray-400">{item.createdAt?.toLocaleString('id-ID')}</time></li>)}</ul>}
           </div>
 
           <div className="bg-white rounded-sm border border-warm-gray-200 p-5">

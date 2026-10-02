@@ -14,4 +14,5 @@ export const createArticleInput = z.object({
 
 export const updateArticleInput = createArticleInput.partial().extend({
   status: z.enum(['draft', 'published', 'archived']).optional(),
+  revision: z.number().int().min(0),
 });

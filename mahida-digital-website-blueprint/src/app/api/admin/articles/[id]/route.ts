@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
-import { getAdminUser } from '@/lib/admin-auth';
+import { requireAdminAccess } from '@/lib/admin-auth';
+import { logActivity } from '@/lib/activity-log';
+import { saveRevision } from '@/lib/revision-log';
 import { updateArticleInput } from '@/lib/article-input';
 import { calculateReadingTime, slugify } from '@/lib/utils';
 import { invalidDriveImages, invalidVideoMarkers } from '@/lib/rich-markers';
@@ -29,7 +31,7 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const admin = await getAdminUser(request);
+  const admin = await requireAdminAccess(request, 'content');
   if (!admin) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
 
   const { id } = await context.params;
@@ -55,7 +57,7 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const admin = await getAdminUser(request);
+  const admin = await requireAdminAccess(request, 'content');
   if (!admin) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
 
   const { id } = await context.params;
@@ -135,14 +137,16 @@ export async function PATCH(
         featuredImage:
           String(body.featuredImage ?? existing.featuredImage ?? '').trim() || null,
         updatedAt: now,
+        revision: existing.revision + 1,
       })
-      .where(and(eq(posts.id, articleId), eq(posts.type, 'article')))
+      .where(and(eq(posts.id, articleId), eq(posts.type, 'article'), eq(posts.revision, body.revision)))
       .returning();
 
     if (!article) {
-      return NextResponse.json({ error: 'Artikel tidak ditemukan' }, { status: 404 });
+      return NextResponse.json({ error: 'Artikel berubah di sesi lain. Muat ulang sebelum menyimpan.' }, { status: 409 });
     }
-
+    await saveRevision({ entityType: 'article', entityId: article.id, data: article, note: status === 'published' ? 'Terbitan diperbarui' : 'Draft diperbarui', actorId: admin.id });
+    await logActivity({ actorId: admin.id, action: status === 'published' ? 'published' : 'updated', targetType: 'article', targetId: article.id, summary: `${status === 'published' ? 'Memperbarui terbitan' : 'Memperbarui draft'} artikel: ${article.title}` });
     return NextResponse.json({ article });
   } catch (error) {
     console.error('Update article error:', error);
@@ -154,7 +158,7 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const admin = await getAdminUser(request);
+  const admin = await requireAdminAccess(request, 'content');
   if (!admin) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
 
   const { id } = await context.params;
@@ -172,5 +176,6 @@ export async function DELETE(
     return NextResponse.json({ error: 'Artikel tidak ditemukan' }, { status: 404 });
   }
 
+  await logActivity({ actorId: admin.id, action: 'archived', targetType: 'article', targetId: articleId, summary: 'Mengarsipkan artikel' });
   return NextResponse.json({ ok: true });
 }

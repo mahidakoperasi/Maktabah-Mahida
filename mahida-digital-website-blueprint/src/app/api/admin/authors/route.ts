@@ -3,18 +3,18 @@ import { asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { authors } from '@/db/schema';
-import { getAdminUser } from '@/lib/admin-auth';
+import { requireAdminAccess } from '@/lib/admin-auth';
 import { slugify } from '@/lib/utils';
 import { publicImageUrl } from '@/lib/media-links';
 
 export async function GET(request: NextRequest) {
-  if (!await getAdminUser(request)) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  if (!await requireAdminAccess(request, 'content')) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const items = await db.select({ id: authors.id, name: authors.name, slug: authors.slug, bio: authors.bio, photo: authors.photo, institution: authors.institution }).from(authors).orderBy(asc(authors.name));
   return NextResponse.json({ authors: items });
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!await getAdminUser(request)) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  if (!await requireAdminAccess(request, 'content')) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const parsed = z.object({
     id: z.number().int().positive(), name: z.string().trim().min(2).max(255),
     bio: z.string().trim().max(3000), photo: z.string().trim().max(2048),
@@ -30,7 +30,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!await getAdminUser(request)) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  if (!await requireAdminAccess(request, 'content')) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const parsed = z.object({ name: z.string().trim().min(2).max(255) }).safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Nama penulis tidak valid' }, { status: 400 });
   const name = parsed.data.name;

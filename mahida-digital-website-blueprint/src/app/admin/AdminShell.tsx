@@ -15,12 +15,14 @@ import {
   LogOut,
   LucideIcon,
 } from 'lucide-react';
+import { canAccess, type AdminAccess, type StoredAdminAccess } from '@/lib/admin-permissions';
 
 interface NavItem {
   label: string;
   href?: string;
   icon?: LucideIcon;
-  children?: { label: string; icon: LucideIcon; href: string }[];
+  access?: AdminAccess | 'primary';
+  children?: { label: string; icon: LucideIcon; href: string; access?: AdminAccess | 'primary' }[];
 }
 
 const navItems: NavItem[] = [
@@ -36,68 +38,78 @@ const navItems: NavItem[] = [
         label: 'Beranda',
         icon: LayoutDashboard,
         href: '/admin/tampilan/beranda',
+        access: 'primary',
       },
       {
         label: 'Kliping Visual',
         icon: FileText,
         href: '/admin/tampilan/kliping',
+        access: 'media',
       },
       {
         label: 'Bagian Konten Resmi',
         icon: FileText,
         href: '/admin/tampilan/bagian',
+        access: 'content',
       },
-      { label: 'Pesan Kontak', icon: FileText, href: '/admin/tampilan/pesan' },
+      { label: 'Pesan Kontak', icon: FileText, href: '/admin/tampilan/pesan', access: 'primary' },
       {
         label: 'Visual & Unit Pendidikan',
         icon: FileText,
         href: '/admin/tampilan/visual',
+        access: 'content',
       },
       {
         label: 'Halaman & Menu',
         icon: FileText,
         href: '/admin/tampilan/halaman',
+        access: 'primary',
       },
       {
         label: 'Media Sosial & Kontak',
         icon: FileText,
         href: '/admin/tampilan/kontak',
+        access: 'primary',
       },
       {
         label: 'Pendaftaran Santri',
         icon: FileText,
         href: '/admin/tampilan/pendaftaran',
+        access: 'admissions',
       },
     ],
   },
   {
     label: 'Konten',
     children: [
-      { label: 'Artikel', icon: FileText, href: '/admin/konten/artikel' },
-      { label: 'Penulis', icon: Users, href: '/admin/konten/penulis' },
-      { label: 'Komentar', icon: FileText, href: '/admin/konten/komentar' },
-      { label: 'Esai & Opini', icon: FileText, href: '/admin/konten/esai' },
-      { label: 'Terjemahan', icon: FileText, href: '/admin/konten/terjemahan' },
-      { label: 'Manuskrip', icon: FileText, href: '/admin/konten/manuskrip' },
-      { label: 'Berita', icon: FileText, href: '/admin/konten/berita' },
-      { label: 'Kegiatan', icon: FileText, href: '/admin/konten/kegiatan' },
-      { label: 'Pengumuman', icon: FileText, href: '/admin/konten/pengumuman' },
-      { label: 'Video YouTube', icon: FileText, href: '/admin/media/video' },
-      { label: 'Galeri Foto', icon: FileText, href: '/admin/media/galeri' },
+      { label: 'Artikel', icon: FileText, href: '/admin/konten/artikel', access: 'content' },
+      { label: 'Penulis', icon: Users, href: '/admin/konten/penulis', access: 'content' },
+      { label: 'Komentar', icon: FileText, href: '/admin/konten/komentar', access: 'content' },
+      { label: 'Esai & Opini', icon: FileText, href: '/admin/konten/esai', access: 'content' },
+      { label: 'Terjemahan', icon: FileText, href: '/admin/konten/terjemahan', access: 'content' },
+      { label: 'Manuskrip', icon: FileText, href: '/admin/konten/manuskrip', access: 'content' },
+      { label: 'Berita', icon: FileText, href: '/admin/konten/berita', access: 'content' },
+      { label: 'Kegiatan', icon: FileText, href: '/admin/konten/kegiatan', access: 'content' },
+      { label: 'Pengumuman', icon: FileText, href: '/admin/konten/pengumuman', access: 'content' },
+      { label: 'Video YouTube', icon: FileText, href: '/admin/media/video', access: 'media' },
+      { label: 'Galeri Foto', icon: FileText, href: '/admin/media/galeri', access: 'media' },
       {
         label: 'Produk Koperasi',
         icon: FileText,
         href: '/admin/koperasi/produk',
+        access: 'commerce',
       },
       {
         label: 'Pengaturan Koperasi',
         icon: FileText,
         href: '/admin/koperasi/pengaturan',
+        access: 'commerce',
       },
       {
         label: 'Pesanan E-Book',
         icon: FileText,
         href: '/admin/koperasi/pesanan',
+        access: 'commerce',
       },
     ],
   },
@@ -116,10 +128,12 @@ function getDesktop() {
 export default function AdminShell({
   children,
   isPrimaryAdmin = false,
+  adminAccess = 'full',
   logoUrl,
 }: {
   children: React.ReactNode;
   isPrimaryAdmin?: boolean;
+  adminAccess?: StoredAdminAccess;
   logoUrl?: string;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -188,6 +202,16 @@ export default function AdminShell({
     return <IconComponent size={size} />;
   }
 
+  const visibleNavItems = [
+    ...navItems,
+    ...(isPrimaryAdmin ? [{ label: 'Kelola Admin', icon: Users, href: '/admin/admins' } as NavItem] : []),
+  ]
+    .filter((item) => !item.access || canAccess(adminAccess, item.access, isPrimaryAdmin))
+    .map((item) => item.children
+      ? { ...item, children: item.children.filter((child) => !child.access || canAccess(adminAccess, child.access, isPrimaryAdmin)) }
+      : item)
+    .filter((item) => !item.children || item.children.length > 0);
+
   return (
     <div
       data-admin-shell
@@ -244,18 +268,7 @@ export default function AdminShell({
           className="min-h-0 flex-1 overflow-y-auto p-3 space-y-1"
           aria-label="Navigasi admin"
         >
-          {[
-            ...navItems,
-            ...(isPrimaryAdmin
-              ? [
-                  {
-                    label: 'Kelola Admin',
-                    icon: Users,
-                    href: '/admin/admins',
-                  } as NavItem,
-                ]
-              : []),
-          ].map((item) =>
+          {visibleNavItems.map((item) =>
             item.href ? (
               <Link
                 key={item.label}

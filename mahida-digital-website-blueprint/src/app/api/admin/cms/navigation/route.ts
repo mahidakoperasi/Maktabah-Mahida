@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { cmsPages, navigationItems } from '@/db/schema';
-import { getAdminUser } from '@/lib/admin-auth';
+import { requireAdminAccess } from '@/lib/admin-auth';
+import { logActivity } from '@/lib/activity-log';
 import { validCmsPath } from '@/lib/cms';
 
 const inputSchema = z.object({
@@ -16,13 +17,15 @@ const inputSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  if (!await getAdminUser(request)) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  const admin = await requireAdminAccess(request, 'primary');
+  if (!admin) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const items = await db.select().from(navigationItems).orderBy(navigationItems.sortOrder, navigationItems.id);
   return NextResponse.json({ items });
 }
 
 async function save(request: NextRequest, edit: boolean) {
-  if (!await getAdminUser(request)) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  const admin = await requireAdminAccess(request, 'primary');
+  if (!admin) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const parsed = inputSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success || (edit && !parsed.data?.id)) return NextResponse.json({ error: 'Data menu tidak valid' }, { status: 400 });
   const { id, parentId, path, label, sortOrder, isVisible } = parsed.data;
@@ -52,9 +55,11 @@ async function save(request: NextRequest, edit: boolean) {
         }
       }
       const [item] = await db.update(navigationItems).set({ parentId, path, label, sortOrder, isVisible }).where(eq(navigationItems.id, id)).returning();
+      await logActivity({ actorId: admin.id, action: 'updated', targetType: 'navigation', targetId: item.id, summary: `Memperbarui menu: ${item.label}` });
       return NextResponse.json({ item });
     }
     const [item] = await db.insert(navigationItems).values({ parentId, path, label, sortOrder, isVisible }).returning();
+    await logActivity({ actorId: admin.id, action: 'created', targetType: 'navigation', targetId: item.id, summary: `Membuat menu: ${item.label}` });
     return NextResponse.json({ item }, { status: 201 });
   } catch (error) {
     console.error('Navigation save:', error);
@@ -66,11 +71,13 @@ export async function POST(request: NextRequest) { return save(request, false); 
 export async function PATCH(request: NextRequest) { return save(request, true); }
 
 export async function DELETE(request: NextRequest) {
-  if (!await getAdminUser(request)) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  const admin = await requireAdminAccess(request, 'primary');
+  if (!admin) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const parsed = z.object({ id: z.number().int().positive() }).safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 });
   const [child] = await db.select({ id: navigationItems.id }).from(navigationItems).where(eq(navigationItems.parentId, parsed.data.id)).limit(1);
   if (child) return NextResponse.json({ error: 'Hapus submenu lebih dahulu' }, { status: 409 });
-  const deleted = await db.delete(navigationItems).where(eq(navigationItems.id, parsed.data.id)).returning();
-  return NextResponse.json({ ok: deleted.length > 0 });
+  const hidden = await db.update(navigationItems).set({ isVisible: false, revision: sql`${navigationItems.revision} + 1` }).where(eq(navigationItems.id, parsed.data.id)).returning();
+  if (hidden[0]) await logActivity({ actorId: admin.id, action: 'hidden', targetType: 'navigation', targetId: hidden[0].id, summary: `Menyembunyikan menu: ${hidden[0].label}` });
+  return NextResponse.json({ ok: hidden.length > 0 });
 }

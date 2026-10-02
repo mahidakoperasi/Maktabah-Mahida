@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { pool } from '@/db';
 import { sameOrigin } from '@/lib/request-origin';
-import { getAdminUser } from '@/lib/admin-auth';
+import { requireAdminAccess } from '@/lib/admin-auth';
+import { logActivity } from '@/lib/activity-log';
 import { designPath, mediaSchema, contentSchema } from '@/lib/design-schema';
 const requestSchema = z.object({
   path: z.string().refine(designPath),
@@ -13,8 +14,6 @@ const requestSchema = z.object({
   version: z.number().int().min(-1).optional(),
 });
 export async function GET(request: NextRequest) {
-  if (!(await getAdminUser(request)))
-    return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const path = request.nextUrl.searchParams.get('path') || '',
     kind = request.nextUrl.searchParams.get('kind');
   if (!designPath(path) || !['media', 'content'].includes(kind || ''))
@@ -22,6 +21,8 @@ export async function GET(request: NextRequest) {
       { error: 'Halaman tidak didukung' },
       { status: 400 },
     );
+  if (!(await requireAdminAccess(request, kind === 'media' ? 'media' : 'content')))
+    return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const { rows } = await pool.query(
     'SELECT draft,published,history,revision FROM design_documents WHERE path=$1 AND kind=$2',
     [path, kind],
@@ -32,9 +33,6 @@ export async function GET(request: NextRequest) {
   );
 }
 export async function PUT(request: NextRequest) {
-  const admin = await getAdminUser(request);
-  if (!admin)
-    return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   if (!sameOrigin(request))
     return NextResponse.json(
       { error: 'Asal permintaan tidak valid' },
@@ -46,6 +44,8 @@ export async function PUT(request: NextRequest) {
   if (!parsed.success)
     return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 });
   const { path, kind, action, revision, version } = parsed.data;
+  const admin = await requireAdminAccess(request, kind === 'media' ? 'media' : 'content');
+  if (!admin) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const data = (kind === 'media' ? mediaSchema : contentSchema).safeParse(
     parsed.data.data,
   );
@@ -147,6 +147,7 @@ export async function PUT(request: NextRequest) {
       ],
     );
     await client.query('COMMIT');
+    await logActivity({ actorId: admin.id, action: action === 'restore' ? 'restored' : action === 'publish' ? 'published' : 'updated', targetType: `design_${kind}`, targetId: path, summary: `${action === 'restore' ? 'Memulihkan' : action === 'publish' ? 'Menerbitkan' : 'Menyimpan draft'} desain ${path}` });
     return NextResponse.json(result[0]);
   } catch (error) {
     await client.query('ROLLBACK');

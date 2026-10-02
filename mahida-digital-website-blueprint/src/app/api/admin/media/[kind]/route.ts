@@ -3,7 +3,9 @@ import { and, asc, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { galleries, galleryImages, videos } from '@/db/schema';
-import { getAdminUser } from '@/lib/admin-auth';
+import { requireAdminAccess } from '@/lib/admin-auth';
+import { logActivity } from '@/lib/activity-log';
+import { saveRevision } from '@/lib/revision-log';
 import { driveIdFromUrl, youtubeIdFromUrl } from '@/lib/media-links';
 import { slugify } from '@/lib/utils';
 
@@ -12,18 +14,19 @@ const schema = z.object({
   description: z.string().trim().max(5000).default(''),
   url: z.string().trim().max(2048).default(''),
   images: z.array(z.object({ url: z.string().trim().max(2048), caption: z.string().trim().max(500).default('') })).max(40).default([]),
-  status: z.enum(['draft','published']).default('draft'),
+  status: z.enum(['draft','published','archived']).default('draft'),
 });
 type Context = { params: Promise<{ kind: string }> };
 async function kindOf(request: NextRequest, context: Context) {
-  if (!await getAdminUser(request)) return null;
+  const admin = await requireAdminAccess(request, 'media');
+  if (!admin) return null;
   const { kind } = await context.params;
-  return kind === 'video' || kind === 'galeri' ? kind : null;
+  return kind === 'video' || kind === 'galeri' ? { kind, admin } : null;
 }
 export async function GET(request: NextRequest, context: Context) {
   const kind = await kindOf(request, context);
   if (!kind) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
-  if (kind === 'video') {
+  if (kind.kind === 'video') {
     const items = await db.select().from(videos).orderBy(asc(videos.sortOrder), desc(videos.createdAt));
     return NextResponse.json({ items });
   }
@@ -37,11 +40,11 @@ async function save(request: NextRequest, context: Context, edit: boolean) {
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success || (edit && !parsed.data?.id)) return NextResponse.json({ error: 'Data media tidak valid' }, { status: 400 });
   const { id, title, description, url, images, status } = parsed.data;
-  const videoId = kind === 'video' ? youtubeIdFromUrl(url) : null;
-  if (kind === 'video' && !videoId) return NextResponse.json({ error: 'Tautan YouTube tidak valid' }, { status: 400 });
-  if (kind === 'galeri' && images.some((image) => !driveIdFromUrl(image.url))) return NextResponse.json({ error: 'Foto harus memakai tautan berkas Google Drive' }, { status: 400 });
+  const videoId = kind.kind === 'video' ? youtubeIdFromUrl(url) : null;
+  if (kind.kind === 'video' && !videoId) return NextResponse.json({ error: 'Tautan YouTube tidak valid' }, { status: 400 });
+  if (kind.kind === 'galeri' && images.some((image) => !driveIdFromUrl(image.url))) return NextResponse.json({ error: 'Foto harus memakai tautan berkas Google Drive' }, { status: 400 });
   try {
-    const table = kind === 'video' ? videos : galleries;
+    const table = kind.kind === 'video' ? videos : galleries;
     const base = slugify(title) || 'media';
     let slug = base;
     for (let n = 2; n < 1000; n++) {
@@ -49,9 +52,11 @@ async function save(request: NextRequest, context: Context, edit: boolean) {
       if (!existing || existing.id === id) break;
       slug = `${base}-${n}`;
     }
-    if (kind === 'video') {
+    if (kind.kind === 'video') {
       const values = { title, slug, description, youtubeId: videoId!, status };
       const [item] = edit && id ? await db.update(videos).set(values).where(eq(videos.id, id)).returning() : await db.insert(videos).values(values).returning();
+      await saveRevision({ entityType: 'video', entityId: item.id, data: item, note: edit ? 'Video diperbarui' : 'Video dibuat', actorId: kind.admin.id });
+      await logActivity({ actorId: kind.admin.id, action: status === 'published' ? 'published' : edit ? 'updated' : 'created', targetType: 'video', targetId: item.id, summary: `${edit ? 'Memperbarui' : 'Membuat'} video: ${item.title}` });
       return NextResponse.json({ item }, { status: edit ? 200 : 201 });
     }
     const item = await db.transaction(async (tx) => {
@@ -62,6 +67,8 @@ async function save(request: NextRequest, context: Context, edit: boolean) {
       if (images.length) await tx.insert(galleryImages).values(images.map((image, index) => ({ galleryId: row.id, imageUrl: image.url, caption: image.caption, sortOrder: index })));
       return row;
     });
+    await saveRevision({ entityType: 'gallery', entityId: item.id, data: { ...item, images }, note: edit ? 'Galeri diperbarui' : 'Galeri dibuat', actorId: kind.admin.id });
+    await logActivity({ actorId: kind.admin.id, action: status === 'published' ? 'published' : edit ? 'updated' : 'created', targetType: 'gallery', targetId: item.id, summary: `${edit ? 'Memperbarui' : 'Membuat'} galeri: ${item.title}` });
     return NextResponse.json({ item }, { status: edit ? 200 : 201 });
   } catch (error) {
     console.error('Media save:', error);
@@ -76,6 +83,9 @@ export async function DELETE(request: NextRequest, context: Context) {
   const parsed = z.object({ id: z.number().int().positive() }).safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 });
   const { id } = parsed.data;
-  const deleted = kind === 'video' ? await db.delete(videos).where(eq(videos.id, id)).returning() : await db.delete(galleries).where(eq(galleries.id, id)).returning();
-  return NextResponse.json({ ok: deleted.length > 0 });
+  const archived = kind.kind === 'video'
+    ? await db.update(videos).set({ status: 'archived', updatedAt: new Date() }).where(eq(videos.id, id)).returning()
+    : await db.update(galleries).set({ status: 'archived', updatedAt: new Date() }).where(eq(galleries.id, id)).returning();
+  if (archived[0]) await logActivity({ actorId: kind.admin.id, action: 'archived', targetType: kind.kind, targetId: id, summary: `Mengarsipkan ${kind.kind === 'video' ? 'video' : 'galeri'}: ${archived[0].title}` });
+  return NextResponse.json({ ok: archived.length > 0 });
 }

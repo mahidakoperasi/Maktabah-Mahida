@@ -4,6 +4,8 @@ import { db } from '@/db';
 import { users } from '@/db/schema';
 import { PRIMARY_ADMIN_EMAIL } from '@/lib/admin-config';
 import { hashPassword, SESSION_COOKIE_NAME, verifyToken } from '@/lib/utils';
+import { isAdminAccess } from '@/lib/admin-permissions';
+import { logActivity } from '@/lib/activity-log';
 
 async function requirePrimaryAdmin(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
@@ -41,6 +43,7 @@ export async function GET(request: NextRequest) {
       id: users.id,
       name: users.name,
       email: users.email,
+      adminAccess: users.adminAccess,
       createdAt: users.createdAt,
     })
     .from(users)
@@ -67,6 +70,7 @@ export async function POST(request: NextRequest) {
     const name = String(body.name ?? '').trim();
     const email = String(body.email ?? '').trim().toLowerCase();
     const password = String(body.password ?? '');
+    const adminAccess = body.adminAccess;
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -84,6 +88,9 @@ export async function POST(request: NextRequest) {
         { error: 'Password minimal 8 karakter.' },
         { status: 400 }
       );
+    }
+    if (!isAdminAccess(adminAccess)) {
+      return NextResponse.json({ error: 'Tugas admin tidak valid.' }, { status: 400 });
     }
 
     const [existing] = await db
@@ -109,15 +116,24 @@ export async function POST(request: NextRequest) {
         password: passwordHash,
         role: 'admin',
         emailVerified: true,
+        adminAccess,
         updatedAt: new Date(),
       })
       .returning({
         id: users.id,
         name: users.name,
         email: users.email,
+        adminAccess: users.adminAccess,
         createdAt: users.createdAt,
       });
 
+    await logActivity({
+      actorId: requester.id,
+      action: 'access_granted',
+      targetType: 'admin',
+      targetId: admin.id,
+      summary: `Memberi akses ${adminAccess} kepada ${admin.name}`,
+    });
     return NextResponse.json(
       { admin: { ...admin, isPrimary: false } },
       { status: 201 }

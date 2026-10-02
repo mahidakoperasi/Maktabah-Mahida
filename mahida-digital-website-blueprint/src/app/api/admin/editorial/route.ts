@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { cmsPages, settings } from '@/db/schema';
-import { getAdminUser } from '@/lib/admin-auth';
+import { requireAdminAccess } from '@/lib/admin-auth';
 import { getEditorialContent } from '@/lib/editorial-content';
 import { editableEditorialPath } from '@/lib/design-pages';
 import { publicImageUrl } from '@/lib/media-links';
@@ -62,7 +62,7 @@ async function pageExists(path: string) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await getAdminUser(request)))
+  if (!(await requireAdminAccess(request, 'content')))
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const path = request.nextUrl.searchParams.get('path') ?? '';
   if (!editableEditorialPath(path) || !(await pageExists(path)))
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  if (!(await getAdminUser(request)))
+  if (!(await requireAdminAccess(request, 'content')))
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success)

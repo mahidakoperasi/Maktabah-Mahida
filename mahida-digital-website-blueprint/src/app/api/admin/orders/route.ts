@@ -3,10 +3,11 @@ import { and, count, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { ebookOrders } from '@/db/schema';
-import { getAdminUser } from '@/lib/admin-auth';
+import { requireAdminAccess } from '@/lib/admin-auth';
+import { logActivity } from '@/lib/activity-log';
 
 export async function GET(request: NextRequest) {
-  if (!await getAdminUser(request)) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  if (!await requireAdminAccess(request, 'commerce')) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const page = z.coerce.number().int().min(1).max(100000).catch(1).parse(request.nextUrl.searchParams.get('page') ?? '1');
   const pageSize = 50;
   const [totalRow] = await db.select({ total: count() }).from(ebookOrders);
@@ -22,7 +23,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!await getAdminUser(request)) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
+  const admin = await requireAdminAccess(request, 'commerce');
+  if (!admin) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const parsed = z.object({
     id: z.number().int().positive(), action: z.enum(['verify','delivered','cancel']),
     paidAmount: z.number().int().nonnegative().optional(),
@@ -52,5 +54,6 @@ export async function PATCH(request: NextRequest) {
     ...(action === 'delivered' ? { deliveredAt: now } : {}),
   }).where(and(eq(ebookOrders.id,id),eq(ebookOrders.status,previous))).returning({ id: ebookOrders.id });
   if (!row) return NextResponse.json({ error: 'Status pesanan tidak sesuai atau pesanan tidak ditemukan' }, { status: 409 });
+  await logActivity({ actorId: admin.id, action: 'updated', targetType: 'ebook_order', targetId: id, summary: `Mengubah status pesanan e-book menjadi ${status}` });
   return NextResponse.json({ ok: true, status });
 }

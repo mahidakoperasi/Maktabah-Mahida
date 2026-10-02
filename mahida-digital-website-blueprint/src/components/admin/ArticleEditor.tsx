@@ -21,6 +21,7 @@ type ArticleData = {
   metaDescription: string | null;
   authorId: number | null;
   authorClass: string | null;
+  revision: number;
 };
 
 export default function ArticleEditor({ articleId }: { articleId?: number }) {
@@ -35,6 +36,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
   const [authorClass, setAuthorClass] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   const [slug, setSlug] = useState('');
+  const [revision, setRevision] = useState(0);
   const [isLoading, setIsLoading] = useState(Boolean(articleId));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -69,6 +71,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
         setAuthorClass(article.authorClass ?? '');
         setStatus(article.status === 'published' ? 'published' : article.status === 'archived' ? 'archived' : 'draft');
         setSlug(article.slug ?? '');
+        setRevision(article.revision ?? 0);
       } catch (err) {
         if (active) {
           setError(err instanceof Error ? err.message : 'Gagal memuat artikel');
@@ -117,6 +120,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
             authorId,
             authorClass,
             status: nextStatus,
+            revision,
           }),
         }
       );
@@ -129,6 +133,7 @@ export default function ArticleEditor({ articleId }: { articleId?: number }) {
 
       setStatus(data.article.status === 'published' ? 'published' : 'draft');
       setSlug(data.article.slug ?? '');
+      setRevision(data.article.revision ?? revision + 1);
       setNotice(nextStatus === 'published' ? 'Artikel berhasil diterbitkan.' : 'Draft berhasil disimpan.');
 
       if (!articleId) {

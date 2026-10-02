@@ -7,6 +7,7 @@ import { PRIMARY_ADMIN_EMAIL } from '@/lib/admin-config';
 import { SESSION_COOKIE_NAME, verifyToken } from '@/lib/utils';
 import AdminShell from './AdminShell';
 import { getHomepageSettings } from '@/lib/homepage-settings';
+import type { StoredAdminAccess } from '@/lib/admin-permissions';
 
 export default async function AdminLayout({
   children,
@@ -26,6 +27,7 @@ export default async function AdminLayout({
       id: users.id,
       role: users.role,
       email: users.email,
+      adminAccess: users.adminAccess,
     })
     .from(users)
     .where(eq(users.id, payload.userId));
@@ -39,6 +41,7 @@ export default async function AdminLayout({
     <AdminShell
       logoUrl={settings.siteLogoUrl}
       isPrimaryAdmin={user.email.toLowerCase() === PRIMARY_ADMIN_EMAIL}
+      adminAccess={user.adminAccess as StoredAdminAccess}
     >
       {children}
     </AdminShell>

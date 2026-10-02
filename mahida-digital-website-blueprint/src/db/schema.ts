@@ -42,6 +42,9 @@ export const users = pgTable('users', {
   avatar: text('avatar'),
   bio: text('bio'),
   role: userRoleEnum('role').default('user'),
+  // `full` is retained for existing admins. New delegated admins receive one
+  // task scope and the primary admin remains controlled by configuration.
+  adminAccess: varchar('admin_access', { length: 24 }).notNull().default('full'),
   emailVerified: boolean('email_verified').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
@@ -137,6 +140,7 @@ export const posts = pgTable('posts', {
 
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
+  revision: integer('revision').notNull().default(0),
 });
 
 // Post Categories junction
@@ -205,6 +209,8 @@ export const videos = pgTable('videos', {
   status: postStatusEnum('status').notNull().default('draft'),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  revision: integer('revision').notNull().default(0),
 });
 
 // Social Posts (Facebook, etc.)
@@ -246,6 +252,8 @@ export const galleries = pgTable('galleries', {
   description: text('description'),
   status: postStatusEnum('status').notNull().default('draft'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  revision: integer('revision').notNull().default(0),
 });
 
 // Gallery Images
@@ -273,6 +281,7 @@ export const products = pgTable('products', {
   status: postStatusEnum('status').notNull().default('draft'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  revision: integer('revision').notNull().default(0),
 });
 
 export const cmsPages = pgTable('cms_pages', {
@@ -284,6 +293,7 @@ export const cmsPages = pgTable('cms_pages', {
   status: postStatusEnum('status').notNull().default('draft'),
   isSystem: boolean('is_system').notNull().default(false),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  revision: integer('revision').notNull().default(0),
 });
 
 export const navigationItems = pgTable('navigation_items', {
@@ -293,6 +303,7 @@ export const navigationItems = pgTable('navigation_items', {
   label: varchar('label', { length: 100 }).notNull(),
   sortOrder: integer('sort_order').notNull().default(0),
   isVisible: boolean('is_visible').notNull().default(true),
+  revision: integer('revision').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -421,6 +432,24 @@ export const revisions = pgTable('revisions', {
   createdBy: integer('created_by').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+export const activityLogs = pgTable(
+  'activity_logs',
+  {
+    id: serial('id').primaryKey(),
+    actorId: integer('actor_id').references(() => users.id, { onDelete: 'set null' }),
+    action: varchar('action', { length: 40 }).notNull(),
+    targetType: varchar('target_type', { length: 60 }).notNull(),
+    targetId: varchar('target_id', { length: 80 }),
+    summary: varchar('summary', { length: 500 }).notNull(),
+    metadata: jsonb('metadata').notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('activity_logs_created_at_idx').on(table.createdAt),
+    index('activity_logs_target_idx').on(table.targetType, table.targetId, table.createdAt),
+  ],
+);
 
 // Settings (key-value store for site settings, homepage config, etc.)
 export const settings = pgTable('settings', {

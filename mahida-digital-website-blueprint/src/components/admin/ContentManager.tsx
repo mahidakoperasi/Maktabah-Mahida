@@ -7,12 +7,12 @@ import RichTextField from './RichTextField';
 import ImageUrlPreview from './ImageUrlPreview';
 import AuthorFields from './AuthorFields';
 
-type Item = { id: number; title: string; slug: string; excerpt: string | null; content: string | null; featuredImage: string | null; status: string; authorId: number | null; authorClass: string | null };
-const blank = { title: '', excerpt: '', content: '', featuredImage: '', status: 'draft', authorId: null as number | null, authorClass: '' };
+type Item = { id: number; title: string; slug: string; excerpt: string | null; content: string | null; featuredImage: string | null; status: string; authorId: number | null; authorClass: string | null; revision: number };
+const blank = { title: '', excerpt: '', content: '', featuredImage: '', status: 'draft', authorId: null as number | null, authorClass: '', revision: 0 };
 
 export default function ContentManager({ section, label, publicPath }: { section: ContentSection; label: string; publicPath: string }) {
   const [items, setItems] = useState<Item[]>([]);
-  const [form, setForm] = useState<{ id?: number; title: string; excerpt: string; content: string; featuredImage: string; status: string; authorId: number | null; authorClass: string }>(blank);
+  const [form, setForm] = useState<{ id?: number; title: string; excerpt: string; content: string; featuredImage: string; status: string; authorId: number | null; authorClass: string; revision: number }>(blank);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [saving, setSaving] = useState(false);
@@ -46,7 +46,7 @@ export default function ContentManager({ section, label, publicPath }: { section
         setNotice('Konten diarsipkan. Pilih kembali dari daftar untuk memulihkannya.');
       } else {
         const item = data.item as Item;
-        setForm({ id: item.id, title: item.title, excerpt: item.excerpt ?? '', content: item.content ?? '', featuredImage: item.featuredImage ?? '', status: item.status, authorId: item.authorId, authorClass: item.authorClass ?? '' });
+        setForm({ id: item.id, title: item.title, excerpt: item.excerpt ?? '', content: item.content ?? '', featuredImage: item.featuredImage ?? '', status: item.status, authorId: item.authorId, authorClass: item.authorClass ?? '', revision: item.revision });
         setNotice(item.status === 'published' ? `Konten diterbitkan di ${publicPath}/${item.slug}` : 'Konten berhasil disimpan.');
       }
     } catch (err) { setError(err instanceof Error ? err.message : 'Gagal menyimpan'); }
@@ -57,7 +57,7 @@ export default function ContentManager({ section, label, publicPath }: { section
       <section className="space-y-4">
         <div><h1 className="font-serif text-3xl font-bold">{label}</h1><p className="mt-1 text-sm text-warm-gray-600">{items.length} konten dalam modul ini.</p></div>
         {items.length === 0 && <p className="empty-state text-sm">Belum ada konten. Tulis dan terbitkan dari formulir ini.</p>}
-        {items.map((item) => <button key={item.id} onClick={() => { setNotice(''); setForm({ id: item.id, title: item.title, excerpt: item.excerpt ?? '', content: item.content ?? '', featuredImage: item.featuredImage ?? '', status: item.status, authorId: item.authorId, authorClass: item.authorClass ?? '' }); }} className="block w-full border border-mahida-200 bg-white p-4 text-left hover:bg-mahida-50"><span className="font-semibold">{item.title}</span><span className="ml-2 text-xs text-warm-gray-500">{item.status}</span></button>)}
+        {items.map((item) => <button key={item.id} onClick={() => { setNotice(''); setForm({ id: item.id, title: item.title, excerpt: item.excerpt ?? '', content: item.content ?? '', featuredImage: item.featuredImage ?? '', status: item.status, authorId: item.authorId, authorClass: item.authorClass ?? '', revision: item.revision }); }} className="block w-full border border-mahida-200 bg-white p-4 text-left hover:bg-mahida-50"><span className="font-semibold">{item.title}</span><span className="ml-2 text-xs text-warm-gray-500">{item.status}</span></button>)}
       </section>
       <form onSubmit={(event) => { event.preventDefault(); submit(form.id ? 'PATCH' : 'POST', form); }} className="space-y-4 border border-mahida-200 bg-white p-5">
         <div className="flex items-center justify-between"><h2 className="font-serif text-xl font-bold">{form.id ? 'Edit konten' : 'Konten baru'}</h2><button className="text-sm text-emerald-forest" type="button" onClick={() => setForm(blank)}>Baru</button></div>

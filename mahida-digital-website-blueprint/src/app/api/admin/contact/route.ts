@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { pool } from '@/db';
 import { sameOrigin } from '@/lib/request-origin';
-import { getAdminUser } from '@/lib/admin-auth';
+import { requireAdminAccess } from '@/lib/admin-auth';
 export async function GET(request: NextRequest) {
-  if (!(await getAdminUser(request)))
+  if (!(await requireAdminAccess(request, 'primary')))
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   const offset = Math.max(
     0,
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   );
 }
 export async function PATCH(request: NextRequest) {
-  if (!(await getAdminUser(request)))
+  if (!(await requireAdminAccess(request, 'primary')))
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   if (!sameOrigin(request))
     return NextResponse.json({ error: 'Asal tidak valid' }, { status: 403 });

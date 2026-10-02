@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { and, desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
-import { getAdminUser } from '@/lib/admin-auth';
+import { requireAdminAccess } from '@/lib/admin-auth';
+import { logActivity } from '@/lib/activity-log';
+import { saveRevision } from '@/lib/revision-log';
 import { createArticleInput } from '@/lib/article-input';
 import { calculateReadingTime, slugify } from '@/lib/utils';
 import { invalidDriveImages, invalidVideoMarkers } from '@/lib/rich-markers';
@@ -26,7 +28,7 @@ async function uniqueSlug(title: string, currentId?: number) {
 }
 
 export async function GET(request: NextRequest) {
-  const admin = await getAdminUser(request);
+  const admin = await requireAdminAccess(request, 'content');
   if (!admin) {
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   }
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const admin = await getAdminUser(request);
+  const admin = await requireAdminAccess(request, 'content');
   if (!admin) {
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   }
@@ -128,6 +130,8 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
     }).returning();
 
+    await saveRevision({ entityType: 'article', entityId: article.id, data: article, note: status === 'published' ? 'Diterbitkan' : 'Draft dibuat', actorId: admin.id });
+    await logActivity({ actorId: admin.id, action: status === 'published' ? 'published' : 'created', targetType: 'article', targetId: article.id, summary: `${status === 'published' ? 'Menerbitkan' : 'Membuat'} artikel: ${article.title}` });
     return NextResponse.json({ article }, { status: 201 });
   } catch (error) {
     console.error('Create article error:', error);

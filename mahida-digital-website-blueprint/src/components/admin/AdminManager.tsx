@@ -9,6 +9,11 @@ type AdminItem = {
   email: string;
   createdAt: string | null;
   isPrimary: boolean;
+  adminAccess: 'full' | 'content' | 'media' | 'admissions' | 'commerce';
+};
+
+const accessLabels: Record<AdminItem['adminAccess'], string> = {
+  full: 'Akses penuh (admin lama)', content: 'Pengelola Konten', media: 'Media & Galeri', admissions: 'Pendaftaran', commerce: 'Koperasi',
 };
 
 export default function AdminManager() {
@@ -16,6 +21,7 @@ export default function AdminManager() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [adminAccess, setAdminAccess] = useState<'content' | 'media' | 'admissions' | 'commerce'>('content');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,7 +75,7 @@ export default function AdminManager() {
       const response = await fetch('/api/admin/admins', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, adminAccess }),
       });
       const data = await response.json();
 
@@ -148,6 +154,7 @@ export default function AdminManager() {
                           <ShieldCheck size={12} /> Admin Utama
                         </span>
                       )}
+                      {!admin.isPrimary && <span className="bg-warm-gray-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-warm-gray-600">{accessLabels[admin.adminAccess]}</span>}
                     </div>
                     <p className="mt-1 text-sm text-warm-gray-500">{admin.email}</p>
                   </div>
@@ -185,6 +192,15 @@ export default function AdminManager() {
                 className="w-full border border-warm-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-forest"
                 placeholder="Nama admin"
               />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-warm-gray-600">Tugas Admin</label>
+              <select value={adminAccess} onChange={(e) => setAdminAccess(e.target.value as typeof adminAccess)} className="w-full border border-warm-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-forest">
+                <option value="content">Pengelola Konten</option>
+                <option value="media">Media &amp; Galeri</option>
+                <option value="admissions">Pendaftaran</option>
+                <option value="commerce">Koperasi</option>
+              </select>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-warm-gray-600">Email</label>
@@ -226,7 +242,7 @@ export default function AdminManager() {
           </form>
 
           <p className="mt-4 text-xs leading-relaxed text-warm-gray-400">
-            Berikan password awal secara langsung kepada admin baru. Admin tidak perlu OTP atau verifikasi email untuk masuk.
+            Admin Utama memegang semua akses. Akun baru hanya dapat membuka modul sesuai tugasnya; menu lain disembunyikan dan API tetap menolak akses langsung.
           </p>
         </aside>
       </div>
