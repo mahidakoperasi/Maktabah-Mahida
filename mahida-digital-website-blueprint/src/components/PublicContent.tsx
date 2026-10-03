@@ -11,6 +11,8 @@ import { getPublicPage, paragraphs } from '@/lib/cms';
 import { contentSections, type ContentSection } from '@/lib/content-sections';
 import DrivePreview from './DrivePreview';
 import RichContent from './RichContent';
+import ProtectedReading from './ProtectedReading';
+import ArabicText from './ArabicText';
 import DetailEngagement from './DetailEngagement';
 import RelatedContent from './RelatedContent';
 import ArticleCover from './ArticleCover';
@@ -18,6 +20,25 @@ import SummaryCard from './SummaryCard';
 import AuthorByline from './AuthorByline';
 import GenericPageTemplate from './GenericPageTemplate';
 import EditorialImage from './EditorialImage';
+
+import { publicBooks, fans, librarySettings } from "@/lib/maktabah-store";
+import { BookCards } from "./MaktabahCatalog";
+
+async function TranslationBooks() {
+  const [books, fanList, settings] = await Promise.all([
+    publicBooks(),
+    fans(),
+    librarySettings(),
+  ]);
+  return (
+    <div className="maktabah-theme rounded p-4 sm:p-6">
+      <Link className="library-back mb-5" href="/maktabah">
+        Buka Maktabah Mahida →
+      </Link>
+      <BookCards books={books} fans={fanList} settings={settings.published} />
+    </div>
+  );
+}
 
 function conditions(section: ContentSection) {
   const config = contentSections[section];
@@ -106,7 +127,9 @@ export async function PublicContentList({
         </div>
       </DesignHero>
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-        {rows.length === 0 ? (
+        {section === "terjemahan" ? (
+          <TranslationBooks />
+        ) : rows.length === 0 ? (
           <div className="empty-state">
             <h2 className="font-serif text-xl font-bold">
               Belum ada konten terbit
@@ -174,13 +197,13 @@ export async function PublicContentDetail({
   if (!preview && !(await db.select({ id: posts.id }).from(posts).where(and(eq(posts.id, stored.id), ...conditions(section))).limit(1)).length) notFound();
   const item = preview?.type === 'announcement' ? { ...stored, title: preview.title, excerpt: preview.excerpt, content: preview.content, contentRaw: preview.content, featuredImage: preview.featuredImage } : stored;
   return (
-    <article className="min-h-screen bg-cream">
+    <ProtectedReading enabled={['esai', 'terjemahan', 'berita'].includes(section)}><article className="min-h-screen bg-cream">
       <header className="bg-emerald-forest py-14 text-white">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <Link href={config.publicPath} className="text-sm text-white/75">
             ← Semua {config.label}
           </Link>
-          <h1 className="display-md mt-5 text-white">{item.title}</h1>
+          <h1 dir="auto" className="display-md mt-5 text-white"><ArabicText text={item.title} /></h1>
           <AuthorByline
             author={
               item.authorName && item.authorSlug
@@ -192,7 +215,7 @@ export async function PublicContentDetail({
             onDark
           />
           {item.excerpt && (
-            <p className="mt-4 text-lg text-white/80">{item.excerpt}</p>
+            <p dir="auto" className="mt-4 text-lg text-white/80"><ArabicText text={item.excerpt} /></p>
           )}
         </div>
       </header>
@@ -210,6 +233,6 @@ export async function PublicContentDetail({
           category={config.category}
         />
       </DetailEngagement>
-    </article>
+    </article></ProtectedReading>
   );
 }

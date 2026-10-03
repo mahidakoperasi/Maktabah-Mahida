@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
   {
     label: 'Tampilan Website',
     children: [
+      { label: 'Proteksi & Promosi', icon: FileText, href: '/admin/tampilan/promosi', access: 'primary' },
       {
         label: 'Header & Penerbitan',
         icon: FileText,
@@ -94,6 +95,7 @@ const navItems: NavItem[] = [
       { label: 'Komentar', icon: FileText, href: '/admin/konten/komentar', access: 'content' },
       { label: 'Esai & Opini', icon: FileText, href: '/admin/konten/esai', access: 'content' },
       { label: 'Terjemahan', icon: FileText, href: '/admin/konten/terjemahan', access: 'content' },
+      { label: 'Maktabah & Kitab', icon: FileText, href: '/admin/maktabah', access: 'content' },
       { label: 'Manuskrip', icon: FileText, href: '/admin/konten/manuskrip', access: 'content' },
       { label: 'Berita', icon: FileText, href: '/admin/konten/berita', access: 'content' },
       { label: 'Kegiatan', icon: FileText, href: '/admin/konten/kegiatan', access: 'content' },

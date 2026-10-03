@@ -15,7 +15,7 @@ export default function PublicAnalytics() {
       return;
     const params = new URLSearchParams(window.location.search);
     if (
-      ['publicationPreview', 'designPreview', 'galleryPreview'].some((k) =>
+      ['publicationPreview', 'designPreview', 'galleryPreview', 'maktabahPreview'].some((k) =>
         params.has(k),
       )
     )

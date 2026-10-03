@@ -15,7 +15,10 @@ import {
   primaryKey,
   date,
   bigint,
+  bigserial,
+  customType,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // Enums
 export const postTypeEnum = pgEnum('post_type', [
@@ -174,6 +177,67 @@ export const relatedPosts = pgTable('related_posts', {
 });
 
 // Books/Kitab (Maktabah)
+export const maktabahFans = pgTable("maktabah_fans", {
+  slug: text("slug").primaryKey(),
+  name: text("name").notNull(),
+  intro: text("intro").notNull().default(""),
+  imageUrl: text("image_url").notNull().default(""),
+  imageAlt: text("image_alt").notNull().default(""),
+  sortOrder: integer("sort_order").notNull().default(0),
+  visible: boolean("visible").notNull().default(true),
+  revision: integer("revision").notNull().default(0),
+});
+export const maktabahBooks = pgTable(
+  "maktabah_books",
+  {
+    postId: integer("post_id")
+      .primaryKey()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    draft: jsonb("draft").notNull().default({}),
+    published: jsonb("published"),
+    revision: integer("revision").notNull().default(0),
+    chapters: jsonb("chapters").notNull().default([]),
+    documentId: text("document_id").notNull().default(""),
+    contentHash: text("content_hash").notNull().default(""),
+    syncPaused: boolean("sync_paused").notNull().default(false),
+    blocked: boolean("blocked").notNull().default(false),
+    syncError: text("sync_error").notNull().default(""),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+  },
+  (table) => [index("maktabah_books_doc_idx").on(table.documentId)],
+);
+
+const tsvector = customType<{ data: string }>({ dataType: () => "tsvector" });
+export const maktabahSearchEntries = pgTable(
+  "maktabah_search_entries",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    postId: integer("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    chapterId: text("chapter_id").notNull().default(""),
+    chapterTitle: text("chapter_title").notNull().default(""),
+    blockId: text("block_id").notNull().default(""),
+    content: text("content").notNull(),
+    contentHash: text("content_hash").notNull().default(""),
+    searchVector: tsvector("search_vector").generatedAlwaysAs(
+      sql`to_tsvector('simple', mahida_search_normalize(content))`,
+    ),
+  },
+  (table) => [
+    index("maktabah_search_vector_idx").using("gin", table.searchVector),
+    index("maktabah_search_post_idx").on(table.postId),
+    uniqueIndex("maktabah_search_identity_idx").on(
+      table.postId,
+      table.kind,
+      table.chapterId,
+      table.blockId,
+    ),
+  ],
+);
+
 export const books = pgTable('books', {
   id: serial('id').primaryKey(),
   title: varchar('title', { length: 500 }).notNull(),

@@ -4,6 +4,11 @@ import { pool } from '@/db';
 import { requireAdminAccess } from '@/lib/admin-auth';
 import { sameOrigin } from '@/lib/request-origin';
 import { analyticsEnabled } from '@/lib/routine-analytics';
+import { analyticsLabels } from '@/lib/analytics-schema';
+import {
+  getPromotionSettings,
+  promotionStatistics,
+} from '@/lib/promotion-store';
 const headers = { 'Cache-Control': 'private, no-store' };
 export async function GET(request: NextRequest) {
   if (!(await requireAdminAccess(request, 'primary')))
@@ -17,29 +22,31 @@ export async function GET(request: NextRequest) {
     ? Number(request.nextUrl.searchParams.get('days'))
     : 30;
   const since =
-    "day >= (now() AT TIME ZONE 'Asia/Jakarta')::date-($1::integer-1)";
+    "day >= (now() AT TIME ZONE 'Asia/Jakarta')::date-($1::integer-1) AND event=ANY($2::varchar[])";
+  const parameters = [days, Object.keys(analyticsLabels)];
   const result = await Promise.allSettled([
     pool.query(
       `SELECT event,sum(count)::bigint AS count FROM analytics_daily WHERE ${since} GROUP BY event ORDER BY count DESC`,
-      [days],
+      parameters,
     ),
     pool.query(
       `SELECT path,sum(count)::bigint AS count FROM analytics_daily WHERE ${since} AND event='pageview' GROUP BY path ORDER BY count DESC,path LIMIT 50`,
-      [days],
+      parameters,
     ),
     pool.query(
       `SELECT day::text,event,sum(count)::bigint AS count FROM analytics_daily WHERE ${since} GROUP BY day,event ORDER BY day,event`,
-      [days],
+      parameters,
     ),
     pool.query(
       `SELECT path,event,sum(count)::bigint AS count FROM analytics_daily WHERE ${since} AND event<>'pageview' GROUP BY path,event ORDER BY count DESC,path LIMIT 50`,
-      [days],
+      parameters,
     ),
   ]);
   const rows = result.map((r) => {
     if (r.status !== 'fulfilled') throw r.reason;
     return r.value.rows.map((row) => ({ ...row, count: Number(row.count) }));
   });
+  const promotion = (await getPromotionSettings()).published;
   return NextResponse.json(
     {
       enabled: await analyticsEnabled(),
@@ -48,6 +55,18 @@ export async function GET(request: NextRequest) {
       pages: rows[1],
       daily: rows[2],
       clicks: rows[3],
+      promotion: promotion
+        ? {
+            id: promotion.id,
+            name: promotion.name || promotion.title,
+            title: promotion.title,
+            statisticsEnabled: promotion.statisticsEnabled,
+            enabled: promotion.enabled,
+            startsAt: promotion.startsAt,
+            endsAt: promotion.endsAt,
+            counts: await promotionStatistics(promotion.id, days),
+          }
+        : null,
     },
     { headers },
   );

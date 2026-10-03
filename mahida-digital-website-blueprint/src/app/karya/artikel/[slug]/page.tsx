@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
 import { ArrowLeft } from 'lucide-react';
 import RichContent from '@/components/RichContent';
+import ProtectedReading from '@/components/ProtectedReading';
+import ArabicText from '@/components/ArabicText';
 import DetailEngagement from '@/components/DetailEngagement';
 import RelatedContent from '@/components/RelatedContent';
 import DrivePreview from '@/components/DrivePreview';
@@ -51,7 +53,7 @@ export default async function PublicArticlePage({
   if (!article) notFound();
 
   return (
-    <article className="bg-cream min-h-screen">
+    <ProtectedReading><article className="bg-cream min-h-screen">
       <header className="border-b border-mahida-200 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
           <Link href="/karya/artikel" className="mb-6 inline-flex items-center gap-2 text-sm text-warm-gray-500 hover:text-emerald-forest">
@@ -59,11 +61,11 @@ export default async function PublicArticlePage({
             Semua Artikel
           </Link>
           <p className="label mb-3">Artikel</p>
-          <h1 className="display-md text-charcoal">{article.title}</h1>
+          <h1 dir="auto" className="display-md text-charcoal"><ArabicText text={article.title} /></h1>
           <AuthorByline author={article.author} authorClass={article.authorClass} publishedAt={article.publishedAt} />
           {article.excerpt && (
-            <p className="mt-5 max-w-3xl text-lg leading-relaxed text-warm-gray-600">
-              {article.excerpt}
+            <p dir="auto" className="mt-5 max-w-3xl text-lg leading-relaxed text-warm-gray-600">
+              <ArabicText text={article.excerpt} />
             </p>
           )}
           {article.readingTime && <p className="mt-3 text-xs text-warm-gray-500">{article.readingTime} menit baca</p>}
@@ -91,6 +93,6 @@ export default async function PublicArticlePage({
       <DetailEngagement kind="post" id={article.id}>
         <RelatedContent kind="post" id={article.id} path="/karya/artikel" />
       </DetailEngagement>
-    </article>
+    </article></ProtectedReading>
   );
 }

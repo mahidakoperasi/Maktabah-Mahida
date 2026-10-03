@@ -11,11 +11,11 @@ function FacebookIcon({ className }: { className?: string; 'aria-hidden'?: boole
   </svg>;
 }
 
-const socialIcons: Record<SocialLink['platform'], LucideIcon | typeof FacebookIcon> = {
+export const socialIcons: Record<SocialLink['platform'], LucideIcon | typeof FacebookIcon> = {
   instagram: Camera, youtube: Play, facebook: FacebookIcon,
   tiktok: Music2, x: AtSign, lainnya: Globe,
 };
-const contactIcons: Record<PublicContact['channel'], LucideIcon> = {
+export const contactIcons: Record<PublicContact['channel'], LucideIcon> = {
   whatsapp: MessageCircle, telepon: Phone, email: Mail, website: Globe,
 };
 
