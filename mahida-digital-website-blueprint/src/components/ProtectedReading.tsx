@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { getPromotionSettings } from "@/lib/promotion-store";
 import ProtectedReadingClient from "./ProtectedReadingClient";
-// Reuse this boundary around the native Maktabah reader in steps 2–3.
+// Public reading protection shared by works and the native Maktabah pages.
 export default async function ProtectedReading({
   children,
   enabled = true,

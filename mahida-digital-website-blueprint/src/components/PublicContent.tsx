@@ -21,6 +21,25 @@ import AuthorByline from './AuthorByline';
 import GenericPageTemplate from './GenericPageTemplate';
 import EditorialImage from './EditorialImage';
 
+import { publicBooks, fans, librarySettings } from "@/lib/maktabah-store";
+import { BookCards } from "./MaktabahCatalog";
+
+async function TranslationBooks() {
+  const [books, fanList, settings] = await Promise.all([
+    publicBooks(),
+    fans(),
+    librarySettings(),
+  ]);
+  return (
+    <div className="maktabah-theme rounded p-4 sm:p-6">
+      <Link className="library-back mb-5" href="/maktabah">
+        Buka Maktabah Mahida →
+      </Link>
+      <BookCards books={books} fans={fanList} settings={settings.published} />
+    </div>
+  );
+}
+
 function conditions(section: ContentSection) {
   const config = contentSections[section];
   const filters = [eq(posts.type, config.type), eq(posts.status, 'published')];
@@ -108,7 +127,9 @@ export async function PublicContentList({
         </div>
       </DesignHero>
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-        {rows.length === 0 ? (
+        {section === "terjemahan" ? (
+          <TranslationBooks />
+        ) : rows.length === 0 ? (
           <div className="empty-state">
             <h2 className="font-serif text-xl font-bold">
               Belum ada konten terbit

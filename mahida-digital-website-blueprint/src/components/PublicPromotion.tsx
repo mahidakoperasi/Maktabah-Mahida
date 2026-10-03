@@ -54,9 +54,12 @@ export default function PublicPromotion() {
     if (!path || excludedPromotionPath(path) || consumed) return;
     const params = new URLSearchParams(window.location.search);
     if (
-      ["publicationPreview", "designPreview", "galleryPreview"].some((k) =>
-        params.has(k),
-      )
+      [
+        "publicationPreview",
+        "designPreview",
+        "galleryPreview",
+        "maktabahPreview",
+      ].some((k) => params.has(k))
     )
       return;
     if (!entry.current) entry.current = path;

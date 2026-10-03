@@ -174,6 +174,37 @@ export const relatedPosts = pgTable('related_posts', {
 });
 
 // Books/Kitab (Maktabah)
+export const maktabahFans = pgTable("maktabah_fans", {
+  slug: text("slug").primaryKey(),
+  name: text("name").notNull(),
+  intro: text("intro").notNull().default(""),
+  imageUrl: text("image_url").notNull().default(""),
+  imageAlt: text("image_alt").notNull().default(""),
+  sortOrder: integer("sort_order").notNull().default(0),
+  visible: boolean("visible").notNull().default(true),
+  revision: integer("revision").notNull().default(0),
+});
+export const maktabahBooks = pgTable(
+  "maktabah_books",
+  {
+    postId: integer("post_id")
+      .primaryKey()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    draft: jsonb("draft").notNull().default({}),
+    published: jsonb("published"),
+    revision: integer("revision").notNull().default(0),
+    chapters: jsonb("chapters").notNull().default([]),
+    documentId: text("document_id").notNull().default(""),
+    contentHash: text("content_hash").notNull().default(""),
+    syncPaused: boolean("sync_paused").notNull().default(false),
+    blocked: boolean("blocked").notNull().default(false),
+    syncError: text("sync_error").notNull().default(""),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+  },
+  (table) => [index("maktabah_books_doc_idx").on(table.documentId)],
+);
+
 export const books = pgTable('books', {
   id: serial('id').primaryKey(),
   title: varchar('title', { length: 500 }).notNull(),
