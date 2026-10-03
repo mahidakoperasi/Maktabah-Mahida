@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { publicImageUrl } from "./media-links";
+import { socialLinkSchema, contactLinkSchema } from "./public-directory";
 export const librarySections = [
   "intro",
   "search",
@@ -38,6 +39,88 @@ export function docsId(url: string) {
   }
 }
 const short = z.string().trim().max(500);
+const destination = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine((value) => {
+    if (!value) return true;
+    if (/[\\\u0000-\u0020]/.test(value)) return false;
+    if (value.startsWith("/") && !value.startsWith("//")) return true;
+    try {
+      const url = new URL(value);
+      return (
+        url.protocol === "https:" &&
+        Boolean(url.hostname) &&
+        !url.username &&
+        !url.password
+      );
+    } catch {
+      return false;
+    }
+  }, "Gunakan tujuan HTTPS atau jalur internal seperti /tentang/pendaftaran.");
+export const libraryBannerSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    title: short.default(""),
+    description: z.string().max(10000).default(""),
+    imageUrl: image.default(""),
+    mobileImageUrl: image.default(""),
+    imageAlt: short.default(""),
+    placement: z
+      .enum(["left", "right", "above", "below", "background"])
+      .default("right"),
+    textAlign: z.enum(["left", "center", "right"]).default("left"),
+    height: z.number().int().min(180).max(640).default(320),
+    focalX: z.number().int().min(0).max(100).default(50),
+    focalY: z.number().int().min(0).max(100).default(50),
+    buttonLabel: short.default(""),
+    buttonUrl: destination.default(""),
+  })
+  .refine(
+    (v) => !v.enabled || !v.buttonLabel || Boolean(v.buttonUrl),
+    "Isi tujuan tombol banner.",
+  );
+export const footerGroups = ["socials", "contacts", "join"] as const;
+export const footerGroupNames = {
+  socials: "Media sosial",
+  contacts: "Kontak",
+  join: "Gabung bersama kami",
+};
+export const libraryFooterSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    source: z.enum(["mahida", "custom"]).default("mahida"),
+    socials: z.array(socialLinkSchema).max(30).default([]),
+    contacts: z.array(contactLinkSchema).max(30).default([]),
+    address: short.default(""),
+    socialsTitle: short.default("Media sosial"),
+    contactsTitle: short.default("Kontak"),
+    joinTitle: short.default("Gabung bersama kami"),
+    joinDescription: z
+      .string()
+      .trim()
+      .max(2000)
+      .default("Bersama merawat tradisi ilmu dan kehidupan pesantren."),
+    joinLabel: short.default("Daftar / Gabung"),
+    joinUrl: destination.default("/tentang/pendaftaran"),
+    groups: z
+      .array(z.object({ id: z.enum(footerGroups), visible: z.boolean() }))
+      .length(3)
+      .refine(
+        (v) => new Set(v.map((s) => s.id)).size === 3,
+        "Setiap kelompok footer harus tersedia tepat satu kali.",
+      )
+      .default(footerGroups.map((id) => ({ id, visible: true }))),
+  })
+  .superRefine((value, ctx) => {
+    const ids = [...value.socials, ...value.contacts].map((item) => item.id);
+    if (new Set(ids).size !== ids.length)
+      ctx.addIssue({
+        code: "custom",
+        message: "ID tautan footer tidak boleh sama.",
+      });
+  });
 export const bookSchema = z.object({
   title: short.min(1),
   arabicTitle: short.default(""),
@@ -102,6 +185,8 @@ export const librarySettingsSchema = z.object({
   logoUrl: image,
   columns: z.enum(["2", "3", "4"]),
   cardStyle: z.enum(["cover", "compact"]),
+  banner: libraryBannerSchema.prefault({}),
+  footer: libraryFooterSchema.prefault({}),
   sections: z
     .array(section)
     .length(6)
@@ -120,6 +205,8 @@ export const defaultLibrarySettings: LibrarySettings = {
   logoUrl: "",
   columns: "3",
   cardStyle: "cover",
+  banner: libraryBannerSchema.parse({}),
+  footer: libraryFooterSchema.parse({}),
   sections: librarySections.map((id) => ({
     id,
     title: id === "intro" ? "Perpustakaan Terjemahan Kitab" : sectionNames[id],

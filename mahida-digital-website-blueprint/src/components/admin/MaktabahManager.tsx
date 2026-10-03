@@ -14,11 +14,14 @@ import type { Chapter } from "@/lib/kitab-content";
 import RichTextField from "./RichTextField";
 import KitabBlocks from "../KitabBlocks";
 import ImageUrlPreview from "./ImageUrlPreview";
+import MaktabahAppearanceFields from "./MaktabahAppearanceFields";
+import type { PublicDirectory } from "@/lib/public-directory";
 type Data = {
   books: BookRow[];
   fans: Fan[];
   settings: { draft: LibrarySettings; revision: number };
   docsConfigured: boolean;
+  directory: PublicDirectory;
 };
 const blankFan: Fan = {
   slug: "",
@@ -44,6 +47,10 @@ export default function MaktabahManager() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<Chapter[] | null>(null);
+  const [layoutPreview, setLayoutPreview] = useState<{
+    width: number;
+    version: number;
+  } | null>(null);
   async function load() {
     const r = await fetch("/api/admin/maktabah", { cache: "no-store" });
     const result = await r.json();
@@ -134,8 +141,10 @@ export default function MaktabahManager() {
               : "Berhasil disimpan.",
         );
       }
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memproses.");
+      return false;
     } finally {
       setBusy(false);
     }
@@ -157,6 +166,20 @@ export default function MaktabahManager() {
       ];
       return { ...old, sections };
     });
+  }
+  async function previewLayout(width: number) {
+    if (!data) return;
+    if (
+      await send("layout-save", {
+        settings: layout,
+        revision: data.settings.revision,
+      })
+    ) {
+      setLayoutPreview((previous) => ({
+        width,
+        version: (previous?.version ?? 0) + 1,
+      }));
+    }
   }
   const row = data?.books.find((b) => b.post_id === id);
   const field = (key: keyof BookMeta, label: string) => (
@@ -621,6 +644,11 @@ export default function MaktabahManager() {
                 label="Penjelasan koleksi, sumber, dan penyuntingan"
                 onChange={(about) => setLayout((old) => ({ ...old, about }))}
               />
+              <MaktabahAppearanceFields
+                value={layout}
+                onChange={setLayout}
+                directory={data.directory}
+              />
               <div className="admin-library-fields">
                 <label className="admin-library-field">
                   Kolom kartu desktop
@@ -763,6 +791,37 @@ export default function MaktabahManager() {
                   Lihat Maktabah
                 </Link>
               </div>
+              <p className="text-sm">
+                Pratinjau ukuran layar menyimpan perubahan sebagai draf terlebih
+                dahulu. Perubahan tampil ke pengunjung setelah Terbitkan
+                Tampilan.
+              </p>
+              <div className="admin-library-actions">
+                {[
+                  [375, "HP"],
+                  [768, "Tablet"],
+                  [1440, "Desktop"],
+                ].map(([width, label]) => (
+                  <button
+                    key={width}
+                    disabled={busy}
+                    aria-pressed={layoutPreview?.width === width}
+                    onClick={() => previewLayout(Number(width))}
+                  >
+                    Pratinjau {label}
+                  </button>
+                ))}
+              </div>
+              {layoutPreview && (
+                <div className="admin-library-preview-scroll">
+                  <iframe
+                    key={layoutPreview.version}
+                    title={`Pratinjau Maktabah ${layoutPreview.width}px`}
+                    src={`/maktabah?maktabahPreview=1&v=${layoutPreview.version}`}
+                    style={{ width: layoutPreview.width, height: 720 }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </>

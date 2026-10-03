@@ -18,6 +18,7 @@ import {
   docsId,
 } from "@/lib/maktabah-schema";
 import { fetchDocs, docsConfigured, DocsError } from "@/lib/google-docs";
+import { getPublicDirectory } from "@/lib/public-directory-store";
 const input = z.object({
   action: z.enum([
     "save",
@@ -41,13 +42,20 @@ const input = z.object({
 export async function GET(request: NextRequest) {
   if (!(await requireAdminAccess(request, "content")))
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 403 });
-  const [books, fanList, settings] = await Promise.all([
+  const [books, fanList, settings, directory] = await Promise.all([
     adminBooks(),
     fans(),
     librarySettings(),
+    getPublicDirectory(),
   ]);
   return NextResponse.json(
-    { books, fans: fanList, settings, docsConfigured: docsConfigured() },
+    {
+      books,
+      fans: fanList,
+      settings,
+      directory,
+      docsConfigured: docsConfigured(),
+    },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }

@@ -12,6 +12,7 @@ import RichContent from "@/components/RichContent";
 import DesignSections from "@/components/DesignSections";
 import DesignHero from "@/components/DesignHero";
 import DesignTextBlock from "@/components/DesignTextBlock";
+import MaktabahBanner from "@/components/MaktabahBanner";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Maktabah Mahida" };
 export default async function Page({
@@ -40,6 +41,15 @@ export default async function Page({
       {s.sections
         .filter((section) => section.visible)
         .map((section) => {
+          if (section.id === "intro" && s.banner.enabled) {
+            return (
+              <MaktabahBanner
+                key={section.id}
+                settings={s}
+                eyebrow={section.title}
+              />
+            );
+          }
           const image = section.imageUrl ? (
             <EditorialImage
               url={section.imageUrl}

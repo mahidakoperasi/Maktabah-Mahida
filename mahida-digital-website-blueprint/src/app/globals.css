@@ -232,17 +232,17 @@
   border-radius: 20px;
   font-size: 0.7rem;
 }
-.library-compact .library-book > a {
+.library-cards-compact .library-book > a {
   display: flex;
 }
-.library-compact .library-cover {
+.library-cards-compact .library-cover {
   width: 31%;
   height: auto;
   min-height: 200px;
   flex-shrink: 0;
   padding: 0.6rem;
 }
-.library-compact .library-card-body {
+.library-cards-compact .library-card-body {
   flex: 1;
 }
 .library-fans {
@@ -270,16 +270,219 @@
   padding: 2rem;
   line-height: 1.8;
 }
-.library-footer {
-  padding: 2rem 1.5rem;
-  border-top: 1px solid #bd9b544d;
+/* Dedicated prose stays in normal block flow even when reading wrappers use display:contents. */
+.library-prose-section {
+  display: block;
+  max-width: 880px;
+  margin-inline: auto;
+  font-size: 1.06rem;
+  line-height: 1.95;
+}
+.library-prose-section :where(p, blockquote, ul, ol, table) {
+  margin-block: 1.1rem;
+}
+.library-prose-section :where(h2, h3, h4) {
+  margin-top: 1.8rem;
+}
+.library-prose-section > h2 {
+  margin-top: 0;
+}
+.library-prose-section :where(ul, ol) {
+  padding-inline-start: 1.5rem;
+}
+.library-prose-section ul {
+  list-style: disc;
+}
+.library-prose-section ol {
+  list-style: decimal;
+}
+.library-prose-section table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.library-prose-section :where(th, td) {
+  border: 1px solid #bd9b544d;
+  padding: 0.65rem;
+}
+.library-prose-section blockquote {
+  border-inline-start: 3px solid #bd9b54;
+  padding-inline-start: 1.2rem;
+}
+.library-banner {
+  position: relative;
+  isolation: isolate;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.8rem;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  margin-block: 0.5rem 2rem;
+  border: 1px solid #bd9b5455;
+  border-radius: 8px;
+  background: #f2efdf;
+  overflow: hidden;
+  min-height: var(--banner-height);
+}
+.library-banner-copy {
+  flex: 1;
+  min-width: 0;
+  align-self: center;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+.library-banner h1 {
+  font-size: clamp(2rem, 4.5vw, 3.4rem);
+}
+.library-banner .library-intro {
+  max-width: 760px;
+  margin-inline: auto;
+}
+.library-banner .library-intro .reading-text > p {
+  text-align: inherit;
+}
+.library-banner-picture {
+  display: block;
+  position: relative;
+  flex: 0 0 43%;
+  min-height: var(--banner-height);
+}
+.library-banner-picture img {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  object-position: var(--banner-focus);
+}
+.library-banner-left {
+  flex-direction: row-reverse;
+}
+.library-banner-above {
+  flex-direction: column-reverse;
+}
+.library-banner-below {
+  flex-direction: column;
+}
+.library-banner-above .library-banner-picture,
+.library-banner-below .library-banner-picture {
+  flex-basis: auto;
+}
+.library-banner-background .library-banner-picture {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+.library-banner-background.library-banner-with-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #062d20bb;
+}
+.library-banner-background.library-banner-with-image {
+  color: #fffaf0;
+}
+.library-banner-background.library-banner-with-image
+  :where(.library-eyebrow, .library-intro) {
+  color: #fffaf0;
+}
+.library-banner-background .library-banner-copy {
+  width: 100%;
+}
+.library-banner-button {
+  margin-top: 1.25rem;
+}
+.library-banner-background .library-banner-button {
+  border: 1px solid #d5bc7e;
+}
+.library-banner-no-image .library-banner-copy {
+  width: 100%;
+}
+.library-footer {
+  background: #103d2c;
+  color: #faf7ef;
+  border-top: 2px solid #bd9b54;
+  font-size: 0.88rem;
+  margin-top: 1rem;
+}
+.library-footer-inner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 2rem;
   max-width: 1280px;
   margin: auto;
+  padding: 2.2rem 1.5rem;
+}
+.library-footer h2 {
+  color: #e3cc95;
+  font-size: 1.15rem;
+  margin: 0 0 0.8rem;
+}
+.library-footer p {
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.library-footer ul {
+  list-style: none;
+  padding: 0;
+}
+.library-social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.library-social-links a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #faf7ef55;
+  border-radius: 50%;
+}
+.library-contact-links a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+.library-contact-links svg {
+  flex-shrink: 0;
+}
+.library-contact-links span {
+  min-width: 0;
+}
+.library-footer-address {
+  margin-top: 0.6rem;
+  white-space: pre-line;
+}
+.library-footer-join-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  margin-top: 1rem;
+  border: 1px solid #d5bc7e;
+  border-radius: 4px;
+}
+.library-footer a:hover {
+  background: #ffffff12;
+}
+.maktabah-theme :where(a, button, input, select):focus-visible {
+  outline: 2px solid #bd9b54;
+  outline-offset: 4px;
+}
+.admin-library-preview-scroll {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid #d1dacd;
+  background: #e8ece6;
+  padding: 1rem;
+}
+.admin-library-preview-scroll iframe {
+  display: block;
+  max-width: none;
+  border: 0;
+  background: #faf7ef;
 }
 .library-sort,
 .library-tags,
@@ -660,6 +863,35 @@ ul.kitab-list {
   }
 }
 @media (max-width: 639px) {
+  .library-section.library-banner {
+    min-height: 0;
+    padding: 0;
+    gap: 0;
+  }
+  .library-banner-right,
+  .library-banner-below {
+    flex-direction: column;
+  }
+  .library-banner-left,
+  .library-banner-above {
+    flex-direction: column-reverse;
+  }
+  .library-banner-picture {
+    flex-basis: auto;
+    min-height: clamp(180px, 55vw, 300px);
+  }
+  .library-banner-background {
+    min-height: min(var(--banner-height), 420px);
+  }
+  .library-banner-copy {
+    padding: 1.5rem;
+  }
+  .library-footer-inner {
+    grid-template-columns: 1fr;
+    padding: 1.8rem 1rem;
+    gap: 1.5rem;
+  }
+
   .library-container {
     width: calc(100% - 2rem);
     padding: 2rem 0;

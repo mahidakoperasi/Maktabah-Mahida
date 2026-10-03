@@ -180,7 +180,7 @@ export default async function SectionPage({
           </div>
         </section>
         {book.meta.preface && (
-          <section className="library-section">
+          <section className="library-section library-prose-section">
             <h2>Kata Pengantar</h2>
             <ProtectedReading enabled={!preview}>
               <RichContent content={book.meta.preface} />
@@ -188,7 +188,7 @@ export default async function SectionPage({
           </section>
         )}
         {book.meta.sourceNote && (
-          <section className="library-section">
+          <section className="library-section library-prose-section">
             <h2>Sumber & Penyuntingan</h2>
             <ProtectedReading enabled={!preview}>
               <RichContent content={book.meta.sourceNote} />

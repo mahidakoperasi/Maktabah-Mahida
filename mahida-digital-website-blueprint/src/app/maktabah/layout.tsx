@@ -4,6 +4,7 @@ import { librarySettings } from "@/lib/maktabah-store";
 import { getHomepageSettings } from "@/lib/homepage-settings";
 import { headers } from "next/headers";
 import { canPreviewLibrary } from "@/lib/maktabah-preview";
+import MaktabahFooter from "@/components/MaktabahFooter";
 export default async function LibraryLayout({
   children,
 }: {
@@ -35,10 +36,7 @@ export default async function LibraryLayout({
         </nav>
       </header>
       {children}
-      <footer className="library-footer">
-        <p>{s.name} · Perpustakaan terjemahan kitab Mahida</p>
-        <Link href="/">Kembali ke Mahida</Link>
-      </footer>
+      <MaktabahFooter settings={s} />
     </div>
   );
 }

@@ -38,7 +38,7 @@ export function BookCards({
 }) {
   return books.length ? (
     <div
-      className={`library-books library-columns-${settings.columns} library-${settings.cardStyle}`}
+      className={`library-books library-columns-${settings.columns} library-cards-${settings.cardStyle}`}
     >
       {books.map((book) => (
         <article key={book.id} className="library-book">

@@ -6,6 +6,7 @@ import { writeFileSync } from "node:fs";
 import {
   bookSchema,
   defaultLibrarySettings,
+  librarySettingsSchema,
   docsId,
 } from "../src/lib/maktabah-schema";
 import { parseDocs, type DocsDocument } from "../src/lib/kitab-content";
@@ -551,5 +552,473 @@ test("admin editor and all tabs remain usable on narrow screens", async ({
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+  }
+});
+
+test("legacy settings keep existing content and reject unsafe banner/footer destinations", () => {
+  const { banner, footer, ...legacy } = defaultLibrarySettings;
+  void banner;
+  void footer;
+  const parsed = librarySettingsSchema.parse({
+    ...legacy,
+    name: "Nama lama",
+    intro: "Pengantar lama",
+  });
+  expect(parsed.name).toBe("Nama lama");
+  expect(parsed.intro).toBe("Pengantar lama");
+  expect(parsed.banner.enabled).toBe(false);
+  expect(parsed.footer.source).toBe("mahida");
+  for (const url of [
+    "javascript:alert(1)",
+    "//evil.invalid",
+    "/\\evil.invalid",
+    "http://evil.invalid",
+    "https://user:pass@evil.invalid/",
+  ]) {
+    expect(
+      librarySettingsSchema.safeParse({
+        ...parsed,
+        banner: { ...parsed.banner, buttonUrl: url },
+      }).success,
+    ).toBe(false);
+    expect(
+      librarySettingsSchema.safeParse({
+        ...parsed,
+        footer: { ...parsed.footer, joinUrl: url },
+      }).success,
+    ).toBe(false);
+  }
+});
+
+test("long preface/source stack vertically and both card styles fit mobile and desktop", async ({
+  page,
+  context,
+}) => {
+  await login(context);
+  const book = await make(context.request, "Kitab Tata Letak Panjang", false);
+  book.meta.preface = `Pengantar pertama. ${"Paragraf panjang tentang tradisi ilmu pesantren. ".repeat(15)}\n\nPengantar kedua. ${"بِسْمِ اللَّهِ dan isi berikutnya. ".repeat(12)}`;
+  book.meta.sourceNote = `Sumber pertama. ${"Penjelasan sumber naskah dan penyuntingan. ".repeat(15)}\n\nSumber kedua. ${"Catatan penyuntingan kitab. ".repeat(15)}`;
+  expect(
+    (await post(context.request, { action: "publish", ...book })).status(),
+  ).toBe(200);
+  const slug = (
+    await pool.query("SELECT slug FROM posts WHERE id=$1", [book.id])
+  ).rows[0].slug;
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`/maktabah/kitab/${slug}`);
+    for (const section of await page.locator(".library-prose-section").all()) {
+      const title = await section.locator("h2").first().boundingBox();
+      const paragraphs = section.locator(".reading-text > p");
+      await expect(paragraphs).toHaveCount(2);
+      const first = await paragraphs.nth(0).boundingBox();
+      const second = await paragraphs.nth(1).boundingBox();
+      expect(title!.width).toBeGreaterThan(width < 640 ? 200 : 500);
+      expect(first!.y).toBeGreaterThanOrEqual(title!.y + title!.height);
+      expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height);
+      expect(Math.abs(first!.x - second!.x)).toBeLessThan(1);
+      await expect(paragraphs.first()).toHaveCSS("text-align", "justify");
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  for (const cardStyle of ["cover", "compact"] as const) {
+    const settings = { ...defaultLibrarySettings, cardStyle };
+    const revision = (
+      await (await context.request.get("/api/admin/maktabah")).json()
+    ).settings.revision;
+    expect(
+      (
+        await post(context.request, {
+          action: "layout-publish",
+          settings,
+          revision,
+        })
+      ).status(),
+    ).toBe(200);
+    for (const width of [320, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/karya/terjemahan");
+      const grid = page.locator(".library-books");
+      await expect(grid).toHaveClass(new RegExp(`library-cards-${cardStyle}`));
+      const box = await grid.boundingBox();
+      expect(box!.height).toBeGreaterThan(cardStyle === "cover" ? 300 : 190);
+      await expect(
+        grid.getByRole("heading", { name: book.meta.title }),
+      ).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+  }
+  await pool.query("DELETE FROM settings WHERE key='maktabah_library'");
+});
+
+test("admin edits banner/footer, previews saved drafts and publishes only to Maktabah", async ({
+  page,
+  context,
+}) => {
+  await login(context);
+  await page.route("https://assets.example.invalid/**", (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500"><rect width="1200" height="500" fill="#1d5940"/><circle cx="900" cy="250" r="150" fill="#bd9b54"/></svg>',
+    }),
+  );
+  await page.goto("/admin/maktabah");
+  await page
+    .getByRole("button", { name: "Tampilan Maktabah", exact: true })
+    .click();
+  await page.getByLabel("Aktifkan banner", { exact: true }).check();
+  await page
+    .getByLabel("Judul banner", { exact: true })
+    .fill("Ruang Ilmu Maktabah Uji");
+  await page
+    .getByLabel("Gambar banner — HTTPS / Drive", { exact: true })
+    .fill("https://assets.example.invalid/banner-desktop.svg");
+  await page
+    .getByLabel("Gambar banner khusus HP — opsional", { exact: true })
+    .fill("https://assets.example.invalid/banner-mobile.svg");
+  await page
+    .getByLabel("Teks alternatif banner", { exact: true })
+    .fill("Rak kitab Mahida");
+  await page
+    .getByLabel("Teks tombol banner — kosong untuk sembunyikan", {
+      exact: true,
+    })
+    .fill("Telusuri fan");
+  await page
+    .getByLabel("Tujuan tombol banner", { exact: true })
+    .fill("/maktabah/fan");
+  await page
+    .getByRole("combobox", { name: /Sumber medsos dan kontak/ })
+    .selectOption("custom");
+  await page
+    .getByRole("button", { name: "Tambah medsos Maktabah", exact: true })
+    .click();
+  await page
+    .getByLabel("Nama akun", { exact: true })
+    .fill("Instagram Maktabah Uji");
+  await page
+    .getByLabel("URL akun HTTPS", { exact: true })
+    .fill("https://www.instagram.com/mahida_uji/");
+  await page.getByLabel("Tampilkan akun", { exact: true }).check();
+  await page
+    .getByRole("button", { name: "Tambah kontak Maktabah", exact: true })
+    .click();
+  await page
+    .getByLabel("Label kontak", { exact: true })
+    .fill("Hubungi pustakawan");
+  await page
+    .getByLabel("Nomor kontak internasional — 628…, tanpa spasi", {
+      exact: true,
+    })
+    .fill("6281234567890");
+  await page.getByLabel("Tampilkan kontak", { exact: true }).check();
+  await page
+    .getByLabel("Judul ajakan bergabung", { exact: true })
+    .fill("Bergabung dalam tradisi ilmu");
+  await page
+    .getByLabel("Label tombol daftar / gabung", { exact: true })
+    .fill("Daftar Mahida Uji");
+  await page
+    .getByRole("button", { name: "Naikkan Gabung bersama kami", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Naikkan Gabung bersama kami", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Pratinjau HP", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Berhasil disimpan.");
+  const frame = page.frameLocator('iframe[title="Pratinjau Maktabah 375px"]');
+  await expect(
+    frame.getByRole("heading", {
+      name: "Ruang Ilmu Maktabah Uji",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(frame.locator(".library-banner-picture img")).toHaveJSProperty(
+    "currentSrc",
+    "https://assets.example.invalid/banner-mobile.svg",
+  );
+  await expect(
+    frame.getByRole("link", { name: "Instagram Maktabah Uji", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page
+      .locator("iframe")
+      .evaluate((el) => el.getBoundingClientRect().width),
+  ).toBe(375);
+  // Clear the session to verify the saved draft remains private.
+  await context.clearCookies();
+  const publicPage = await context.newPage();
+  await publicPage.goto("http://127.0.0.1:3010/maktabah?maktabahPreview=1");
+  await expect(
+    publicPage.getByRole("heading", { name: "Ruang Ilmu Maktabah Uji" }),
+  ).toHaveCount(0);
+  await expect(
+    publicPage.getByRole("link", { name: "Instagram Maktabah Uji" }),
+  ).toHaveCount(0);
+  await publicPage.close();
+  await login(context);
+  await page
+    .getByRole("button", { name: "Terbitkan Tampilan", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toHaveText("Berhasil diterbitkan.");
+  const published = (
+    await (await context.request.get("/api/admin/maktabah")).json()
+  ).settings.published;
+  await context.clearCookies();
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/maktabah");
+    await expect(
+      page.getByRole("heading", {
+        name: "Ruang Ilmu Maktabah Uji",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.locator(".library-banner-picture img")).toHaveJSProperty(
+      "currentSrc",
+      `https://assets.example.invalid/banner-${width < 640 ? "mobile" : "desktop"}.svg`,
+    );
+    await expect(
+      page.getByRole("link", { name: "Telusuri fan", exact: true }),
+    ).toHaveAttribute("href", "/maktabah/fan");
+    await expect(
+      page.locator(".library-footer-inner > section").first(),
+    ).toHaveClass("library-footer-join");
+    await expect(
+      page.getByRole("link", { name: "Hubungi pustakawan", exact: true }),
+    ).toHaveAttribute("href", "https://wa.me/6281234567890");
+    await expect(
+      page.getByRole("link", { name: "Daftar Mahida Uji", exact: true }),
+    ).toHaveAttribute("href", "/tentang/pendaftaran");
+    await expect(page.locator(".site-footer")).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    if (width === 390 || width === 1440) {
+      await page.screenshot({
+        path: `test-results/maktabah-appearance-${width}.png`,
+        fullPage: width === 1440,
+      });
+      if (width === 390) {
+        await page.locator(".library-footer").scrollIntoViewIfNeeded();
+        await page
+          .locator(".library-footer")
+          .screenshot({ path: "test-results/maktabah-footer-mobile.png" });
+      }
+    }
+  }
+  await page.goto("/maktabah/fan");
+  await expect(page.locator(".library-banner")).toHaveCount(0);
+  await expect(page.locator(".library-footer")).toBeVisible();
+  await page.goto("/");
+  await expect(page.locator(".library-footer")).toHaveCount(0);
+  await expect(page.locator(".site-footer")).toBeVisible();
+  await login(context);
+  let revision = (
+    await (await context.request.get("/api/admin/maktabah")).json()
+  ).settings.revision;
+  for (const placement of [
+    "left",
+    "right",
+    "above",
+    "below",
+    "background",
+  ] as const) {
+    const settings = {
+      ...published,
+      banner: { ...published.banner, placement, textAlign: "center" },
+    };
+    expect(
+      (
+        await post(context.request, {
+          action: "layout-publish",
+          revision,
+          settings,
+        })
+      ).status(),
+    ).toBe(200);
+    revision++;
+    for (const width of [320, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/maktabah");
+      await expect(page.locator(".library-banner")).toHaveClass(
+        new RegExp(`library-banner-${placement}`),
+      );
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      const copy = await page.locator(".library-banner-copy").boundingBox();
+      const image = await page.locator(".library-banner-picture").boundingBox();
+      expect(copy!.width).toBeGreaterThan(200);
+      expect(image!.height).toBeGreaterThan(150);
+    }
+  }
+  const hidden = {
+    ...published,
+    banner: { ...published.banner, enabled: false },
+    footer: { ...published.footer, enabled: false },
+  };
+  expect(
+    (
+      await post(context.request, {
+        action: "layout-publish",
+        revision,
+        settings: hidden,
+      })
+    ).status(),
+  ).toBe(200);
+  await page.goto("/maktabah");
+  await expect(page.locator(".library-banner")).toHaveCount(0);
+  await expect(page.locator(".library-footer")).toHaveCount(0);
+  await expect(page.locator("#library-intro h1")).toBeVisible();
+  await pool.query("DELETE FROM settings WHERE key='maktabah_library'");
+});
+
+test("footer follows visible Mahida contacts and a failed local banner image keeps text usable", async ({
+  page,
+  context,
+}) => {
+  const original = (
+    await pool.query("SELECT value FROM settings WHERE key='public_directory'")
+  ).rows[0]?.value;
+  const directory = {
+    socials: [
+      {
+        id: crypto.randomUUID(),
+        platform: "youtube",
+        label: "YouTube Mahida Uji",
+        url: "https://www.youtube.com/@mahida",
+        isVisible: true,
+        sortOrder: 0,
+      },
+      {
+        id: crypto.randomUUID(),
+        platform: "instagram",
+        label: "Akun disembunyikan",
+        url: "https://www.instagram.com/hidden",
+        isVisible: false,
+        sortOrder: 1,
+      },
+    ],
+    contacts: [
+      {
+        id: crypto.randomUUID(),
+        category: "umum",
+        channel: "email",
+        label: "Email Mahida Uji",
+        value: "maktabah@example.invalid",
+        isVisible: true,
+        sortOrder: 0,
+      },
+    ],
+    coopWhatsapp: { label: "Koperasi Mahida", isVisible: false, sortOrder: 0 },
+  };
+  try {
+    await pool.query(
+      "INSERT INTO settings(key,type,value) VALUES('public_directory','json',$1) ON CONFLICT(key) DO UPDATE SET value=$1",
+      [JSON.stringify(directory)],
+    );
+    await login(context);
+    const revision = (
+      await (await context.request.get("/api/admin/maktabah")).json()
+    ).settings.revision;
+    const settings = {
+      ...defaultLibrarySettings,
+      banner: {
+        ...defaultLibrarySettings.banner,
+        enabled: true,
+        title: "Banner tetap terbaca",
+        imageUrl: "/missing-banner-test.png",
+        buttonLabel: "Buka fan",
+        buttonUrl: "/maktabah/fan",
+      },
+    };
+    expect(
+      (
+        await post(context.request, {
+          action: "layout-publish",
+          revision,
+          settings,
+        })
+      ).status(),
+    ).toBe(200);
+    for (const width of [320, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/maktabah");
+      await expect(page.locator(".library-banner-picture")).toHaveCount(0);
+      await expect(
+        page.getByRole("heading", {
+          name: "Banner tetap terbaca",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Buka fan", exact: true }),
+      ).toHaveAttribute("href", "/maktabah/fan");
+      await expect(
+        page
+          .locator(".library-footer")
+          .getByRole("link", { name: "YouTube Mahida Uji", exact: true }),
+      ).toHaveAttribute("href", directory.socials[0].url);
+      await expect(
+        page
+          .locator(".library-footer")
+          .getByRole("link", { name: "Email Mahida Uji", exact: true }),
+      ).toHaveAttribute("href", "mailto:maktabah@example.invalid");
+      await expect(
+        page.getByRole("link", { name: "Akun disembunyikan", exact: true }),
+      ).toHaveCount(0);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    const book = await make(context.request, "Kitab Dengan Footer", false);
+    expect(
+      (await post(context.request, { action: "publish", ...book })).status(),
+    ).toBe(200);
+    const slug = (
+      await pool.query("SELECT slug FROM posts WHERE id=$1", [book.id])
+    ).rows[0].slug;
+    await page.goto(`/maktabah/kitab/${slug}/baca`);
+    await expect(page.locator(".library-reading")).toBeVisible();
+    const reading = await page.locator(".library-reading").boundingBox();
+    const footer = await page.locator(".library-footer").boundingBox();
+    expect(footer!.y).toBeGreaterThanOrEqual(reading!.y + reading!.height);
+    await expect(page.locator(".library-banner")).toHaveCount(0);
+    // Updating the shared directory is reflected without overwriting Maktabah settings.
+    directory.contacts[0].label = "Email Mahida Diperbarui";
+    await pool.query(
+      "UPDATE settings SET value=$1 WHERE key='public_directory'",
+      [JSON.stringify(directory)],
+    );
+    await page.reload();
+    await expect(
+      page
+        .locator(".library-footer")
+        .getByRole("link", { name: "Email Mahida Diperbarui", exact: true }),
+    ).toBeVisible();
+  } finally {
+    await pool.query("DELETE FROM settings WHERE key='maktabah_library'");
+    if (original === undefined)
+      await pool.query("DELETE FROM settings WHERE key='public_directory'");
+    else
+      await pool.query(
+        "UPDATE settings SET value=$1 WHERE key='public_directory'",
+        [original],
+      );
   }
 });
