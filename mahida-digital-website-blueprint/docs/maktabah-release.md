@@ -77,7 +77,7 @@ GOOGLE_DOCS_CREDENTIALS_FILE=/opt/mahida-secrets/mahida-google-docs.json
 
 Script memasang hanya file tersebut secara read-only ke kontainer. Jangan mengubah DATABASE_URL, secret autentikasi, atau pengaturan promosi. Dokumentasi resmi: [Docs API](https://developers.google.com/workspace/docs/api) dan [OAuth service account](https://developers.google.com/identity/protocols/oauth2/service-account).
 
-Jika kredensial ditambahkan setelah rilis, kontainer perlu dibuat ulang dengan env dan mount baru melalui prosedur rilis yang sesuai. `docker restart` saja tidak membaca ulang env-file. Script ini tidak mengulang rilis jika commit yang sama sudah aktif.
+Jika kredensial ditambahkan setelah rilis, gunakan [panduan pemasangan Google Docs](google-docs-setup.md) dan script `scripts/enable-google-docs.sh` untuk membuat ulang kontainer dengan preview dan rollback. `docker restart` saja tidak membaca ulang env-file. Script ini tidak mengulang rilis jika commit yang sama sudah aktif.
 
 ## 4. Jalankan di latar belakang
 
