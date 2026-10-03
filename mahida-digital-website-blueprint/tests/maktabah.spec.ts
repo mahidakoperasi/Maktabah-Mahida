@@ -109,6 +109,31 @@ test("Docs parser preserves tabs, chapter levels, lists, tables and footnotes", 
     docsId("https://evil.example/document/d/maktabahdocs12345"),
   ).toBeNull();
 });
+test("internal navigation switches Mahida and Maktabah headers and footers", async ({
+  page,
+}) => {
+  await page.goto("/karya/terjemahan");
+  await expect(
+    page.getByRole("navigation", { name: "Navigasi utama", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Buka Maktabah Mahida →" }).click();
+  await expect(page).toHaveURL("/maktabah");
+  await expect(page.locator(".library-header")).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Navigasi utama", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator(".site-footer")).toHaveCount(0);
+  await page
+    .locator(".library-header")
+    .getByRole("link", { name: "← Kembali ke Mahida", exact: true })
+    .click();
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("navigation", { name: "Navigasi utama", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".site-footer")).toBeVisible();
+  await expect(page.locator(".library-header")).toHaveCount(0);
+});
 test("authorization, origin checks and optimistic concurrency protect writes", async ({
   context,
 }) => {
@@ -268,12 +293,24 @@ test("admin controls layout drafts, section placement, titles and legacy clippin
     page.getByRole("heading", { name: "Perpustakaan Draf Uji" }),
   ).toHaveCount(0);
   await page.goto("/maktabah?maktabahPreview=1");
+  await expect(page.locator(".library-brand")).toContainText(
+    "Perpustakaan Draf Uji",
+  );
   await expect(
     page.getByRole("heading", { name: "Perpustakaan Draf Uji" }),
   ).toBeVisible();
   expect(
     await page.locator(".library-section").first().getAttribute("id"),
   ).toBe("library-about");
+  await context.clearCookies();
+  await page.goto("/maktabah?maktabahPreview=1");
+  await expect(page.locator(".library-brand")).not.toContainText(
+    "Perpustakaan Draf Uji",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Perpustakaan Draf Uji" }),
+  ).toHaveCount(0);
+  await login(context);
   expect(
     (
       await post(context.request, {
@@ -284,6 +321,10 @@ test("admin controls layout drafts, section placement, titles and legacy clippin
     ).status(),
   ).toBe(200);
   await context.clearCookies();
+  await page.goto("/maktabah?maktabahPreview=1");
+  await expect(page.locator(".library-brand")).toContainText(
+    "Perpustakaan Draf Uji",
+  );
   await page.goto("/maktabah");
   await expect(
     page.getByRole("heading", { name: "Perpustakaan Draf Uji" }),

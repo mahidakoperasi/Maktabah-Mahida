@@ -10,7 +10,7 @@ import PublicAnalytics from "@/components/PublicAnalytics";
 import PublicPromotion from "@/components/PublicPromotion";
 import { getHomepageSettings } from "@/lib/homepage-settings";
 import { publicImageUrl } from "@/lib/media-links";
-import { headers } from "next/headers";
+import PublicSiteChrome from "@/components/PublicSiteChrome";
 
 export const dynamic = "force-dynamic";
 
@@ -39,8 +39,6 @@ export default async function RootLayout({
 }: {
   children: ReactNode;
 }) {
-  const path = (await headers()).get("x-mahida-public-path") ?? "";
-  const isLibrary = path === "/maktabah" || path.startsWith("/maktabah/");
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
@@ -58,12 +56,16 @@ export default async function RootLayout({
       <body className="bg-cream text-charcoal antialiased min-h-screen flex flex-col">
         <PublicAnalytics />
         <PublicPromotion />
-        {!isLibrary && <PublicationHeader />}
-        {!isLibrary && <Navbar />}
+        <PublicSiteChrome>
+          <PublicationHeader />
+          <Navbar />
+        </PublicSiteChrome>
         <main className="min-w-0 flex-1">
           <PublicationFrame>{children}</PublicationFrame>
         </main>
-        {!isLibrary && <Footer />}
+        <PublicSiteChrome>
+          <Footer />
+        </PublicSiteChrome>
       </body>
     </html>
   );

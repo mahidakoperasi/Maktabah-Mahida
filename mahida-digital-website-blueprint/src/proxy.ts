@@ -6,7 +6,10 @@ export function proxy(request: NextRequest) {
   headers.delete('x-mahida-design-preview');
   headers.delete('x-mahida-design-kind');
   headers.delete('x-mahida-publication-preview');
+  headers.delete('x-mahida-maktabah-preview');
   headers.set('x-mahida-public-path', request.nextUrl.pathname);
+  if (request.nextUrl.searchParams.get('maktabahPreview') === '1')
+    headers.set('x-mahida-maktabah-preview', '1');
   const target = request.nextUrl.searchParams.get('publicationPreview');
   if (target && validTarget(target)) headers.set('x-mahida-publication-preview', target);
   if (
@@ -19,7 +22,7 @@ export function proxy(request: NextRequest) {
       headers.set('x-mahida-design-kind', kind);
   }
   const response = NextResponse.next({ request: { headers } });
-  if (request.nextUrl.searchParams.has('designPreview') || target)
+  if (request.nextUrl.searchParams.has('designPreview') || request.nextUrl.searchParams.has('maktabahPreview') || target)
     response.headers.set('Cache-Control', 'private, no-store');
   return response;
 }
