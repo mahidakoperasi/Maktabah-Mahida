@@ -50,7 +50,7 @@ if [ "$current_revision" = "$EXPECTED" ]; then
   released=1
   exit 0
 fi
-test "$current_revision" = 20d1e0fb16933b4a2894af019704b9e231f753cb || { echo 'Versi produksi berbeda dari dasar promosi 20d1e0f; rilis dihentikan.' >&2; exit 1; }
+test "$current_revision" = 6393627cfa72eca469354fadf5532ace91dcb27e || { echo 'Versi produksi berbeda dari dasar Maktabah 6393627; rilis dihentikan.' >&2; exit 1; }
 docker network inspect "$NETWORK" >/dev/null
 docker_root="$(docker info -f '{{.DockerRootDir}}')"
 available_mb="$(df -Pm "$docker_root" | awk 'NR==2 { print $4 }')"
@@ -62,6 +62,12 @@ if [ -n "$credential_file" ]; then
   [[ "$credential_file" == /* && "$credential_file" != *[[:space:]]* && "$credential_file" != *,* ]] && [ -f "$credential_file" ] || { echo 'File identitas Google Docs tidak valid.' >&2; exit 1; }
   secret_mount=(--mount "type=bind,src=$credential_file,dst=$credential_file,readonly")
 fi
+# Refuse missing/different credentials or extra mounts rather than dropping them.
+[ "$credential_file" = /opt/mahida-secrets/mahida-google-docs.json ] || { echo 'Kredensial Google Docs yang sudah aktif tidak ditemukan dalam env-file; produksi belum diubah.' >&2; exit 1; }
+current_mounts="$(docker inspect -f '{{range .Mounts}}{{println .Type .Source .Destination .RW}}{{end}}' mahida-app)"
+[ "$current_mounts" = "bind $credential_file $credential_file false" ] || { echo 'Mount produksi berbeda dari kunci Google Docs read-only yang diharapkan; produksi belum diubah.' >&2; exit 1; }
+docker exec mahida-app node -e 'const fs=require("node:fs");if(process.env.GOOGLE_DOCS_CREDENTIALS_FILE!==process.argv[1])process.exit(1);fs.accessSync(process.argv[1],fs.constants.R_OK)' "$credential_file" >/dev/null 2>&1 || { echo 'Identitas Google Docs produksi belum terbaca; rilis dihentikan.' >&2; exit 1; }
+echo 'Source dan kredensial cocok. Memuat image rilis...'
 gzip -t "$ARCHIVE"
 gzip -dc "$ARCHIVE" | docker load
 test "$(docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' mahida-digital-ci:latest)" = "$EXPECTED" || { echo 'Image bukan build Maktabah yang diminta; produksi belum diubah.' >&2; exit 1; }
@@ -69,22 +75,27 @@ docker tag mahida-digital-ci:latest "$TAG"
 if [ -n "$credential_file" ]; then
   docker run --rm "${secret_mount[@]}" --entrypoint sh "$TAG" -c 'test -r "$1"' sh "$credential_file" >/dev/null 2>&1 || { echo 'File identitas Google Docs harus dapat dibaca UID 1001. Periksa izin file.' >&2; exit 1; }
 fi
+install -m 600 "$ENV_FILE" "$BACKUP_DIR/maktabah-$STAMP.env"
+docker inspect mahida-app > "$BACKUP_DIR/maktabah-$STAMP.container.json"
+printf '%s\n' "$current_revision" > "$BACKUP_DIR/maktabah-$STAMP.previous-revision.txt"
+echo 'Membuat backup database...'
 docker run --rm --network "$NETWORK" --env-file "$ENV_FILE" postgres:16-alpine sh -c 'exec pg_dump -Fc --dbname="$DATABASE_URL"' > "$BACKUP"
 chmod 600 "$BACKUP"
 test -s "$BACKUP"
 docker run --rm -i postgres:16-alpine pg_restore -l >/dev/null < "$BACKUP"
 echo "Backup database tervalidasi: $BACKUP"
+echo 'Menjalankan migrasi tambahan dan menyiapkan preview...'
 docker run --rm --network "$NETWORK" --env-file "$ENV_FILE" "$TAG" node scripts/migrate.mjs
-docker run -d "${secret_mount[@]}" --name "$PREVIEW" --network "$NETWORK" --env-file "$ENV_FILE" -p 127.0.0.1:3001:3000 "$TAG" >/dev/null
+docker run -d "${secret_mount[@]}" --name "$PREVIEW" --network "$NETWORK" --env-file "$ENV_FILE" -e MAKTABAH_SYNC_ENABLED=false -p 127.0.0.1:3001:3000 "$TAG" >/dev/null
 preview_created=1
 health_ok() {
   local response
   response="$(curl -fsS --max-time 8 "$1/api/health" 2>/dev/null)" || return 1
-  [[ "$response" == *'"ok":true'* && "$response" == *'"database":"connected"'* && "$response" == *'"qualityReady":true'* && "$response" == *'"maktabahReady":true'* ]]
+  [[ "$response" == *'"ok":true'* && "$response" == *'"database":"connected"'* && "$response" == *'"qualityReady":true'* && "$response" == *'"maktabahReady":true'* && "$response" == *'"maktabahSearchReady":true'* ]]
 }
 routes_ok() {
   local route
-  for route in / /api/promotion /maktabah /maktabah/fan /maktabah/pencarian /karya/terjemahan; do
+  for route in / /api/promotion /maktabah /maktabah/fan /maktabah/pencarian /api/maktabah/pencarian?q=ilmu /karya/terjemahan; do
     curl -fsS --max-time 15 "$1$route" >/dev/null 2>&1 || return 1
   done
 }
@@ -108,6 +119,7 @@ docker stop mahida-app >/dev/null
 if ! docker rename mahida-app "$OLD"; then docker start mahida-app >/dev/null; exit 1; fi
 swapped=1
 docker run -d "${secret_mount[@]}" --name mahida-app --network "$NETWORK" --env-file "$ENV_FILE" --restart unless-stopped -p 127.0.0.1:3000:3000 "$TAG" >/dev/null
+docker exec mahida-app node -e 'const fs=require("node:fs");if(process.env.GOOGLE_DOCS_CREDENTIALS_FILE!==process.argv[1])process.exit(1);fs.accessSync(process.argv[1],fs.constants.R_OK)' "$credential_file" >/dev/null 2>&1 || { echo 'Identitas Google Docs tidak terbaca di aplikasi baru; rollback dijalankan.' >&2; exit 1; }
 if ! wait_ready mahida-app http://127.0.0.1:3000 || ! health_ok https://mahida.my.id || ! routes_ok https://mahida.my.id; then echo 'Validasi produksi gagal; rollback dijalankan.' >&2; exit 1; fi
 released=1
 docker inspect -f '{{.Config.Image}} {{.State.Status}} {{.State.Health.Status}}' mahida-app

@@ -1,6 +1,6 @@
 # Rilis Maktabah Mahida
 
-Rilis ini melanjutkan produksi `mahida:promosi-20d1e0f`. Jalankan di VPS sebagai root. Source dan image harus berasal dari commit yang sama. Jangan memakai ulang image promosi, step1, atau PR17.
+Rilis ini melanjutkan produksi `mahida:maktabah-6393627`. Jalankan di VPS sebagai root. Source dan image harus berasal dari commit yang sama. Gunakan artifact baru dari CI commit rilis ini; image yang sudah dipakai pada rilis sebelumnya tidak berisi penyempurnaan terbaru.
 
 ## Fitur dan batasan
 
@@ -50,34 +50,21 @@ git -C "$SOURCE_DIR" rev-parse HEAD
 bash -n "$SOURCE_DIR/mahida-digital-website-blueprint/scripts/release-maktabah.sh"
 ```
 
-HEAD harus sama dengan SHA rilis. Produksi harus `mahida:promosi-20d1e0f running healthy`. Script membutuhkan minimal 2 GB kosong di filesystem Docker; VPS terakhir memiliki sekitar 9,1 GB kosong. Port preview 3001 harus tersedia. Jika terpakai, periksa pemiliknya sebelum tindakan lain.
+HEAD harus sama dengan SHA rilis. Produksi harus `mahida:maktabah-6393627 running healthy`. Script membutuhkan minimal 2 GB kosong di filesystem Docker; VPS terakhir memiliki sekitar 9,1 GB kosong. Port preview 3001 harus tersedia. Jika terpakai, periksa pemiliknya sebelum tindakan lain.
 
-## 3. Google Docs sebelum rilis (opsional)
+## 3. Pertahankan Google Docs yang sudah aktif
 
-Kitab lama dan Maktabah tetap berjalan tanpa identitas Google. Untuk menghubungkan dokumen privat:
+Kunci yang sudah berhasil dipakai tetap berada di `/opt/mahida-secrets/mahida-google-docs.json`, dengan pemilik UID 1001 dan mode 600. Env produksi tetap memakai `GOOGLE_DOCS_CREDENTIALS_FILE=/opt/mahida-secrets/mahida-google-docs.json`.
 
-1. Aktifkan Google Docs API di project Google Cloud, buat service account, dan unduh kunci JSON.
-2. Bagikan dokumen khusus siap tayang ke alamat email service account sebagai **Viewer**. Dokumen tidak perlu dibuka untuk publik.
-3. Kirim kunci JSON melalui saluran aman ke `/opt/mahida-secrets/mahida-google-docs.json`. Jangan simpan di repo, folder publik, log, atau percakapan.
-4. Atur izin agar UID aplikasi 1001 dapat membaca file:
+Script memeriksa bahwa env dan mount kontainer aktif cocok dengan file itu, lalu memasangnya read-only pada preview dan produksi. Mount tambahan atau identitas yang tidak cocok menghentikan rilis sebelum produksi ditukar. Preview menonaktifkan worker sinkronisasi agar pemeriksaan tidak menjalankan worker kedua. Backup mencakup database, env, dan konfigurasi kontainer; file konfigurasi disimpan mode 600 dan dapat memuat informasi rahasia.
+
+Pemeriksaan berikut hanya menampilkan izin/path dan hasil keterbacaan, tanpa isi kunci:
 
 ```bash
-mkdir -p /opt/mahida-secrets
-chmod 755 /opt/mahida-secrets
-chown 1001:1001 /opt/mahida-secrets/mahida-google-docs.json
-chmod 600 /opt/mahida-secrets/mahida-google-docs.json
-nano /opt/Maktabah-Mahida/mahida-digital-website-blueprint/.env.production
+ls -l /opt/mahida-secrets/mahida-google-docs.json
+docker inspect -f '{{range .Mounts}}{{println .Type .Source .Destination .RW}}{{end}}' mahida-app
+docker exec mahida-app node -e 'const fs=require("node:fs");const p=process.env.GOOGLE_DOCS_CREDENTIALS_FILE;if(p!=="/opt/mahida-secrets/mahida-google-docs.json")process.exit(1);fs.accessSync(p,fs.constants.R_OK);console.log("Identitas Google Docs terbaca.")'
 ```
-
-Tambahkan satu baris tanpa tanda kutip:
-
-```dotenv
-GOOGLE_DOCS_CREDENTIALS_FILE=/opt/mahida-secrets/mahida-google-docs.json
-```
-
-Script memasang hanya file tersebut secara read-only ke kontainer. Jangan mengubah DATABASE_URL, secret autentikasi, atau pengaturan promosi. Dokumentasi resmi: [Docs API](https://developers.google.com/workspace/docs/api) dan [OAuth service account](https://developers.google.com/identity/protocols/oauth2/service-account).
-
-Jika kredensial ditambahkan setelah rilis, gunakan [panduan pemasangan Google Docs](google-docs-setup.md) dan script `scripts/enable-google-docs.sh` untuk membuat ulang kontainer dengan preview dan rollback. `docker restart` saja tidak membaca ulang env-file. Script ini tidak mengulang rilis jika commit yang sama sudah aktif.
 
 ## 4. Jalankan di latar belakang
 
@@ -87,7 +74,8 @@ Di shell dengan variabel langkah 2:
 nohup bash "$SOURCE_DIR/mahida-digital-website-blueprint/scripts/release-maktabah.sh" \
   "$RELEASE_SHA" "$UPLOAD_DIR/mahida-editorial-image.tar.gz" \
   > "$UPLOAD_DIR/release.log" 2>&1 < /dev/null &
-echo "PID rilis: $!"
+printf '%s\n' "$!" > "$UPLOAD_DIR/release.pid"
+echo "PID rilis: $(cat "$UPLOAD_DIR/release.pid")"
 tail -f "$UPLOAD_DIR/release.log"
 ```
 
@@ -99,7 +87,7 @@ tail -n 80 /root/mahida-backups/maktabah-XXXXXXX/release.log
 
 Ganti XXXXXXX dengan tujuh karakter pertama SHA. Jangan memulai proses rilis kedua selagi yang pertama berjalan.
 
-Script memvalidasi source/image, membuat backup database custom-format mode 600, memeriksa backup, menjalankan migrasi tambahan tabel, menguji preview, dan menukar kontainer. Kontainer promosi disimpan untuk rollback. Kegagalan validasi produksi memulihkan kontainer lama otomatis. Migrasi tidak menghapus isi lama, sehingga aplikasi lama dapat berjalan dengan tabel tambahan.
+Script memvalidasi source/image, membuat backup database custom-format mode 600, memeriksa backup, menjalankan migrasi 0017 untuk indeks pencarian, menguji preview, dan menukar kontainer. Kontainer Maktabah 6393627 yang sudah memasang kunci Google Docs disimpan untuk rollback. Kegagalan validasi produksi memulihkan kontainer lama otomatis. Migrasi tidak menghapus isi lama, sehingga aplikasi lama dapat berjalan dengan tabel tambahan.
 
 Selesai ditandai **RILIS BERHASIL** beserta lokasi backup, rollback, dan source. Setelah `Preview dan health lulus`, tunggu validasi produksi.
 
@@ -111,34 +99,36 @@ curl -fsS -w '\n' https://mahida.my.id/api/health
 df -h /
 ```
 
-Harus menunjukkan `mahida:maktabah-XXXXXXX running healthy`, health `ok:true`, `database:connected`, dan `maktabahReady:true`.
+Harus menunjukkan `mahida:maktabah-XXXXXXX running healthy`, health `ok:true`, `database:connected`, dan `maktabahReady:true`, dan `maktabahSearchReady:true`.
 
 Periksa HP dan desktop:
 
-- `/maktabah`: gambar, navigasi, urutan bagian, pencarian, fan berisi kitab, pilihan, terbaru, dan kliping lama.
+- `/maktabah`: banner HP/desktop, footer ringkas, navigasi, urutan bagian, pencarian judul/bab/isi/catatan, fan, pilihan, terbaru, dan kliping lama.
 - `/maktabah/fan`: fan tersedia tanpa kategori/filter pengarang.
 - `/karya/terjemahan`: koleksi sama dan tautan lama tetap terbuka.
 - `/admin/maktabah`: simpan draft, pratinjau, terbitkan; draft tidak mengubah publik sebelum diterbitkan.
-- Satu kitab: pengenalan, kata pengantar, Mulai Membaca, daftar isi, bab berikut/sebelumnya, ukuran huruf, Arab, dan lanjut membaca.
+- Satu kitab: pengenalan, kata pengantar, Mulai Membaca, daftar isi, Cari Bab/Cari Isi, sorotan hasil, paginasi hasil, kembali ke posisi baca, bab berikut/sebelumnya, ukuran huruf, Arab, dan lanjut membaca.
+- Catatan kaki: nomor mengikuti Docs, kotak desktop/panel HP, Esc/fokus, dan backlink di akhir bab. Sinkronkan kitab lama agar nomor terbaru dari Docs masuk ke cache.
+- Admin Tampilan: aktifkan banner, atur footer/kontak/medsos/tombol gabung, label pencarian dan ukuran catatan, lalu terbitkan pengaturan.
 - Promosi: tutup, navigasi internal, refresh; perilaku promosi tetap berfungsi.
 
 Untuk Docs gunakan dokumen uji dengan H1/2/3, Arab, daftar, tabel, dan catatan kaki. Simpan tautan, Uji Koneksi, Pratinjau, Terbitkan. Ubah paragraf di Docs; tunggu sekitar dua menit, periksa waktu sinkronisasi serta pemberitahuan pembaca. Uji Jeda dan Sinkronkan Sekarang. Cabut akses **dokumen uji saja**; setelah pemeriksaan berikutnya sumber harus berhenti ditayangkan dan admin melihat kesalahan. Pulihkan akses dan sinkronkan lagi.
 
 ## 6. Rollback aplikasi
 
-Gunakan nama rollback rilis berhasil. Perintah ini memulihkan aplikasi promosi, bukan perubahan data setelah rilis:
+Gunakan nama rollback rilis berhasil. Perintah ini memulihkan aplikasi Maktabah 6393627, bukan perubahan data setelah rilis:
 
 ```bash
 ROLLBACK_CONTAINER="$(cat /root/mahida-backups/maktabah-rollback-container.txt)"
 docker inspect -f '{{.Name}} {{.Config.Image}} {{.State.Status}}' "$ROLLBACK_CONTAINER"
 ```
 
-Pastikan image rollback adalah `mahida:promosi-20d1e0f`, kemudian:
+Pastikan image rollback adalah `mahida:maktabah-6393627`, kemudian:
 
 ```bash
 (
   flock -n 9 || exit 1
-  test "$(docker inspect -f '{{.Config.Image}}' "$ROLLBACK_CONTAINER")" = 'mahida:promosi-20d1e0f' || exit 1
+  test "$(docker inspect -f '{{.Config.Image}}' "$ROLLBACK_CONTAINER")" = 'mahida:maktabah-6393627' || exit 1
   FAILED_CONTAINER="mahida-app-maktabah-held-$(date +%Y%m%d%H%M%S)"
   docker stop mahida-app || exit 1
   if ! docker rename mahida-app "$FAILED_CONTAINER"; then
@@ -161,3 +151,7 @@ curl -fsS -w '\n' https://mahida.my.id/api/health
 ```
 
 Simpan backup dan kontainer rollback sampai pemeriksaan selesai. Jangan restore dump saat aplikasi menerima perubahan; restore database memerlukan penghentian penulisan dan pemilihan backup yang tepat. Rollback aplikasi ini tidak memerlukannya.
+
+## Verifikasi script rilis penyempurnaan
+
+`bash -n` lulus. Dua belas skenario orchestration memakai perintah Docker/curl/Git palsu di direktori uji: sukses dengan mount read-only dan backup, source salah, disk kurang, mount tambahan, image salah, backup rusak, migrasi gagal, preview gagal, health indeks belum siap, kegagalan membuat produksi, kunci produksi tidak terbaca, dan validasi HTTPS gagal. Seluruh kegagalan mempertahankan atau memulihkan kontainer awal. Uji ini tidak mengakses VPS.
