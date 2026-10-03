@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useRef, useState } from 'react';
+import { useRef, useState } from "react";
 import {
   Bold,
   ImagePlus,
@@ -10,23 +10,45 @@ import {
   ListOrdered,
   Play,
   Underline,
-} from 'lucide-react';
-import { driveIdFromUrl, videoEmbedFromUrl } from '@/lib/media-links';
-import { safeArticleLink } from '@/lib/rich-links';
-import RichContent from '@/components/RichContent';
+} from "lucide-react";
+import { driveIdFromUrl, videoEmbedFromUrl } from "@/lib/media-links";
+import { safeArticleLink } from "@/lib/rich-links";
+import RichContent from "@/components/RichContent";
 
 export default function RichTextField({
   value,
-  onChange,
-  label = 'Isi tulisan',
+  onChange: onChangeProp,
+  label = "Isi tulisan",
+  bookTools = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   label?: string;
+  bookTools?: boolean;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [preview, setPreview] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [direction, setDirection] = useState<"auto" | "rtl" | "ltr">("auto");
+  const undoStack = useRef<string[]>([]);
+  const redoStack = useRef<string[]>([]);
+  function onChange(next: string) {
+    if (bookTools && next !== value) {
+      undoStack.current.push(value);
+      if (undoStack.current.length > 80) undoStack.current.shift();
+      redoStack.current = [];
+    }
+    onChangeProp(next);
+  }
+  function history(redo: boolean) {
+    const from = redo ? redoStack.current : undoStack.current;
+    const to = redo ? undoStack.current : redoStack.current;
+    const next = from.pop();
+    if (next === undefined) return;
+    to.push(value);
+    onChangeProp(next);
+    ref.current?.focus();
+  }
 
   function insert(
     before: string,
@@ -39,12 +61,12 @@ export default function RichTextField({
     const scroll = { left: window.scrollX, top: window.scrollY };
     const start = field.selectionStart;
     const end = field.selectionEnd;
-    const selected = block ? '' : value.slice(start, end) || placeholder;
+    const selected = block ? "" : value.slice(start, end) || placeholder;
     const prefix =
-      block && start > 0 && !value.slice(0, start).endsWith('\n\n')
-        ? '\n\n'
-        : '';
-    const suffix = block && !value.slice(end).startsWith('\n\n') ? '\n\n' : '';
+      block && start > 0 && !value.slice(0, start).endsWith("\n\n")
+        ? "\n\n"
+        : "";
+    const suffix = block && !value.slice(end).startsWith("\n\n") ? "\n\n" : "";
     onChange(
       value.slice(0, start) +
         prefix +
@@ -60,7 +82,7 @@ export default function RichTextField({
         start + prefix.length + before.length,
         start + prefix.length + before.length + selected.length,
       );
-      window.scrollTo({ ...scroll, behavior: 'instant' });
+      window.scrollTo({ ...scroll, behavior: "instant" });
     });
   }
 
@@ -68,18 +90,18 @@ export default function RichTextField({
     const field = ref.current;
     if (!field) return;
     const scroll = { left: window.scrollX, top: window.scrollY };
-    const start = value.lastIndexOf('\n', field.selectionStart - 1) + 1;
-    const nextNewline = value.indexOf('\n', field.selectionEnd);
+    const start = value.lastIndexOf("\n", field.selectionStart - 1) + 1;
+    const nextNewline = value.indexOf("\n", field.selectionEnd);
     const end = nextNewline === -1 ? value.length : nextNewline;
-    const lines = (value.slice(start, end) || 'Poin daftar').split('\n');
+    const lines = (value.slice(start, end) || "Poin daftar").split("\n");
     const listed = lines
       .map(
         (line, index) =>
-          `${ordered ? `${index + 1}.` : '-'} ${line.replace(/^\s*(?:\d+\.|[-*])\s+/, '') || 'Poin daftar'}`,
+          `${ordered ? `${index + 1}.` : "-"} ${line.replace(/^\s*(?:\d+\.|[-*])\s+/, "") || "Poin daftar"}`,
       )
-      .join('\n');
-    const before = start > 0 && value[start - 1] !== '\n' ? '\n' : '';
-    const after = end < value.length && value[end + 1] !== '\n' ? '\n' : '';
+      .join("\n");
+    const before = start > 0 && value[start - 1] !== "\n" ? "\n" : "";
+    const after = end < value.length && value[end + 1] !== "\n" ? "\n" : "";
     onChange(
       value.slice(0, start) + before + listed + after + value.slice(end),
     );
@@ -89,31 +111,31 @@ export default function RichTextField({
         start + before.length,
         start + before.length + listed.length,
       );
-      window.scrollTo({ ...scroll, behavior: 'instant' });
+      window.scrollTo({ ...scroll, behavior: "instant" });
     });
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.ctrlKey || event.metaKey) && !event.altKey) {
-      const wrap = { b: '**', i: '*', u: '++' }[
-        event.key.toLowerCase() as 'b' | 'i' | 'u'
+      const wrap = { b: "**", i: "*", u: "++" }[
+        event.key.toLowerCase() as "b" | "i" | "u"
       ];
       if (wrap) {
         event.preventDefault();
-        insert(wrap, wrap, 'teks');
+        insert(wrap, wrap, "teks");
       }
       return;
     }
-    if (event.key !== 'Enter' || event.shiftKey) return;
+    if (event.key !== "Enter" || event.shiftKey) return;
     const field = ref.current;
     if (!field || field.selectionStart !== field.selectionEnd) return;
-    const start = value.lastIndexOf('\n', field.selectionStart - 1) + 1;
+    const start = value.lastIndexOf("\n", field.selectionStart - 1) + 1;
     const line = value.slice(start, field.selectionStart);
     const numbered = /^(\d+)\.\s+(.+)$/.exec(line);
     const bulleted = /^-\s+(.+)$/.exec(line);
     if (numbered || bulleted) {
       event.preventDefault();
-      insert(`\n${numbered ? `${Number(numbered[1]) + 1}.` : '-'} `, '', '');
+      insert(`\n${numbered ? `${Number(numbered[1]) + 1}.` : "-"} `, "", "");
     } else if (/^(?:\d+\.|-)\s*$/.test(line)) {
       event.preventDefault();
       onChange(value.slice(0, start) + value.slice(field.selectionStart));
@@ -126,59 +148,59 @@ export default function RichTextField({
 
   function addImage() {
     const url = window.prompt(
-      'Tempel tautan berkas foto Google Drive (akses: siapa saja dengan link)',
+      "Tempel tautan berkas foto Google Drive (akses: siapa saja dengan link)",
     );
     if (url === null) return;
     if (!driveIdFromUrl(url.trim())) {
-      setError('Gunakan tautan berkas Google Drive yang valid.');
+      setError("Gunakan tautan berkas Google Drive yang valid.");
       return;
     }
     const caption = window
-      .prompt('Keterangan foto (opsional)')
-      ?.replace(/[|\[\]]/g, '')
+      .prompt("Keterangan foto (opsional)")
+      ?.replace(/[|\[\]]/g, "")
       .trim()
       .slice(0, 200);
-    setError('');
+    setError("");
     insert(
-      `[[image:${url.trim()}${caption ? `|${caption}` : ''}]]`,
-      '',
-      '',
+      `[[image:${url.trim()}${caption ? `|${caption}` : ""}]]`,
+      "",
+      "",
       true,
     );
   }
 
   function addLink() {
-    const url = window.prompt('Tempel tautan HTTPS tujuan');
+    const url = window.prompt("Tempel tautan HTTPS tujuan");
     if (url === null) return;
     const href = safeArticleLink(url.trim());
     if (!href) {
-      setError('Gunakan tautan HTTPS yang valid.');
+      setError("Gunakan tautan HTTPS yang valid.");
       return;
     }
-    setError('');
-    insert('[', `](${href})`, 'teks tautan');
+    setError("");
+    insert("[", `](${href})`, "teks tautan");
   }
 
   function addVideo() {
     const url = window.prompt(
-      'Tempel tautan video publik YouTube, Facebook, Instagram, atau TikTok',
+      "Tempel tautan video publik YouTube, Facebook, Instagram, atau TikTok",
     );
     if (url === null) return;
     const video = videoEmbedFromUrl(url.trim());
     if (!video) {
-      setError('Gunakan tautan postingan video publik yang lengkap dan valid.');
+      setError("Gunakan tautan postingan video publik yang lengkap dan valid.");
       return;
     }
     const caption = window
-      .prompt('Judul video (opsional)')
-      ?.replace(/[|\[\]]/g, '')
+      .prompt("Judul video (opsional)")
+      ?.replace(/[|\[\]]/g, "")
       .trim()
       .slice(0, 200);
-    setError('');
+    setError("");
     insert(
-      `[[video:${video.url}${caption ? `|${caption}` : ''}]]`,
-      '',
-      '',
+      `[[video:${video.url}${caption ? `|${caption}` : ""}]]`,
+      "",
+      "",
       true,
     );
   }
@@ -190,16 +212,71 @@ export default function RichTextField({
         role="toolbar"
         aria-label="Format tulisan"
         onMouseDown={(event) => {
-          if ((event.target as Element).closest('button'))
+          if ((event.target as Element).closest("button"))
             event.preventDefault();
         }}
         className="flex flex-wrap gap-2 rounded border border-warm-gray-300 bg-warm-gray-50 p-2"
       >
+        {bookTools && (
+          <>
+            <button
+              type="button"
+              className="min-h-11 rounded border bg-white px-3"
+              onClick={() => insert("\n\n> ", "\n\n", "Kutipan")}
+            >
+              Kutipan
+            </button>
+            <button
+              type="button"
+              className="min-h-11 rounded border bg-white px-3"
+              onClick={() =>
+                insert(
+                  "| Kolom 1 | Kolom 2 |\n| --- | --- |\n| Isi 1 | Isi 2 |",
+                  "",
+                  "",
+                  true,
+                )
+              }
+            >
+              Tabel Sederhana
+            </button>
+            <button
+              type="button"
+              className="min-h-11 rounded border bg-white px-3"
+              onClick={() => history(false)}
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              className="min-h-11 rounded border bg-white px-3"
+              onClick={() => history(true)}
+            >
+              Redo
+            </button>
+            <button
+              type="button"
+              className="min-h-11 rounded border bg-white px-3"
+              aria-pressed={direction === "rtl"}
+              onClick={() => setDirection("rtl")}
+            >
+              Arah Arab
+            </button>
+            <button
+              type="button"
+              className="min-h-11 rounded border bg-white px-3"
+              aria-pressed={direction === "ltr"}
+              onClick={() => setDirection("ltr")}
+            >
+              Arah Indonesia
+            </button>
+          </>
+        )}
         <button
           type="button"
           aria-label="Heading"
           className="min-h-11 rounded border bg-white px-3"
-          onClick={() => insert('\n\n## ', '\n\n', 'Judul bagian')}
+          onClick={() => insert("\n\n## ", "\n\n", "Judul bagian")}
         >
           Heading
         </button>
@@ -208,7 +285,7 @@ export default function RichTextField({
           title="Tebal"
           aria-label="Tebal"
           className="grid h-11 w-11 place-items-center rounded border bg-white"
-          onClick={() => insert('**', '**', 'teks tebal')}
+          onClick={() => insert("**", "**", "teks tebal")}
         >
           <Bold size={18} />
         </button>
@@ -217,7 +294,7 @@ export default function RichTextField({
           title="Miring"
           aria-label="Miring"
           className="grid h-11 w-11 place-items-center rounded border bg-white"
-          onClick={() => insert('*', '*', 'teks miring')}
+          onClick={() => insert("*", "*", "teks miring")}
         >
           <Italic size={18} />
         </button>
@@ -226,7 +303,7 @@ export default function RichTextField({
           title="Garis bawah"
           aria-label="Garis bawah"
           className="grid h-11 w-11 place-items-center rounded border bg-white"
-          onClick={() => insert('++', '++', 'teks bergaris bawah')}
+          onClick={() => insert("++", "++", "teks bergaris bawah")}
         >
           <Underline size={18} />
         </button>
@@ -295,7 +372,7 @@ export default function RichTextField({
         aria-label={label}
         rows={18}
         className="w-full resize-y border border-warm-gray-300 p-4 text-base leading-8"
-        dir="auto"
+        dir={direction}
       />
       {preview && (
         <div

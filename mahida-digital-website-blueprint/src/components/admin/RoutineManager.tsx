@@ -14,6 +14,16 @@ type Stats = {
   pages: { path: string; count: number }[];
   daily: { day: string; event: AnalyticsEvent; count: number }[];
   clicks: { path: string; event: AnalyticsEvent; count: number }[];
+  promotion: {
+    id: string;
+    name: string;
+    title: string;
+    statisticsEnabled: boolean;
+    enabled: boolean;
+    startsAt: string | null;
+    endsAt: string | null;
+    counts: { view: number; close: number; click: number };
+  } | null;
 };
 const field = 'mt-1 w-full min-w-0 border bg-white p-3';
 export default function RoutineManager() {
@@ -43,6 +53,11 @@ export default function RoutineManager() {
         if (!active) return;
         setTargets(data.items);
         setCaps(data.capabilities);
+        if (
+          data.capabilities.primary &&
+          new URLSearchParams(window.location.search).get('tab') === 'statistik'
+        )
+          setTab('Statistik');
         const requested = new URLSearchParams(window.location.search).get(
           'target',
         );
@@ -438,7 +453,8 @@ export default function RoutineManager() {
             <>
               <p className="text-sm">
                 Pencatatan:{' '}
-                <strong>{stats.enabled ? 'aktif' : 'nonaktif'}</strong>
+                <strong>{stats.enabled ? 'aktif' : 'nonaktif'}</strong>{' '}
+                (kunjungan dan klik website)
               </p>
               <button
                 disabled={busy}
@@ -450,6 +466,54 @@ export default function RoutineManager() {
                   ? 'Nonaktifkan pencatatan'
                   : 'Aktifkan pencatatan'}
               </button>
+              <section
+                aria-label="Statistik promosi"
+                className="space-y-3 border border-mahida-200 bg-white p-4"
+              >
+                <h3 className="font-bold">Statistik promosi</h3>
+                {stats.promotion ? (
+                  <>
+                    <p className="text-sm">{stats.promotion.name}</p>
+                    <p className="text-xs text-warm-gray-600">
+                      Pencatatan promosi:{' '}
+                      {stats.promotion.statisticsEnabled ? 'aktif' : 'nonaktif'}
+                      . Angka mengikuti periode {stats.days} hari yang dipilih,
+                      termasuk saat kampanye dijeda atau selesai.
+                    </p>
+                    <dl className="grid grid-cols-3 gap-3">
+                      {(
+                        [
+                          ['view', 'Tampil'],
+                          ['close', 'Ditutup'],
+                          ['click', 'Klik tombol'],
+                        ] as const
+                      ).map(([key, label]) => (
+                        <div key={key} className="rounded bg-mahida-50 p-3">
+                          <dt className="text-xs">{label}</dt>
+                          <dd className="mt-1 text-xl font-semibold">
+                            {stats.promotion!.counts[key].toLocaleString(
+                              'id-ID',
+                            )}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <p className="text-xs text-warm-gray-600">
+                      Hitungan kampanye terbit saat ini; bukan pengunjung unik.
+                      Kampanye baru memiliki hitungan tersendiri. Pengaturan
+                      pencatatan promosi terpisah dari kunjungan website.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm">Belum ada promosi terbit.</p>
+                )}
+                <Link
+                  className="inline-block text-sm text-emerald-forest underline"
+                  href="/admin/tampilan/promosi"
+                >
+                  Kelola promosi dan pencatatannya
+                </Link>
+              </section>
               <div className="grid gap-3 sm:grid-cols-2">
                 {stats.events.map((e) => (
                   <div key={e.event} className="border bg-white p-4">

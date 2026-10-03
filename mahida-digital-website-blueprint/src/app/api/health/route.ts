@@ -1,14 +1,14 @@
-import { db } from '@/db';
-import { sql } from 'drizzle-orm';
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   if (!process.env.DATABASE_URL) {
     return Response.json(
       {
         ok: false,
-        database: 'not_configured',
+        database: "not_configured",
         authSchemaReady: false,
         articleCmsReady: false,
       },
@@ -34,7 +34,10 @@ export async function GET() {
         to_regclass('public.publication_documents') is not null as publication_documents_table,
         to_regclass('public.analytics_daily') is not null as analytics_daily_table,
         to_regclass('public.quality_reports') is not null as quality_reports_table,
-        to_regclass('public.publication_checklists') is not null as publication_checklists_table
+        to_regclass('public.publication_checklists') is not null as publication_checklists_table,
+        to_regclass('public.maktabah_books') is not null as maktabah_books_table,
+        to_regclass('public.maktabah_fans') is not null as maktabah_fans_table,
+        to_regclass('public.maktabah_search_entries') is not null as maktabah_search_table
     `);
 
     const row = schema.rows?.[0] as
@@ -54,6 +57,9 @@ export async function GET() {
           analytics_daily_table?: boolean;
           quality_reports_table?: boolean;
           publication_checklists_table?: boolean;
+          maktabah_books_table?: boolean;
+          maktabah_fans_table?: boolean;
+          maktabah_search_table?: boolean;
         }
       | undefined;
 
@@ -63,20 +69,28 @@ export async function GET() {
 
     return Response.json({
       ok: Boolean(connection),
-      database: 'connected',
+      database: "connected",
       authSchemaReady: usersTable && otpCodesTable,
       articleCmsReady: postsTable,
       galleryFolderReady: Boolean(row?.gallery_documents_table),
       visualClippingReady: Boolean(row?.design_documents_table),
       publicationReady: Boolean(row?.publication_documents_table),
-      qualityReady: Boolean(row?.analytics_daily_table && row?.quality_reports_table && row?.publication_checklists_table),
+      qualityReady: Boolean(
+        row?.analytics_daily_table &&
+        row?.quality_reports_table &&
+        row?.publication_checklists_table,
+      ),
+      maktabahReady: Boolean(
+        row?.maktabah_books_table && row?.maktabah_fans_table,
+      ),
+      maktabahSearchReady: Boolean(row?.maktabah_search_table),
       stage2CmsReady: Boolean(
         row?.cms_pages_table &&
-          row?.navigation_items_table &&
-          row?.products_table &&
-          row?.videos_table &&
-          row?.galleries_table &&
-          row?.ebook_orders_table,
+        row?.navigation_items_table &&
+        row?.products_table &&
+        row?.videos_table &&
+        row?.galleries_table &&
+        row?.ebook_orders_table,
       ),
       tables: {
         users: usersTable,
@@ -94,14 +108,17 @@ export async function GET() {
         analyticsDaily: Boolean(row?.analytics_daily_table),
         qualityReports: Boolean(row?.quality_reports_table),
         publicationChecklists: Boolean(row?.publication_checklists_table),
+        maktabahBooks: Boolean(row?.maktabah_books_table),
+        maktabahFans: Boolean(row?.maktabah_fans_table),
+        maktabahSearch: Boolean(row?.maktabah_search_table),
       },
     });
   } catch (error) {
-    console.error('Health check error:', error);
+    console.error("Health check error:", error);
     return Response.json(
       {
         ok: false,
-        database: 'unreachable',
+        database: "unreachable",
         authSchemaReady: false,
         articleCmsReady: false,
       },
