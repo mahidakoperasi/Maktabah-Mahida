@@ -23,6 +23,7 @@ import RichContent from "@/components/RichContent";
 import ProtectedReading from "@/components/ProtectedReading";
 import ResumeReading from "@/components/ResumeReading";
 import BookReader from "@/components/BookReader";
+import MaktabahSearchResults from "@/components/MaktabahSearchResults";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
@@ -51,6 +52,9 @@ export default async function SectionPage({
     q?: string;
     sort?: string;
     maktabahPreview?: string;
+    jenis?: string;
+    fan?: string;
+    page?: string;
   }>;
 }) {
   const { slug } = await params;
@@ -89,6 +93,7 @@ export default async function SectionPage({
           index={index}
           protectedContent={(await getPromotionSettings()).protectionEnabled}
           preview={preview}
+          readingSettings={s.reading}
         />
       );
     }
@@ -198,6 +203,22 @@ export default async function SectionPage({
       </div>
     );
   }
+  if (slug.length === 1 && slug[0] === "pencarian") {
+    return (
+      <MaktabahSearchResults
+        query={(query.q ?? "").slice(0, 200)}
+        settings={s}
+        fans={fanList}
+        kind={
+          ["book", "chapter", "body"].includes(query.jenis ?? "")
+            ? query.jenis
+            : "all"
+        }
+        fan={(query.fan ?? "").slice(0, 100)}
+        page={Math.max(1, Number(query.page) || 1)}
+      />
+    );
+  }
   const books = await publicBooks();
   let title = "Koleksi Kitab";
   let intro = "";
@@ -255,7 +276,11 @@ export default async function SectionPage({
       <p className="library-eyebrow">Maktabah Mahida</p>
       <h1>{title}</h1>
       {intro && <RichContent content={intro} />}
-      <LibrarySearch query={query.q ?? ""} action={action} />
+      <LibrarySearch
+        query={query.q ?? ""}
+        settings={s}
+        selectedFan={fanSlug ?? ""}
+      />
       <nav className="library-sort" aria-label="Urutan kitab">
         <Link
           aria-current={query.sort !== "az" ? "page" : undefined}

@@ -556,9 +556,11 @@ test("admin editor and all tabs remain usable on narrow screens", async ({
 });
 
 test("legacy settings keep existing content and reject unsafe banner/footer destinations", () => {
-  const { banner, footer, ...legacy } = defaultLibrarySettings;
+  const { banner, footer, reading, search, ...legacy } = defaultLibrarySettings;
   void banner;
   void footer;
+  void reading;
+  void search;
   const parsed = librarySettingsSchema.parse({
     ...legacy,
     name: "Nama lama",
@@ -568,6 +570,8 @@ test("legacy settings keep existing content and reject unsafe banner/footer dest
   expect(parsed.intro).toBe("Pengantar lama");
   expect(parsed.banner.enabled).toBe(false);
   expect(parsed.footer.source).toBe("mahida");
+  expect(parsed.reading.footnoteFontSize).toBe(18);
+  expect(parsed.search.buttonLabel).toBe("Cari Koleksi");
   for (const url of [
     "javascript:alert(1)",
     "//evil.invalid",
@@ -1021,4 +1025,364 @@ test("footer follows visible Mahida contacts and a failed local banner image kee
         [original],
       );
   }
+});
+
+test("search normalization preserves displayed Arabic and SQL matches prefix queries", async () => {
+  const { normalizeSearch, matchRanges, searchTerms } =
+    await import("../src/lib/kitab-search-text");
+  const original = "بِسْمِ اللَّهِ ـ فِقْه ١٢۳ Café";
+  const normalized = normalizeSearch(original);
+  expect(normalized).toBe("بسم الله  فقه 123 cafe");
+  expect(
+    (
+      await pool.query("SELECT mahida_search_normalize($1) AS value", [
+        original,
+      ])
+    ).rows[0].value,
+  ).toBe(normalized);
+  expect(
+    matchRanges(original, "بسم").map((r) => original.slice(r.start, r.end)),
+  ).toEqual(["بِسْمِ"]);
+  expect(searchTerms("' OR 1=1 -- @:*")).toEqual(["or", "1"]);
+  const parsed = parseDocs(kitabDocument() as DocsDocument);
+  expect(
+    parsed.chapters[0].blocks
+      .flatMap((b) => b.runs ?? [])
+      .find((r) => r.footnote)?.footnoteNumber,
+  ).toBe("7");
+  expect(
+    parsed.chapters[0].blocks.find((b) => b.kind === "footnote")?.noteNumber,
+  ).toBe("7");
+  const { collectFootnotes } = await import("../src/lib/kitab-footnotes");
+  const reused = structuredClone(parsed.chapters);
+  reused[1].blocks.push({
+    id: "reused-note",
+    kind: "paragraph",
+    runs: [{ text: "", footnote: "t.utama-fn1", footnoteNumber: "7" }],
+  });
+  reused[1].blocks.push(
+    parsed.chapters[0].blocks.find((b) => b.kind === "footnote")!,
+  );
+  const notes = collectFootnotes(reused);
+  expect(notes["t.utama-fn1"].number).toBe("7");
+  expect(notes["t.utama-fn1"].references).toHaveLength(2);
+  expect(collectFootnotes([reused[1]])["t.utama-fn1"].references).toEqual([
+    "footnote-ref-reused-note-0",
+  ]);
+});
+
+test("collection index searches metadata, headings, tables, notes and legacy content while excluding drafts", async ({
+  page,
+  context,
+}) => {
+  state({});
+  await login(context);
+  const book = await make(context.request, "Kitab Pencarian Indeks");
+  const slug = (
+    await pool.query("SELECT slug FROM posts WHERE id=$1", [book.id])
+  ).rows[0].slug;
+  const search = async (q: string, extra: Record<string, string> = {}) => {
+    const response = await context.request.get(
+      `/api/maktabah/pencarian?${new URLSearchParams({ q, ...extra })}`,
+    );
+    expect(response.status()).toBe(200);
+    return response.json();
+  };
+  expect(
+    (await search("Pencarian Indeks")).hits.filter(
+      (h: { bookSlug: string }) => h.bookSlug === slug,
+    ),
+  ).toHaveLength(0);
+  expect(
+    (await post(context.request, { action: "publish", ...book })).status(),
+  ).toBe(200);
+  expect(
+    (await search("Pencarian Indeks", { jenis: "book" })).hits.some(
+      (h: { bookSlug: string }) => h.bookSlug === slug,
+    ),
+  ).toBe(true);
+  expect(
+    (await search("Subbab Pertama", { jenis: "chapter" })).hits.some(
+      (h: { bookSlug: string; blockId: string }) =>
+        h.bookSlug === slug && h.blockId.includes("sub1"),
+    ),
+  ).toBe(true);
+  expect((await search("Sel tabel Arab", { kitab: slug })).hits).toHaveLength(
+    1,
+  );
+  expect(
+    (await search("بسم الله", { kitab: slug })).hits.length,
+  ).toBeGreaterThanOrEqual(3);
+  const notes = await search("Catatan rujukan", { kitab: slug });
+  expect(notes.hits).toHaveLength(1);
+  expect(notes.hits[0].kind).toBe("footnote");
+  const long = await search("pengujian posisi", { kitab: slug });
+  expect(long.total).toBe(20);
+  expect(long.hits).toHaveLength(12);
+  expect(long.pages).toBe(2);
+  expect(long.hits.every((h: { text: string }) => h.text.length <= 242)).toBe(
+    true,
+  );
+  const second = await search("pengujian posisi", { kitab: slug, page: "2" });
+  expect(second.hits).toHaveLength(8);
+  const selected = await search("pengujian posisi", {
+    kitab: slug,
+    selected: second.hits[6].id,
+  });
+  expect(selected.page).toBe(2);
+  expect(
+    (await search("pengujian posisi", { kitab: slug, page: "1.5" })).page,
+  ).toBe(1);
+  expect((await search("' @ : * & !")).total).toBe(0);
+  expect(
+    (
+      await context.request.get(`/api/maktabah/pencarian?q=${"a".repeat(201)}`)
+    ).status(),
+  ).toBe(400);
+  const legacy = await make(context.request, "Kitab Pencarian Lama", false);
+  expect(
+    (await post(context.request, { action: "publish", ...legacy })).status(),
+  ).toBe(200);
+  const oldSlug = (
+    await pool.query("SELECT slug FROM posts WHERE id=$1", [legacy.id])
+  ).rows[0].slug;
+  const old = await search("Isi lanjutan", { kitab: oldSlug });
+  expect(old.total).toBe(1);
+  expect(old.hits[0].chapterId).toBe("lama-2");
+  await page.goto(
+    "/maktabah/pencarian?q=Subbab+Pertama&jenis=chapter&fan=fiqh",
+  );
+  await expect(
+    page.locator(".library-search-results mark").first(),
+  ).toBeVisible();
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    if (width === 390)
+      expect(
+        (await page.locator(".library-search-filters").boundingBox())!.height,
+      ).toBeLessThan(180);
+    await page.screenshot({
+      path: `test-results/maktabah-global-search-${width}.png`,
+    });
+  }
+  await page
+    .locator(".library-search-results a")
+    .filter({ hasText: "Subbab Pertama" })
+    .first()
+    .click();
+  await expect(page.locator(".library-search-target")).toBeVisible();
+  expect(
+    (
+      await post(context.request, {
+        action: "save",
+        id: book.id,
+        revision: 2,
+        meta: { ...book.meta, title: "Rahasiatersembunyi" },
+      })
+    ).status(),
+  ).toBe(200);
+  expect((await search("Rahasiatersembunyi")).total).toBe(0);
+  state({ maktabahdocs12345: { version: "uniksinkronisasi" } });
+  expect(
+    (
+      await post(context.request, { action: "sync", id: book.id, revision: 3 })
+    ).status(),
+  ).toBe(200);
+  expect((await search("uniksinkronisasi", { kitab: slug })).total).toBe(1);
+  await pool.query("UPDATE maktabah_books SET blocked=true WHERE post_id=$1", [
+    book.id,
+  ]);
+  expect(
+    (await search("Pencarian Indeks")).hits.some(
+      (h: { bookSlug: string }) => h.bookSlug === slug,
+    ),
+  ).toBe(false);
+  expect((await search("uniksinkronisasi", { kitab: slug })).total).toBe(0);
+  await pool.query("UPDATE posts SET status='archived' WHERE id=$1", [
+    legacy.id,
+  ]);
+  expect((await search("Isi lanjutan", { kitab: oldSlug })).total).toBe(0);
+  state({});
+});
+
+test("reader searches chapters and contents, opens accessible footnotes and restores reading position", async ({
+  page,
+  context,
+}) => {
+  state({});
+  await login(context);
+  const book = await make(context.request, "Kitab Cari dan Catatan");
+  expect(
+    (await post(context.request, { action: "publish", ...book })).status(),
+  ).toBe(200);
+  const slug = (
+    await pool.query("SELECT slug FROM posts WHERE id=$1", [book.id])
+  ).rows[0].slug;
+  await context.clearCookies();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/maktabah/kitab/${slug}/baca/t.utama-h.bab1`);
+  const navigation = page.locator(".library-desktop-toc");
+  await navigation.getByRole("tab", { name: "Cari Bab" }).click();
+  await navigation.getByLabel("Cari judul bab").fill("lanjutan");
+  await expect(
+    navigation.getByRole("link", { name: "Bagian Lanjutan" }),
+  ).toBeVisible();
+  await expect(
+    navigation.getByRole("link", { name: "Bab Kedua", exact: true }),
+  ).toHaveCount(0);
+  const marker = page.getByRole("link", { name: "Baca catatan kaki 7" });
+  await marker.click();
+  const note = page.getByRole("dialog", { name: "Catatan kaki 7" });
+  await expect(note).toBeVisible();
+  await expect(note.locator("strong")).toContainText("Catatan rujukan");
+  await page.screenshot({ path: "test-results/maktabah-footnote-desktop.png" });
+  const before = await page.evaluate(() => scrollY);
+  await page.keyboard.press("Escape");
+  await expect(note).not.toBeVisible();
+  await expect(marker).toBeFocused();
+  expect(await page.evaluate(() => scrollY)).toBe(before);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await marker.click();
+  await expect(note).toBeVisible();
+  const box = await note.boundingBox();
+  expect(box!.y + box!.height).toBeCloseTo(844, 0);
+  await page.screenshot({ path: "test-results/maktabah-footnote-mobile.png" });
+  await note.getByRole("button", { name: "Kembali membaca" }).click();
+  await expect(marker).toBeFocused();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(() => scrollTo(0, 250));
+  const origin = await page.evaluate(() => scrollY);
+  await navigation.getByRole("tab", { name: "Cari Isi", exact: true }).click();
+  await navigation.getByLabel("Cari teks dalam kitab").fill("pengujian posisi");
+  await navigation.getByRole("button", { name: "Cari Isi Kitab" }).click();
+  await expect(navigation.getByRole("status")).toContainText("20 hasil");
+  await navigation.locator(".library-reader-results a").first().click();
+  await expect(page).toHaveURL(/t.utama-h.bab2.*result=/);
+  await expect(page.locator(".library-search-target")).toBeVisible();
+  await expect(page.locator(".library-reading mark").first()).toBeVisible();
+  await page
+    .getByRole("button", { name: "Hasil berikutnya", exact: true })
+    .click();
+  await expect(page.locator(".library-search-target")).toBeVisible();
+  await navigation
+    .getByRole("button", { name: "Berikutnya", exact: true })
+    .click();
+  await expect(navigation.locator(".library-reader-pagination")).toContainText(
+    "2/2",
+  );
+  await navigation.locator(".library-reader-results a").first().click();
+  await expect(page.locator(".library-search-controls")).toContainText(
+    "13 / 20",
+  );
+  await page
+    .getByRole("button", { name: "Hasil sebelumnya", exact: true })
+    .click();
+  await expect(page.locator(".library-search-controls")).toContainText(
+    "12 / 20",
+  );
+  await page
+    .getByRole("button", { name: "Hasil berikutnya", exact: true })
+    .click();
+  await expect(page.locator(".library-search-controls")).toContainText(
+    "13 / 20",
+  );
+  await page.screenshot({
+    path: "test-results/maktabah-content-search-desktop.png",
+  });
+  await page.getByRole("button", { name: "Kembali ke posisi baca" }).click();
+  await expect(page).toHaveURL(/t.utama-h.bab1\?lanjut=1/);
+  await expect
+    .poll(() =>
+      page.evaluate((previous) => Math.abs(scrollY - previous), origin),
+    )
+    .toBeLessThan(100);
+});
+
+test("published reading settings control footnote size and search without changing notes", async ({
+  page,
+  context,
+}) => {
+  state({ maktabahdocs12345: { version: "catatanpanjang" } });
+  await login(context);
+  const book = await make(context.request, "Kitab Pengaturan Catatan");
+  expect(
+    (await post(context.request, { action: "publish", ...book })).status(),
+  ).toBe(200);
+  const slug = (
+    await pool.query("SELECT slug FROM posts WHERE id=$1", [book.id])
+  ).rows[0].slug;
+  const settings = {
+    ...defaultLibrarySettings,
+    reading: { footnoteFontSize: 24, searchFootnotes: false },
+    search: {
+      ...defaultLibrarySettings.search,
+      buttonLabel: "Telusuri Koleksi Uji",
+    },
+  };
+  let revision = Number(
+    (await (await context.request.get("/api/admin/maktabah")).json()).settings
+      .revision,
+  );
+  expect(
+    (
+      await post(context.request, { action: "layout-save", revision, settings })
+    ).status(),
+  ).toBe(200);
+  expect(
+    (
+      await (
+        await context.request.get(
+          `/api/maktabah/pencarian?q=Catatan+rujukan&kitab=${slug}`,
+        )
+      ).json()
+    ).total,
+  ).toBe(1);
+  revision++;
+  expect(
+    (
+      await post(context.request, {
+        action: "layout-publish",
+        revision,
+        settings,
+      })
+    ).status(),
+  ).toBe(200);
+  expect(
+    (
+      await (
+        await context.request.get(
+          `/api/maktabah/pencarian?q=Catatan+rujukan&kitab=${slug}`,
+        )
+      ).json()
+    ).total,
+  ).toBe(0);
+  await page.goto(`/maktabah/kitab/${slug}/baca/t.utama-h.bab1`);
+  await expect(page.locator(".kitab-footnotes")).toHaveCSS("font-size", "24px");
+  await page.getByRole("link", { name: "Baca catatan kaki 7" }).click();
+  await expect(page.getByRole("dialog", { name: "Catatan kaki 7" })).toHaveCSS(
+    "font-size",
+    "24px",
+  );
+  const noteBounds = await page
+    .getByRole("dialog", { name: "Catatan kaki 7" })
+    .boundingBox();
+  expect(noteBounds!.y + noteBounds!.height).toBeLessThanOrEqual(
+    page.viewportSize()!.height,
+  );
+  expect(
+    await page
+      .getByRole("dialog", { name: "Catatan kaki 7" })
+      .evaluate((el) => el.scrollHeight > el.clientHeight),
+  ).toBe(true);
+  await page.keyboard.press("Escape");
+  await page.goto("/maktabah");
+  await expect(
+    page.getByRole("button", { name: "Telusuri Koleksi Uji" }),
+  ).toBeVisible();
+  await pool.query("DELETE FROM settings WHERE key='maktabah_library'");
 });

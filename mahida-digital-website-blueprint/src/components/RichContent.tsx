@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import ArabicText from "./ArabicText";
+import SearchHighlight from "./SearchHighlight";
 import VideoEmbedBlock from "./VideoEmbedBlock";
 import { driveThumbnailUrl, videoEmbedFromUrl } from "@/lib/media-links";
 import { safeArticleLink } from "@/lib/rich-links";
@@ -10,7 +10,7 @@ const imageMarker =
 const videoMarker =
   /^\[\[(?:youtube|video):(https:\/\/[^\]|\s]+)(?:\|([^\]]{0,200}))?\]\]$/i;
 
-function inline(text: string): ReactNode[] {
+function inline(text: string, query = ""): ReactNode[] {
   return text
     .split(
       /(\[[^\]\n]{1,200}\]\(https:\/\/[^\s)]+\)|https:\/\/[^\s<>()]+|\*\*[^*\n]+\*\*|\*[^*\n]+\*|\+\+[^+\n]+\+\+)/g,
@@ -28,7 +28,7 @@ function inline(text: string): ReactNode[] {
               rel="noopener noreferrer"
               className="break-all text-emerald-forest underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-              <ArabicText text={link[1]} />
+              <SearchHighlight query={query} text={link[1]} />
             </a>
           );
       }
@@ -53,26 +53,32 @@ function inline(text: string): ReactNode[] {
       if (part.startsWith("**") && part.endsWith("**"))
         return (
           <strong key={index}>
-            <ArabicText text={part.slice(2, -2)} />
+            <SearchHighlight query={query} text={part.slice(2, -2)} />
           </strong>
         );
       if (part.startsWith("*") && part.endsWith("*"))
         return (
           <em key={index}>
-            <ArabicText text={part.slice(1, -1)} />
+            <SearchHighlight query={query} text={part.slice(1, -1)} />
           </em>
         );
       if (part.startsWith("++") && part.endsWith("++"))
         return (
           <u key={index}>
-            <ArabicText text={part.slice(2, -2)} />
+            <SearchHighlight query={query} text={part.slice(2, -2)} />
           </u>
         );
-      return <ArabicText key={index} text={part} />;
+      return <SearchHighlight query={query} key={index} text={part} />;
     });
 }
 
-export default function RichContent({ content }: { content: string }) {
+export default function RichContent({
+  content,
+  query = "",
+}: {
+  content: string;
+  query?: string;
+}) {
   let key = 0;
   const nodes: ReactNode[] = [];
   content.split(blocks).forEach((part) => {
@@ -146,7 +152,7 @@ export default function RichContent({ content }: { content: string }) {
                   <tr>
                     {cells(lines[0]).map((cell, i) => (
                       <th key={i} dir="auto">
-                        {inline(cell)}
+                        {inline(cell, query)}
                       </th>
                     ))}
                   </tr>
@@ -156,7 +162,7 @@ export default function RichContent({ content }: { content: string }) {
                     <tr key={i}>
                       {cells(line).map((cell, j) => (
                         <td key={j} dir="auto">
-                          {inline(cell)}
+                          {inline(cell, query)}
                         </td>
                       ))}
                     </tr>
@@ -168,18 +174,18 @@ export default function RichContent({ content }: { content: string }) {
         } else if (lines.every((line) => line.startsWith("> "))) {
           nodes.push(
             <blockquote key={key++} dir="auto">
-              {inline(lines.map((line) => line.slice(2)).join(" "))}
+              {inline(lines.map((line) => line.slice(2)).join(" "), query)}
             </blockquote>,
           );
         } else if (heading) {
           nodes.push(
             heading[1].length === 2 ? (
               <h2 key={key++} dir="auto" className="text-2xl font-bold">
-                {inline(heading[2])}
+                {inline(heading[2], query)}
               </h2>
             ) : (
               <h3 key={key++} dir="auto" className="text-xl font-bold">
-                {inline(heading[2])}
+                {inline(heading[2], query)}
               </h3>
             ),
           );
@@ -188,7 +194,7 @@ export default function RichContent({ content }: { content: string }) {
             <ol key={key++} dir="auto" className="list-decimal space-y-1 pl-6">
               {lines.map((line, index) => (
                 <li key={index} dir="auto">
-                  {inline(line.replace(/^\d+\.\s+/, ""))}
+                  {inline(line.replace(/^\d+\.\s+/, ""), query)}
                 </li>
               ))}
             </ol>,
@@ -198,7 +204,7 @@ export default function RichContent({ content }: { content: string }) {
             <ul key={key++} dir="auto" className="list-disc space-y-1 pl-6">
               {lines.map((line, index) => (
                 <li key={index} dir="auto">
-                  {inline(line.replace(/^-\s+/, ""))}
+                  {inline(line.replace(/^-\s+/, ""), query)}
                 </li>
               ))}
             </ul>,
@@ -206,7 +212,7 @@ export default function RichContent({ content }: { content: string }) {
         } else {
           nodes.push(
             <p key={key++} dir="auto">
-              {inline(paragraph.replace(/\s*\n\s*/g, " "))}
+              {inline(paragraph.replace(/\s*\n\s*/g, " "), query)}
             </p>,
           );
         }

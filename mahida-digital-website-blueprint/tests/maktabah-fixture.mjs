@@ -62,7 +62,12 @@ export function kitabDocument(version = "awal") {
                     text("tautan berbahaya", {
                       link: { url: "javascript:alert(1)" },
                     }),
-                    { footnoteReference: { footnoteId: "fn1" } },
+                    {
+                      footnoteReference: {
+                        footnoteId: "fn1",
+                        footnoteNumber: "7",
+                      },
+                    },
                   ],
                 },
               },
@@ -84,6 +89,22 @@ export function kitabDocument(version = "awal") {
             fn1: {
               content: [
                 paragraph(9000, "Catatan sumber dan penjelasan kitab."),
+                ...(version === "catatanpanjang"
+                  ? Array.from({ length: 28 }, (_, i) =>
+                      paragraph(
+                        9100 + i * 100,
+                        `Penjelasan lanjutan ${i + 1}. ${"Catatan penjelas kitab untuk pembaca. ".repeat(5)}`,
+                      ),
+                    )
+                  : []),
+                {
+                  startIndex: 9020,
+                  paragraph: {
+                    elements: [
+                      text("Catatan rujukan بِسْمِ اللَّهِ", { bold: true }),
+                    ],
+                  },
+                },
               ],
             },
           },

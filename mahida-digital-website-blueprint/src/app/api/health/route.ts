@@ -36,7 +36,8 @@ export async function GET() {
         to_regclass('public.quality_reports') is not null as quality_reports_table,
         to_regclass('public.publication_checklists') is not null as publication_checklists_table,
         to_regclass('public.maktabah_books') is not null as maktabah_books_table,
-        to_regclass('public.maktabah_fans') is not null as maktabah_fans_table
+        to_regclass('public.maktabah_fans') is not null as maktabah_fans_table,
+        to_regclass('public.maktabah_search_entries') is not null as maktabah_search_table
     `);
 
     const row = schema.rows?.[0] as
@@ -58,6 +59,7 @@ export async function GET() {
           publication_checklists_table?: boolean;
           maktabah_books_table?: boolean;
           maktabah_fans_table?: boolean;
+          maktabah_search_table?: boolean;
         }
       | undefined;
 
@@ -81,6 +83,7 @@ export async function GET() {
       maktabahReady: Boolean(
         row?.maktabah_books_table && row?.maktabah_fans_table,
       ),
+      maktabahSearchReady: Boolean(row?.maktabah_search_table),
       stage2CmsReady: Boolean(
         row?.cms_pages_table &&
         row?.navigation_items_table &&
@@ -107,6 +110,7 @@ export async function GET() {
         publicationChecklists: Boolean(row?.publication_checklists_table),
         maktabahBooks: Boolean(row?.maktabah_books_table),
         maktabahFans: Boolean(row?.maktabah_fans_table),
+        maktabahSearch: Boolean(row?.maktabah_search_table),
       },
     });
   } catch (error) {

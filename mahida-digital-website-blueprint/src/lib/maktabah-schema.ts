@@ -187,6 +187,22 @@ export const librarySettingsSchema = z.object({
   cardStyle: z.enum(["cover", "compact"]),
   banner: libraryBannerSchema.prefault({}),
   footer: libraryFooterSchema.prefault({}),
+  reading: z
+    .object({
+      footnoteFontSize: z.number().int().min(14).max(24).default(18),
+      searchFootnotes: z.boolean().default(true),
+    })
+    .prefault({}),
+  search: z
+    .object({
+      label: short
+        .min(1)
+        .default("Cari kitab, judul bab, atau teks dalam koleksi"),
+      placeholder: short.default("Judul kitab, judul bab, atau isi kitab…"),
+      buttonLabel: short.min(1).default("Cari Koleksi"),
+      resultsTitle: short.min(1).default("Pencarian Koleksi"),
+    })
+    .prefault({}),
   sections: z
     .array(section)
     .length(6)
@@ -207,6 +223,13 @@ export const defaultLibrarySettings: LibrarySettings = {
   cardStyle: "cover",
   banner: libraryBannerSchema.parse({}),
   footer: libraryFooterSchema.parse({}),
+  reading: { footnoteFontSize: 18, searchFootnotes: true },
+  search: {
+    label: "Cari kitab, judul bab, atau teks dalam koleksi",
+    placeholder: "Judul kitab, judul bab, atau isi kitab…",
+    buttonLabel: "Cari Koleksi",
+    resultsTitle: "Pencarian Koleksi",
+  },
   sections: librarySections.map((id) => ({
     id,
     title: id === "intro" ? "Perpustakaan Terjemahan Kitab" : sectionNames[id],

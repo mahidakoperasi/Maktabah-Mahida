@@ -15,7 +15,10 @@ import {
   primaryKey,
   date,
   bigint,
+  bigserial,
+  customType,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // Enums
 export const postTypeEnum = pgEnum('post_type', [
@@ -203,6 +206,36 @@ export const maktabahBooks = pgTable(
     lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
   },
   (table) => [index("maktabah_books_doc_idx").on(table.documentId)],
+);
+
+const tsvector = customType<{ data: string }>({ dataType: () => "tsvector" });
+export const maktabahSearchEntries = pgTable(
+  "maktabah_search_entries",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    postId: integer("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    chapterId: text("chapter_id").notNull().default(""),
+    chapterTitle: text("chapter_title").notNull().default(""),
+    blockId: text("block_id").notNull().default(""),
+    content: text("content").notNull(),
+    contentHash: text("content_hash").notNull().default(""),
+    searchVector: tsvector("search_vector").generatedAlwaysAs(
+      sql`to_tsvector('simple', mahida_search_normalize(content))`,
+    ),
+  },
+  (table) => [
+    index("maktabah_search_vector_idx").using("gin", table.searchVector),
+    index("maktabah_search_post_idx").on(table.postId),
+    uniqueIndex("maktabah_search_identity_idx").on(
+      table.postId,
+      table.kind,
+      table.chapterId,
+      table.blockId,
+    ),
+  ],
 );
 
 export const books = pgTable('books', {

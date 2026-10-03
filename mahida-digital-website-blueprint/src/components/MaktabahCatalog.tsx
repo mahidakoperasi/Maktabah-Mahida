@@ -3,27 +3,68 @@ import type { Book } from "@/lib/maktabah-store";
 import type { Fan, LibrarySettings } from "@/lib/maktabah-schema";
 import ArabicText from "./ArabicText";
 import EditorialImage from "./EditorialImage";
+import { defaultLibrarySettings } from "@/lib/maktabah-schema";
+import { matchesSearch } from "@/lib/kitab-search-text";
 export function LibrarySearch({
   query = "",
   action = "/maktabah/pencarian",
+  settings = defaultLibrarySettings,
+  advanced = false,
+  fans = [],
+  selectedKind = "all",
+  selectedFan = "",
 }: {
   query?: string;
   action?: string;
+  settings?: LibrarySettings;
+  advanced?: boolean;
+  fans?: Fan[];
+  selectedKind?: string;
+  selectedFan?: string;
 }) {
   return (
     <form action={action} method="get" role="search" className="library-search">
-      <label htmlFor="library-q">Cari judul kitab atau topik</label>
+      <label htmlFor="library-q">{settings.search.label}</label>
       <div>
         <input
           id="library-q"
           type="search"
           name="q"
           defaultValue={query}
-          placeholder="Judul kitab, ringkasan, atau topik…"
+          placeholder={settings.search.placeholder}
           maxLength={200}
         />
-        <button type="submit">Cari Kitab</button>
+        <button type="submit">{settings.search.buttonLabel}</button>
       </div>
+      {!advanced && selectedFan && (
+        <input type="hidden" name="fan" value={selectedFan} />
+      )}
+      {advanced && (
+        <div className="library-search-filters">
+          <label>
+            Jenis hasil
+            <select name="jenis" defaultValue={selectedKind}>
+              <option value="all">Semua</option>
+              <option value="book">Kitab</option>
+              <option value="chapter">Bab</option>
+              <option value="body">Isi</option>
+            </select>
+          </label>
+          <label>
+            Fan
+            <select name="fan" defaultValue={selectedFan}>
+              <option value="">Seluruh fan</option>
+              {fans
+                .filter((f) => f.visible)
+                .map((f) => (
+                  <option key={f.slug} value={f.slug}>
+                    {f.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+        </div>
+      )}
     </form>
   );
 }
@@ -119,16 +160,10 @@ export function FanCards({ fans, books }: { fans: Fan[]; books: Book[] }) {
   );
 }
 export function searchBooks(books: Book[], query: string) {
-  const terms = query
-    .trim()
-    .toLocaleLowerCase("id-ID")
-    .split(/\s+/)
-    .filter(Boolean);
   return books.filter((b) =>
-    terms.every((term) =>
-      `${b.meta.title} ${b.meta.arabicTitle} ${b.meta.summary}`
-        .toLocaleLowerCase("id-ID")
-        .includes(term),
+    matchesSearch(
+      `${b.meta.title} ${b.meta.arabicTitle} ${b.meta.summary}`,
+      query,
     ),
   );
 }

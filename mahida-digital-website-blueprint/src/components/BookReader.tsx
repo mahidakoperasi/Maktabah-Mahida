@@ -1,6 +1,16 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import type { LibrarySettings } from "@/lib/maktabah-schema";
+import { collectFootnotes, type Footnote } from "@/lib/kitab-footnotes";
+import {
+  hitUrl,
+  type SearchHit,
+  type SearchResponse,
+} from "@/lib/kitab-search-text";
+import BookReaderNavigation from "./BookReaderNavigation";
+import KitabFootnoteDialog, { type OpenFootnote } from "./KitabFootnoteDialog";
 import type { Book } from "@/lib/maktabah-store";
 import KitabBlocks from "./KitabBlocks";
 import RichContent from "./RichContent";
@@ -18,11 +28,13 @@ export default function BookReader({
   index,
   protectedContent,
   preview = false,
+  readingSettings,
 }: {
   book: Book;
   index: number;
   protectedContent: boolean;
   preview?: boolean;
+  readingSettings: LibrarySettings["reading"];
 }) {
   const chapter = book.chapters[index];
   const [font, setFont] = useState(20);
@@ -33,15 +45,284 @@ export default function BookReader({
   const dialog = useRef<HTMLDialogElement>(null);
   const tocButton = useRef<HTMLButtonElement>(null);
   const previewQuery = preview ? "?maktabahPreview=1" : "";
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlQuery = (searchParams.get("q") ?? "").slice(0, 200);
+  const resultId = searchParams.get("result") ?? "";
+  const searchHash = searchParams.get("searchHash") ?? "";
+  const [tab, setTab] = useState(urlQuery ? "body" : "toc");
+  const [chapterQuery, setChapterQuery] = useState("");
+  const [query, setQuery] = useState(urlQuery);
+  const [draft, setDraft] = useState(urlQuery);
+  const [searchPaging, setSearchPaging] = useState({ page: 0, key: "" });
+  const searchKey = `${book.id}:${resultId}:${query}`;
+  const searchPage = searchPaging.key === searchKey ? searchPaging.page : 0;
+  const [navigating, startNavigation] = useTransition();
+  const chapterIds = book.chapters.map((c) => c.id).join("\u0000");
+  const [results, setResults] = useState<SearchResponse>({
+    hits: [],
+    total: 0,
+    page: 1,
+    pages: 0,
+  });
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [origin, setOrigin] = useState<ReadingPosition | null>(null);
+  const [noteOpen, setNoteOpen] = useState<OpenFootnote | null>(null);
+  const adjacent = useRef<"first" | "last" | null>(null);
+  const notes = collectFootnotes(book.chapters);
+  const originKey = `mahida-search-origin-${book.id}`;
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setQuery(urlQuery);
+      setDraft(urlQuery);
+      if (urlQuery) setTab("body");
+      setNoteOpen(null);
+      try {
+        const saved = JSON.parse(
+          sessionStorage.getItem(originKey) ?? "null",
+        ) as ReadingPosition | null;
+        setOrigin(
+          saved && chapterIds.split("\u0000").includes(saved.chapter)
+            ? saved
+            : null,
+        );
+      } catch {}
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [urlQuery, originKey, chapterIds]);
+  useEffect(() => {
+    let stopped = false;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setSearchError("");
+      if (!query.trim() || preview || unavailable) {
+        setResults({ hits: [], total: 0, page: 1, pages: 0 });
+        setSearchLoading(false);
+        return;
+      }
+      setSearchLoading(true);
+      try {
+        const params = new URLSearchParams({
+          q: query,
+          kitab: book.slug,
+          page: String(searchPage || 1),
+        });
+        if (!searchPage && resultId) params.set("selected", resultId);
+        const response = await fetch(`/api/maktabah/pencarian?${params}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (!response.ok) throw Error(data.error ?? "Pencarian gagal.");
+        if (stopped) return;
+        setResults(data);
+        if (adjacent.current && data.hits.length) {
+          const hit =
+            adjacent.current === "first"
+              ? data.hits[0]
+              : data.hits[data.hits.length - 1];
+          adjacent.current = null;
+          startNavigation(() =>
+            router.push(hitUrl(hit, query, data.page), { scroll: false }),
+          );
+        }
+      } catch (error) {
+        if (!stopped)
+          setSearchError(
+            error instanceof Error ? error.message : "Pencarian gagal.",
+          );
+      } finally {
+        if (!stopped) setSearchLoading(false);
+      }
+    }, 0);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [
+    query,
+    searchPage,
+    resultId,
+    book.slug,
+    book.contentHash,
+    preview,
+    unavailable,
+    router,
+  ]);
+  const scrollToResult = useCallback((id: string) => {
+    const target = document.getElementById(id);
+    if (!target || !target.closest(".library-reading")) {
+      setMessage("Bagian hasil pencarian berubah. Jalankan pencarian kembali.");
+      return;
+    }
+    const element =
+      id === "legacy-content"
+        ? (target
+            .querySelector("[data-search-match]")
+            ?.closest("p,li,blockquote,td,h2,h3") ?? target)
+        : target;
+    document
+      .querySelectorAll(".library-search-target")
+      .forEach((e) => e.classList.remove("library-search-target"));
+    element.classList.add("library-search-target");
+    element.scrollIntoView({ block: "center", behavior: "instant" });
+  }, []);
+  useEffect(() => {
+    if (!urlQuery || !resultId || query !== urlQuery || unavailable) return;
+    const frame = requestAnimationFrame(() => {
+      if (searchHash && searchHash !== book.contentHash)
+        setMessage(
+          "Isi telah diperbarui sejak pencarian. Periksa hasil pencarian terbaru.",
+        );
+      let target = "";
+      try {
+        target = decodeURIComponent(location.hash.slice(1));
+      } catch {}
+      if (target) scrollToResult(target);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [
+    urlQuery,
+    resultId,
+    query,
+    chapter.id,
+    book.contentHash,
+    searchHash,
+    unavailable,
+    scrollToResult,
+  ]);
+  function rememberOrigin() {
+    if (origin) return;
+    const saved = {
+      chapter: chapter.id,
+      scroll: scrollY,
+      hash: book.contentHash,
+      updated: Date.now(),
+    };
+    setOrigin(saved);
+    try {
+      sessionStorage.setItem(originKey, JSON.stringify(saved));
+    } catch {}
+  }
+  function startSearch() {
+    rememberOrigin();
+    adjacent.current = null;
+    setSearchPaging({ key: "", page: 0 });
+    setQuery(draft.trim());
+  }
+  function selectHit(hit: SearchHit) {
+    rememberOrigin();
+    if (hit.chapterId === chapter.id)
+      requestAnimationFrame(() => scrollToResult(hit.blockId));
+    startNavigation(() =>
+      router.push(hitUrl(hit, query, results.page), { scroll: false }),
+    );
+  }
+  function returnToReading() {
+    if (!origin) return;
+    if (origin.chapter === chapter.id) {
+      history.replaceState(null, "", location.pathname);
+      setQuery("");
+      setDraft("");
+      setTab("toc");
+      document
+        .querySelectorAll(".library-search-target")
+        .forEach((e) => e.classList.remove("library-search-target"));
+      if (origin.hash === book.contentHash)
+        scrollTo({ top: origin.scroll, behavior: "instant" });
+      else
+        setMessage(
+          "Isi kitab diperbarui. Anda kembali ke bab sebelum pencarian.",
+        );
+    } else {
+      try {
+        sessionStorage.setItem(
+          `mahida-reading-return-${book.id}`,
+          JSON.stringify(origin),
+        );
+      } catch {}
+      location.assign(
+        `/maktabah/kitab/${book.slug}/baca/${origin.chapter}?lanjut=1&kembali=1`,
+      );
+    }
+    setOrigin(null);
+    try {
+      sessionStorage.removeItem(originKey);
+    } catch {}
+  }
+  function openNote(note: Footnote, trigger: HTMLAnchorElement) {
+    const rect = trigger.getBoundingClientRect();
+    setNoteOpen({
+      note,
+      trigger,
+      left: Math.max(16, Math.min(innerWidth - 456, rect.left)),
+      top: Math.max(16, Math.min(innerHeight - 350, rect.bottom + 10)),
+    });
+  }
+  function closeNote() {
+    noteOpen?.trigger.focus({ preventScroll: true });
+    setNoteOpen(null);
+  }
+  const selectedResult = results.hits.findIndex((hit) => hit.id === resultId);
+  function moveResult(direction: number) {
+    rememberOrigin();
+    const next = selectedResult < 0 ? 0 : selectedResult + direction;
+    if (next >= 0 && next < results.hits.length)
+      startNavigation(() =>
+        router.push(hitUrl(results.hits[next], query, results.page), {
+          scroll: false,
+        }),
+      );
+    else if (direction > 0 && results.page < results.pages) {
+      adjacent.current = "first";
+      setSearchPaging({ key: searchKey, page: results.page + 1 });
+    } else if (direction < 0 && results.page > 1) {
+      adjacent.current = "last";
+      setSearchPaging({ key: searchKey, page: results.page - 1 });
+    }
+  }
+  const navigationProps = {
+    chapters: book.chapters,
+    index,
+    bookSlug: book.slug,
+    preview,
+    tab,
+    onTab: setTab,
+    chapterQuery,
+    onChapterQuery: setChapterQuery,
+    query,
+    draft,
+    onDraft: setDraft,
+    onSearch: startSearch,
+    results,
+    loading: searchLoading || navigating,
+    error: searchError,
+    unavailable,
+    onPage: (page: number) => {
+      adjacent.current = null;
+      setSearchPaging({ key: searchKey, page });
+    },
+    onSelect: selectHit,
+    onClose: closeToc,
+  };
+
   useEffect(() => {
     const hydration = requestAnimationFrame(() => {
       try {
         const saved = Number(localStorage.getItem("mahida-reading-font"));
         if (saved >= 18 && saved <= 28) setFont(saved);
         if (new URLSearchParams(location.search).get("lanjut") === "1") {
+          const returning =
+            new URLSearchParams(location.search).get("kembali") === "1";
+          const returnKey = `mahida-reading-return-${book.id}`;
           const p = JSON.parse(
-            localStorage.getItem(readingKey(book.id)) ?? "null",
+            (returning
+              ? sessionStorage.getItem(returnKey)
+              : localStorage.getItem(readingKey(book.id))) ?? "null",
           ) as ReadingPosition | null;
+          if (returning) sessionStorage.removeItem(returnKey);
           if (p?.chapter === chapter.id) {
             if (p.hash === book.contentHash)
               requestAnimationFrame(() =>
@@ -145,33 +426,6 @@ export default function BookReader({
       setMessage(`Tautan bab: ${url}`);
     }
   }
-  const toc = (
-    <nav aria-label="Daftar isi kitab">
-      {book.chapters.map((c, i) => (
-        <div key={c.id}>
-          <Link
-            aria-current={i === index ? "page" : undefined}
-            href={`/maktabah/kitab/${book.slug}/baca/${c.id}${previewQuery}`}
-            onClick={closeToc}
-          >
-            {c.title}
-          </Link>
-          {c.blocks
-            .filter((b) => b.kind === "heading" && (b.level ?? 0) > 1)
-            .map((b) => (
-              <Link
-                key={b.id}
-                className={`toc-level-${b.level}`}
-                href={`${i === index ? "" : `/maktabah/kitab/${book.slug}/baca/${c.id}${previewQuery}`}#${b.id}`}
-                onClick={closeToc}
-              >
-                {b.runs?.map((r) => r.text).join("")}
-              </Link>
-            ))}
-        </div>
-      ))}
-    </nav>
-  );
   return (
     <div className="library-container library-reader-container">
       <Link
@@ -244,11 +498,47 @@ export default function BookReader({
           A+
         </button>
         <button onClick={share}>Bagikan Bab</button>
+        {origin && (
+          <button onClick={returnToReading}>Kembali ke posisi baca</button>
+        )}
+        {query && !unavailable && results.total > 0 && (
+          <div
+            className="library-search-controls"
+            aria-label="Navigasi hasil pencarian"
+          >
+            <button
+              disabled={
+                searchLoading ||
+                navigating ||
+                (selectedResult <= 0 && results.page <= 1)
+              }
+              onClick={() => moveResult(-1)}
+            >
+              Hasil sebelumnya
+            </button>
+            <span>
+              {selectedResult >= 0
+                ? `${(results.page - 1) * 12 + selectedResult + 1} / ${results.total}`
+                : `${results.total} hasil`}
+            </span>
+            <button
+              disabled={
+                searchLoading ||
+                navigating ||
+                (selectedResult === results.hits.length - 1 &&
+                  results.page >= results.pages)
+              }
+              onClick={() => moveResult(1)}
+            >
+              Hasil berikutnya
+            </button>
+          </div>
+        )}
       </div>
       <div className="library-reader-grid">
         <aside className="library-desktop-toc">
           <h2>Daftar Isi</h2>
-          {toc}
+          <BookReaderNavigation {...navigationProps} prefix="desktop" />
         </aside>
         <article className="library-reading" style={{ fontSize: font }}>
           {unavailable ? (
@@ -260,9 +550,17 @@ export default function BookReader({
             <>
               <ProtectedReadingClient enabled={protectedContent && !preview}>
                 {chapter.legacy ? (
-                  <RichContent content={chapter.legacy} />
+                  <div id="legacy-content">
+                    <RichContent content={chapter.legacy} query={query} />
+                  </div>
                 ) : (
-                  <KitabBlocks blocks={chapter.blocks} />
+                  <KitabBlocks
+                    blocks={chapter.blocks}
+                    query={query}
+                    footnotes={notes}
+                    onFootnote={openNote}
+                    footnoteFontSize={readingSettings.footnoteFontSize}
+                  />
                 )}
               </ProtectedReadingClient>
               <nav className="library-chapter-nav" aria-label="Navigasi bab">
@@ -298,14 +596,21 @@ export default function BookReader({
         }}
         onClose={() => setTocOpen(false)}
       >
-        <div>
-          <h2 id="mobile-toc-title">Daftar Isi</h2>
+        <div className="library-dialog-heading">
+          <h2 id="mobile-toc-title">Daftar Isi & Pencarian</h2>
           <button onClick={closeToc} aria-label="Tutup daftar isi">
             ×
           </button>
         </div>
-        {toc}
+        <BookReaderNavigation {...navigationProps} prefix="mobile" />
       </dialog>
+      <KitabFootnoteDialog
+        open={unavailable ? null : noteOpen}
+        onClose={closeNote}
+        fontSize={readingSettings.footnoteFontSize}
+        protectedContent={protectedContent && !preview}
+        query={query}
+      />
     </div>
   );
 }

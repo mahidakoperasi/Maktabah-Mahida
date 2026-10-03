@@ -44,6 +44,72 @@ export default function MaktabahAppearanceFields({
   return (
     <>
       <fieldset className="rounded border bg-white p-4 space-y-4">
+        <legend className="font-bold text-xl">Pencarian & catatan kaki</legend>
+        <div className="admin-library-fields">
+          {(
+            [
+              ["label", "Label pencarian"],
+              ["placeholder", "Petunjuk kolom pencarian"],
+              ["buttonLabel", "Teks tombol pencarian"],
+              ["resultsTitle", "Judul halaman hasil"],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="admin-library-field">
+              {label}
+              <input
+                maxLength={200}
+                value={value.search[key]}
+                onChange={(e) =>
+                  onChange({
+                    ...value,
+                    search: { ...value.search, [key]: e.target.value },
+                  })
+                }
+              />
+            </label>
+          ))}
+          <label className="admin-library-field">
+            Ukuran huruf catatan kaki (14–24 px)
+            <input
+              type="number"
+              min={14}
+              max={24}
+              value={value.reading.footnoteFontSize}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  reading: {
+                    ...value.reading,
+                    footnoteFontSize: Number(e.target.value),
+                  },
+                })
+              }
+            />
+          </label>
+        </div>
+        <label className="flex items-center gap-2 min-h-11">
+          <input
+            type="checkbox"
+            checked={value.reading.searchFootnotes}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                reading: {
+                  ...value.reading,
+                  searchFootnotes: e.target.checked,
+                },
+              })
+            }
+          />
+          Sertakan catatan kaki dalam pencarian
+        </label>
+        <p className="text-sm">
+          Tambahkan catatan kaki melalui fitur Catatan kaki di Google Docs, lalu
+          sinkronkan kitab. Nomor dan formatnya mengikuti dokumen sumber.
+          Pengaturan ini berlaku setelah diterbitkan.
+        </p>
+      </fieldset>
+      <fieldset className="rounded border bg-white p-4 space-y-4">
         <legend className="font-bold text-xl">Banner Maktabah</legend>
         <p className="text-sm">
           Banner menggantikan tampilan bagian Nama & pengantar. Posisi dan

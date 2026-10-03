@@ -75,7 +75,7 @@ export default async function Page({
                 ) : (
                   <h2>{section.title}</h2>
                 )}
-                {section.id === "search" && <LibrarySearch />}
+                {section.id === "search" && <LibrarySearch settings={s} />}
                 {section.id === "fans" && (
                   <FanCards fans={fanList} books={books} />
                 )}{" "}

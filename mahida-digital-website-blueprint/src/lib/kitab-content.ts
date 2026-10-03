@@ -6,6 +6,7 @@ export type Run = {
   underline?: boolean;
   href?: string;
   footnote?: string;
+  footnoteNumber?: string;
 };
 export type Block = {
   id: string;
@@ -15,6 +16,7 @@ export type Block = {
   runs?: Run[];
   rows?: Block[][][];
   noteId?: string;
+  noteNumber?: string;
 };
 export type Chapter = {
   id: string;
@@ -37,7 +39,7 @@ type Element = {
           link?: { url?: string };
         };
       };
-      footnoteReference?: { footnoteId?: string };
+      footnoteReference?: { footnoteId?: string; footnoteNumber?: string };
       inlineObjectElement?: unknown;
     }[];
   };
@@ -61,6 +63,8 @@ export function parseDocs(doc: DocsDocument) {
   const chapters: Chapter[] = [];
   const warnings = new Set<string>();
   let serial = 0;
+  let noteSerial = 0;
+  const noteNumbers = new Map<string, string>();
   function read(elements: Element[], tab: DocTab, prefix: string): Block[] {
     return elements.flatMap<Block>((e) => {
       const id = `${prefix}-${e.startIndex ?? ++serial}`;
@@ -91,13 +95,26 @@ export function parseDocs(doc: DocsDocument) {
           );
           return [];
         }
-        if (el.footnoteReference)
+        if (el.footnoteReference?.footnoteId) {
+          const noteId = `${prefix}-${el.footnoteReference.footnoteId}`;
+          if (!noteNumbers.has(noteId)) {
+            noteSerial = Math.max(
+              noteSerial + 1,
+              Number(el.footnoteReference.footnoteNumber) || 0,
+            );
+            noteNumbers.set(
+              noteId,
+              el.footnoteReference.footnoteNumber || String(noteSerial),
+            );
+          }
           return [
             {
               text: "",
-              footnote: `${prefix}-${el.footnoteReference.footnoteId}`,
+              footnote: noteId,
+              footnoteNumber: noteNumbers.get(noteId),
             },
           ];
+        }
         if (!el.textRun) return [];
         const s = el.textRun.textStyle;
         return [
@@ -159,15 +176,21 @@ export function parseDocs(doc: DocsDocument) {
     }
     for (const [noteId, note] of Object.entries(tab.footnotes ?? {})) {
       const id = `${prefix}-${noteId}`;
-      const chapter = chapters.find((c) =>
-        c.blocks.some((b) => JSON.stringify(b).includes(`"footnote":"${id}"`)),
-      );
-      if (chapter)
+      const references = (blocks: Block[]): boolean =>
+        blocks.some(
+          (b) =>
+            b.runs?.some((r) => r.footnote === id) ||
+            b.rows?.some((row) => row.some(references)),
+        );
+      for (const chapter of chapters.filter((c) => references(c.blocks)))
         chapter.blocks.push({
           id,
           kind: "footnote",
           noteId: id,
-          rows: [[read(note.content ?? [], tab, prefix)]],
+          noteNumber: noteNumbers.get(id),
+          rows: [
+            [read(note.content ?? [], tab, `${prefix}-footnote-${noteId}`)],
+          ],
         });
     }
   }
