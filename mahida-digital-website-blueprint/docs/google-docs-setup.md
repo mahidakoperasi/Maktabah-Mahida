@@ -29,14 +29,16 @@ Pastikan Test-Path True, type service_account, dan email sama dengan penerima ak
 
 ```bash
 chmod 755 /opt/mahida-secrets
-chown root:1001 /opt/mahida-secrets/mahida-google-docs.json
-chmod 640 /opt/mahida-secrets/mahida-google-docs.json
+chown 1001:1001 /opt/mahida-secrets/mahida-google-docs.json
+chmod 600 /opt/mahida-secrets/mahida-google-docs.json
 ls -l /opt/mahida-secrets/mahida-google-docs.json
 docker inspect -f '{{.Config.Image}} {{.State.Status}} {{.State.Health.Status}}' mahida-app
 ss -H -ltn 'sport = :3001'
 ```
 
 Harus image mahida:maktabah-6393627, running healthy, dan port 3001 kosong.
+
+Image 6393627 menjalankan aplikasi sebagai UID 1001 tetapi grup utamanya GID 65533 (nogroup). Karena itu root:1001 mode 640 tidak memberi akses kepada aplikasi. Kepemilikan UID 1001 dengan mode 600 memberi izin hanya kepada pengguna aplikasi; file tetap dipasang read-only.
 
 ## Ambil script dari branch GitHub
 
@@ -77,4 +79,4 @@ docker exec mahida-app node -e 'const fs=require("node:fs");const p=process.env.
 
 Buka ulang `/admin/maktabah`; peringatan konfigurasi harus hilang. Pilih Kitab & Terjemahan, buat kitab uji, isi judul/fan/tautan Docs, Simpan, Uji Koneksi, Pratinjau Isi, Terbitkan. Buka pembaca, ubah dokumen, tunggu sekitar dua menit dan periksa waktu sinkronisasi serta pemberitahuan pembaca. Jika MAKTABAH_SYNC_ENABLED=false sudah sengaja disetel di env, pemeriksaan otomatis tetap dinonaktifkan; script tidak mengubah pengaturan jeda itu. Jeda per kitab tetap dihormati.
 
-HTTP 403/404 dokumen: periksa akses Viewer, email, ID, API Google Docs, dan pembatasan berbagi akun. Otorisasi gagal: periksa JSON/service account dan waktu VPS. Kunci tidak terbaca: periksa root:1001 dan mode 640. Jika script gagal, lihat log dan periksa kontainer mahida-app sebelum mengulangi. Gambar tertanam Docs belum diimpor; sampul/tampilan dikelola di Mahida.
+HTTP 403/404 dokumen: periksa akses Viewer, email, ID, API Google Docs, dan pembatasan berbagi akun. Otorisasi gagal: periksa JSON/service account dan waktu VPS. Kunci tidak terbaca: periksa pemilik UID 1001 dan mode 600. Jika script gagal, lihat log dan periksa kontainer mahida-app sebelum mengulangi. Gambar tertanam Docs belum diimpor; sampul/tampilan dikelola di Mahida.

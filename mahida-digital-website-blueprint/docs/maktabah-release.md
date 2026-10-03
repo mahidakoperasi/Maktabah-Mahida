@@ -64,8 +64,8 @@ Kitab lama dan Maktabah tetap berjalan tanpa identitas Google. Untuk menghubungk
 ```bash
 mkdir -p /opt/mahida-secrets
 chmod 755 /opt/mahida-secrets
-chown root:1001 /opt/mahida-secrets/mahida-google-docs.json
-chmod 640 /opt/mahida-secrets/mahida-google-docs.json
+chown 1001:1001 /opt/mahida-secrets/mahida-google-docs.json
+chmod 600 /opt/mahida-secrets/mahida-google-docs.json
 nano /opt/Maktabah-Mahida/mahida-digital-website-blueprint/.env.production
 ```
 
