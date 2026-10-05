@@ -1027,6 +1027,84 @@ test("footer follows visible Mahida contacts and a failed local banner image kee
   }
 });
 
+test("Google Docs soft line breaks keep Arabic and translations as separate reader blocks", () => {
+  const parsed = parseDocs({
+    tabs: [
+      {
+        tabProperties: { tabId: "t.0", title: "Tab 1" },
+        documentTab: {
+          body: {
+            content: [
+              {
+                startIndex: 1,
+                paragraph: {
+                  paragraphStyle: {
+                    namedStyleType: "HEADING_1",
+                    alignment: "CENTER",
+                  },
+                  elements: [
+                    {
+                      textRun: {
+                        content:
+                          "﴾مَجْمُوْعَةُ أَنْظَامِ أَلَالَا مَعَ التَّرْجَمَةِ﴿\n",
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                startIndex: 100,
+                paragraph: {
+                  paragraphStyle: {
+                    namedStyleType: "NORMAL_TEXT",
+                    alignment: "CENTER",
+                  },
+                  elements: [
+                    {
+                      textRun: {
+                        content:
+                          "اَلاَ لاَتَنَالُ الْعِلْمَ اِلاَّ بِسِتَّةٍ\u000bElingo dak kasil ilmu anging nem perkara\u000bIngat, kalian tidak akan mendapatkan ilmu kecuali dengan enam perkara\n",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      },
+    ],
+  } as DocsDocument);
+  expect(parsed.chapters).toHaveLength(1);
+  expect(parsed.chapters[0].blocks).toHaveLength(4);
+  expect(parsed.chapters[0].blocks[0]).toMatchObject({
+    kind: "heading",
+    align: "center",
+    dir: "rtl",
+  });
+  expect(parsed.chapters[0].blocks.slice(1).map((block) => ({
+    text: block.runs?.map((run) => run.text).join(""),
+    align: block.align,
+    dir: block.dir,
+  }))).toEqual([
+    {
+      text: "اَلاَ لاَتَنَالُ الْعِلْمَ اِلاَّ بِسِتَّةٍ",
+      align: "center",
+      dir: "rtl",
+    },
+    {
+      text: "Elingo dak kasil ilmu anging nem perkara",
+      align: "center",
+      dir: "ltr",
+    },
+    {
+      text: "Ingat, kalian tidak akan mendapatkan ilmu kecuali dengan enam perkara",
+      align: "center",
+      dir: "ltr",
+    },
+  ]);
+});
+
 test("search normalization preserves displayed Arabic and SQL matches prefix queries", async () => {
   const { normalizeSearch, matchRanges, searchTerms } =
     await import("../src/lib/kitab-search-text");
