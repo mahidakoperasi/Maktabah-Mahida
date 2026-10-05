@@ -657,6 +657,38 @@
 .kitab-blocks > .kitab-list {
   margin: 1.3rem 0;
 }
+
+.kitab-blocks .kitab-rtl {
+  direction: rtl;
+  unicode-bidi: isolate;
+  font-family: var(--font-arabic);
+}
+
+.kitab-blocks .kitab-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.kitab-blocks .kitab-align-center {
+  text-align: center;
+}
+
+.kitab-blocks .kitab-align-right {
+  text-align: right;
+}
+
+.kitab-blocks .kitab-align-left {
+  text-align: left;
+}
+
+.kitab-blocks .kitab-align-justify {
+  text-align: justify;
+}
+
+.kitab-blocks p.kitab-rtl {
+  font-size: 1.08em;
+  line-height: 2;
+}
 .kitab-blocks h2,
 .kitab-blocks h3,
 .kitab-blocks h4 {
