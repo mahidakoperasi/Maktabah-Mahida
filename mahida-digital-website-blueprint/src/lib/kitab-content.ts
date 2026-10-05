@@ -17,6 +17,8 @@ export type Block = {
   rows?: Block[][][];
   noteId?: string;
   noteNumber?: string;
+  align?: "left" | "center" | "right" | "justify";
+  dir?: "ltr" | "rtl";
 };
 export type Chapter = {
   id: string;
@@ -27,7 +29,12 @@ export type Chapter = {
 type Element = {
   startIndex?: number;
   paragraph?: {
-    paragraphStyle?: { namedStyleType?: string; headingId?: string };
+    paragraphStyle?: {
+      namedStyleType?: string;
+      headingId?: string;
+      alignment?: string;
+      direction?: string;
+    };
     bullet?: { listId?: string; nestingLevel?: number };
     elements?: {
       textRun?: {
@@ -59,6 +66,46 @@ type Tab = {
   childTabs?: Tab[];
 };
 export type DocsDocument = DocTab & { title?: string; tabs?: Tab[] };
+
+const ARABIC_SCRIPT =
+  /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+const LATIN_SCRIPT = /[A-Za-zÀ-ÖØ-öø-ÿ]/g;
+
+function blockDirection(runs: Run[]): "ltr" | "rtl" {
+  const text = runs.map((run) => run.text).join("");
+  const arabic = text.match(ARABIC_SCRIPT)?.length ?? 0;
+  const latin = text.match(LATIN_SCRIPT)?.length ?? 0;
+  return arabic > 0 && arabic >= latin ? "rtl" : "ltr";
+}
+
+function blockAlignment(
+  value?: string,
+): Block["align"] | undefined {
+  if (value === "CENTER") return "center";
+  if (value === "END" || value === "RIGHT") return "right";
+  if (value === "JUSTIFIED") return "justify";
+  if (value === "START" || value === "LEFT") return "left";
+  return undefined;
+}
+
+function splitSoftLines(runs: Run[]) {
+  const lines: Run[][] = [[]];
+  for (const run of runs) {
+    if (run.footnote) {
+      lines[lines.length - 1].push(run);
+      continue;
+    }
+    const parts = run.text.replace(/\r/g, "").split("\u000b");
+    parts.forEach((part, index) => {
+      if (index > 0) lines.push([]);
+      if (part) lines[lines.length - 1].push({ ...run, text: part });
+    });
+  }
+  return lines.filter((line) =>
+    line.some((run) => run.text.trim() || run.footnote),
+  );
+}
+
 export function parseDocs(doc: DocsDocument) {
   const chapters: Chapter[] = [];
   const warnings = new Set<string>();
@@ -133,23 +180,34 @@ export function parseDocs(doc: DocsDocument) {
         tab.lists?.[p.bullet?.listId ?? ""]?.listProperties?.nestingLevels?.[
           nesting
         ]?.glyphType;
-      return [
-        {
-          id: level
-            ? `${prefix}-${p.paragraphStyle?.headingId ?? e.startIndex ?? ++serial}`
-            : id,
-          kind: level
-            ? ("heading" as const)
-            : p.bullet
-              ? ("list" as const)
-              : ("paragraph" as const),
-          level: level || nesting,
-          runs,
-          ordered: Boolean(
-            glyph && !["GLYPH_TYPE_UNSPECIFIED", "NONE"].includes(glyph),
-          ),
-        },
-      ];
+      const kind = level
+        ? ("heading" as const)
+        : p.bullet
+          ? ("list" as const)
+          : ("paragraph" as const);
+      const baseId = level
+        ? `${prefix}-${p.paragraphStyle?.headingId ?? e.startIndex ?? ++serial}`
+        : id;
+      const align = blockAlignment(p.paragraphStyle?.alignment);
+      const lines =
+        kind === "paragraph" ? splitSoftLines(runs) : [runs];
+      return lines.map((lineRuns, lineIndex) => ({
+        id: lineIndex === 0 ? baseId : `${baseId}-line-${lineIndex + 1}`,
+        kind,
+        level: level || nesting,
+        runs: lineRuns.map((run) => ({
+          ...run,
+          text:
+            kind === "heading"
+              ? run.text.replace(/\u000b+/g, " ")
+              : run.text,
+        })),
+        ordered: Boolean(
+          glyph && !["GLYPH_TYPE_UNSPECIFIED", "NONE"].includes(glyph),
+        ),
+        align,
+        dir: blockDirection(lineRuns),
+      }));
     });
   }
   function add(tab: DocTab, prefix: string, title: string) {
