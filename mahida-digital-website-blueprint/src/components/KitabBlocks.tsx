@@ -34,6 +34,15 @@ export default function KitabBlocks({
     idPrefix,
     footnoteFontSize,
   };
+  function blockClass(block: Block) {
+    return [
+      block.dir === "rtl" ? "kitab-rtl" : "kitab-ltr",
+      block.align ? `kitab-align-${block.align}` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
   function runs(values: Run[] = [], block: Block) {
     return values.map((run, i) => {
       if (run.footnote) {
@@ -106,7 +115,12 @@ export default function KitabBlocks({
           const Heading =
             block.level === 1 ? "h2" : block.level === 2 ? "h3" : "h4";
           return (
-            <Heading key={block.id} id={`${idPrefix}${block.id}`} dir="auto">
+            <Heading
+              key={block.id}
+              id={`${idPrefix}${block.id}`}
+              dir={block.dir ?? "auto"}
+              className={blockClass(block)}
+            >
               {runs(block.runs, block)}
             </Heading>
           );
@@ -124,9 +138,9 @@ export default function KitabBlocks({
           return (
             <List
               key={block.id}
-              className="kitab-list"
+              className={`kitab-list ${blockClass(block)}`}
               data-level={block.level}
-              dir="auto"
+              dir={block.dir ?? "auto"}
             >
               {items.map((item) => (
                 <li key={item.id} id={`${idPrefix}${item.id}`}>
@@ -137,7 +151,12 @@ export default function KitabBlocks({
           );
         }
         return (
-          <p key={block.id} id={`${idPrefix}${block.id}`} dir="auto">
+          <p
+            key={block.id}
+            id={`${idPrefix}${block.id}`}
+            dir={block.dir ?? "auto"}
+            className={blockClass(block)}
+          >
             {runs(block.runs, block)}
           </p>
         );
