@@ -168,6 +168,8 @@ export default function VisualGrid({
       {clips.map((clip) => (
         <figure
           key={clip.id}
+          data-motion="reveal"
+          data-motion-media
           data-clip-id={clip.id}
           className={
             carousel

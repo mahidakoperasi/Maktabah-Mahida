@@ -115,7 +115,7 @@ export default async function HomePage() {
               <Link
                 href={settings.heroPrimaryHref || '/tentang/pendaftaran'}
                 data-analytics-action="hero-primary"
-                className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#e4c72f] px-6 py-3 text-sm font-bold text-[#123d2b] transition hover:bg-[#f3da60]"
+                className="motion-button inline-flex min-h-12 items-center justify-center gap-2 bg-[#e4c72f] px-6 py-3 text-sm font-bold text-[#123d2b] transition hover:bg-[#f3da60]"
               >
                 {settings.heroPrimaryLabel}{' '}
                 <ArrowUpRight size={18} aria-hidden />
@@ -125,7 +125,7 @@ export default async function HomePage() {
               <Link
                 href={settings.heroSecondaryHref || '/tentang/profil'}
                 data-analytics-action="hero-secondary"
-                className="inline-flex min-h-12 items-center justify-center gap-2 border border-white/70 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+                className="motion-button inline-flex min-h-12 items-center justify-center gap-2 border border-white/70 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
               >
                 {settings.heroSecondaryLabel}{' '}
                 <ArrowUpRight size={18} aria-hidden />
@@ -141,7 +141,7 @@ export default async function HomePage() {
           className="bg-[#f2f4ed] py-16 md:py-24 lg:py-28"
         >
           <div className="mx-auto max-w-[1440px] px-5 md:px-8 lg:px-12">
-            <div className="mb-9 lg:mb-12">
+            <div data-motion="reveal" className="mb-9 lg:mb-12">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-rich">
                 {settings.newsEyebrow}
               </p>
@@ -157,8 +157,9 @@ export default async function HomePage() {
                 {articles.map((article, index) => (
                   <Link
                     key={article.id}
+                    data-motion="reveal"
                     href={article.href}
-                    className={`group border border-mahida-200 bg-white transition hover:shadow-lg ${index === 0 ? 'md:col-span-2 lg:col-span-2 lg:row-span-2' : 'lg:col-span-2'}`}
+                    className={`motion-card group overflow-hidden border border-mahida-200 bg-white transition hover:shadow-lg ${index === 0 ? 'md:col-span-2 lg:col-span-2 lg:row-span-2' : 'lg:col-span-2'}`}
                   >
                     <EditorialImage
                       hideFallback
@@ -205,7 +206,7 @@ export default async function HomePage() {
           className="bg-[#fffef9] py-16 md:py-24 lg:py-28"
         >
           <div className="mx-auto max-w-[1440px] px-5 md:px-8 lg:px-12">
-            <div className="mb-9 grid gap-4 md:grid-cols-[1fr_1fr] md:items-end lg:mb-12">
+            <div data-motion="reveal" className="mb-9 grid gap-4 md:grid-cols-[1fr_1fr] md:items-end lg:mb-12">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-rich">
                   {settings.unitsEyebrow}
@@ -225,8 +226,9 @@ export default async function HomePage() {
               {units.map((unit, index) => (
                 <Link
                   key={unit.id}
+                  data-motion="reveal"
                   href={unit.path}
-                  className={`group flex min-h-[245px] flex-col justify-between border border-mahida-200 bg-[#f1f5ef] p-6 transition hover:-translate-y-1 hover:border-emerald-forest hover:shadow-lg md:min-h-[300px] lg:min-h-[350px] ${index === 0 || index === units.length - 1 ? 'lg:col-span-3' : 'lg:col-span-2'}`}
+                  className={`motion-card group flex min-h-[245px] flex-col justify-between border border-mahida-200 bg-[#f1f5ef] p-6 transition hover:-translate-y-1 hover:border-emerald-forest hover:shadow-lg md:min-h-[300px] lg:min-h-[350px] ${index === 0 || index === units.length - 1 ? 'lg:col-span-3' : 'lg:col-span-2'}`}
                 >
                   <span className="flex items-start justify-between text-xs font-bold tracking-widest text-emerald-rich">
                     <span>

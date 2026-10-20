@@ -4,6 +4,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { driveThumbnailUrl } from "@/lib/media-links";
 import { promotionHref, type Promotion } from "@/lib/promotion-schema";
+import useMotionDismiss from "./useMotionDismiss";
 export default function PromotionDialog({
   promotion,
   preview = false,
@@ -25,6 +26,7 @@ export default function PromotionDialog({
   }, [onView, onDismiss]);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
+  const { closing, dismiss } = useMotionDismiss(onDismiss);
   const src = driveThumbnailUrl(promotion.posterUrl);
   useEffect(() => {
     const element = dialog.current;
@@ -46,42 +48,35 @@ export default function PromotionDialog({
   const click = () => {
     if (preview) return;
     onClick?.();
-    onDismiss();
+    dismiss();
   };
   return (
     <dialog
       ref={dialog}
       aria-labelledby="promotion-title"
       className="promotion-dialog"
+      data-closing={closing}
       onCancel={(event) => {
         event.preventDefault();
-        onDismiss();
+        dismiss();
       }}
     >
-      <div className="relative">
+      <div className="promotion-layout">
         <button
           type="button"
           aria-label="Tutup promosi"
-          onClick={onDismiss}
-          className="absolute right-3 top-3 z-10 rounded-full border border-mahida-200 bg-white p-2 text-charcoal shadow-sm focus-visible:outline-2 focus-visible:outline-emerald-forest"
+          onClick={dismiss}
+          className="promotion-close"
         >
           <X size={20} />
         </button>
-        <div className="bg-emerald-forest px-6 pb-5 pt-6 pr-16 text-white">
-          <p className="mb-2 text-xs uppercase tracking-widest">
-            {preview ? "Pratinjau Promosi" : "Informasi Mahida"}
-          </p>
-          <h2 id="promotion-title" className="font-serif text-2xl font-bold">
-            {promotion.title || "Judul promosi"}
-          </h2>
-        </div>
-        <div className="p-4 sm:p-6">
+        <div className="promotion-poster">
           {src && !failed ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={src}
               alt={promotion.posterAlt || promotion.title || "Poster promosi"}
-              className="mx-auto max-h-[58svh] w-full object-contain"
+              className="promotion-poster-image"
               onLoad={() => setLoaded(true)}
               onError={() => {
                 setFailed(true);
@@ -97,13 +92,30 @@ export default function PromotionDialog({
               Google Drive.
             </p>
           )}
+        </div>
+        <div className="promotion-content">
+          <div className="promotion-copy">
+            <p className="promotion-eyebrow">
+              {preview ? "Pratinjau Promosi" : "Informasi Mahida"}
+            </p>
+            <h2 id="promotion-title" className="promotion-title">
+              {promotion.title || "Judul promosi"}
+            </h2>
           {promotion.description && (
-            <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-warm-gray-600">
+            <p className="promotion-description">
               {promotion.description}
             </p>
           )}
+          {preview && (
+            <p className="mt-3 break-all text-xs text-warm-gray-500">
+              Tujuan tombol: {promotion.buttonUrl || "Belum diisi"}. Pratinjau
+              tidak menghitung statistik.
+            </p>
+          )}
+          </div>
+          <div className="promotion-actions">
           {preview ? (
-            <button type="button" className="btn-primary mt-5 w-full" disabled>
+            <button type="button" className="btn-primary w-full" disabled>
               {promotion.buttonLabel || "Daftar Sekarang"}
             </button>
           ) : (
@@ -112,7 +124,7 @@ export default function PromotionDialog({
               <Link
                 href={href}
                 onClick={click}
-                className="btn-primary mt-5 w-full"
+                className="btn-primary w-full"
               >
                 {promotion.buttonLabel}
               </Link>
@@ -122,18 +134,13 @@ export default function PromotionDialog({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={click}
-                className="btn-primary mt-5 w-full"
+                className="btn-primary w-full"
               >
                 {promotion.buttonLabel}
               </a>
             ))
           )}
-          {preview && (
-            <p className="mt-3 break-all text-xs text-warm-gray-500">
-              Tujuan tombol: {promotion.buttonUrl || "Belum diisi"}. Pratinjau
-              tidak menghitung statistik.
-            </p>
-          )}
+          </div>
         </div>
       </div>
     </dialog>

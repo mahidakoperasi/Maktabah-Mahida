@@ -12,7 +12,7 @@ export default async function Footer() {
     getHomepageSettings(),
   ]);
   return (
-    <footer className="site-footer bg-[#062d20] text-white">
+    <footer data-motion="fade" className="site-footer bg-[#062d20] text-white">
       <div className="mx-auto max-w-[1450px] px-5 py-14 sm:px-8 lg:px-12">
         <div className="flex items-center gap-3">
           {settings.siteLogoUrl && (

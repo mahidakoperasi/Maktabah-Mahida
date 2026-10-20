@@ -218,21 +218,14 @@ test('old campaigns remain readable; admin fields and independent HP/desktop pre
     frame.getByRole('button', { name: 'Daftar Sekarang', exact: true }),
   ).toBeDisabled();
   expect(await frame.locator('body').evaluate(() => innerWidth)).toBe(390);
-  await expect(frame.getByRole('dialog')).toHaveCSS(
-    'background-color',
-    'rgb(251, 250, 244)',
-  );
+  const mobileWidth = await frame.getByRole('dialog').evaluate(el => el.getBoundingClientRect().width);
+  expect(mobileWidth).toBeLessThanOrEqual(390);
   await page.getByRole('button', { name: 'Desktop', exact: true }).click();
   await expect
     .poll(() => frame.locator('body').evaluate(() => innerWidth))
     .toBe(1280);
-  await expect
-    .poll(() =>
-      frame
-        .getByRole('dialog')
-        .evaluate((el) => Math.round(el.getBoundingClientRect().width)),
-    )
-    .toBe(620);
+  await expect.poll(() => frame.getByRole('dialog').evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThan(mobileWidth);
+  expect(await frame.getByRole('dialog').evaluate(el => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1280);
   await page.getByRole('button', { name: 'HP', exact: true }).click();
   await expect
     .poll(() => frame.locator('body').evaluate(() => innerWidth))

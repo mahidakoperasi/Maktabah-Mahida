@@ -6,6 +6,7 @@ import BrandLogo from './BrandLogo';
 import { usePathname } from 'next/navigation';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import type { PublicMenuItem } from '@/lib/cms';
+import useMotionDismiss from './useMotionDismiss';
 
 function MobileItems({
   items,
@@ -16,7 +17,7 @@ function MobileItems({
 }) {
   const [expanded, setExpanded] = useState<number[]>([]);
   return (
-    <ul className="border-l border-mahida-200 pl-3">
+    <ul className="site-mobile-branch border-l border-mahida-200 pl-3">
       {items.map((item) => (
         <li key={item.id}>
           <div className="flex items-center border-b border-mahida-100">
@@ -41,7 +42,7 @@ function MobileItems({
                   )
                 }
               >
-                <ChevronDown size={17} aria-hidden />
+                <ChevronDown className="nav-chevron" size={17} aria-hidden />
               </button>
             )}
           </div>
@@ -65,6 +66,7 @@ export default function NavbarClient({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { closing, dismiss } = useMotionDismiss(() => setOpen(false));
   const [desktopOpen, setDesktopOpen] = useState<number | null>(null);
   const [childOpen, setChildOpen] = useState<number | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -82,7 +84,7 @@ export default function NavbarClient({
     panel.current?.querySelector<HTMLElement>('a')?.focus();
     const keydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setOpen(false);
+        dismiss();
         trigger.current?.focus();
       }
       if (event.key === 'Tab') {
@@ -124,7 +126,7 @@ export default function NavbarClient({
       window.visualViewport?.removeEventListener('resize', fitPanel);
       wide.removeEventListener('change', resize);
     };
-  }, [open]);
+  }, [open, dismiss]);
 
   return (
     <header
@@ -154,7 +156,7 @@ export default function NavbarClient({
           className="hidden items-center gap-1 lg:flex"
         >
           {items.map((item) => (
-            <div key={item.id} className="group/top relative">
+            <div key={item.id} className="site-nav-item group/top relative">
               <div className="flex items-center">
                 <Link
                   href={item.path}
@@ -163,7 +165,7 @@ export default function NavbarClient({
                     setChildOpen(null);
                   }}
                   aria-current={pathname === item.path ? 'page' : undefined}
-                  className="inline-flex min-h-11 items-center px-3 py-2 text-sm font-bold text-[#183c2d] hover:text-emerald-rich"
+                  className="site-nav-link inline-flex min-h-11 items-center px-3 py-2 text-sm font-bold text-[#183c2d] hover:text-emerald-rich"
                 >
                   {item.label}
                 </Link>
@@ -178,16 +180,17 @@ export default function NavbarClient({
                     }}
                     className="grid h-11 w-7 place-items-center"
                   >
-                    <ChevronDown size={15} aria-hidden />
+                    <ChevronDown className="nav-chevron" size={15} aria-hidden />
                   </button>
                 )}
               </div>
               {item.children.length > 0 && (
                 <div
-                  className={`${desktopOpen === item.id ? 'visible opacity-100' : 'invisible opacity-0'} absolute left-0 top-full w-72 border border-mahida-200 bg-white p-2 shadow-xl transition-opacity group-hover/top:visible group-hover/top:opacity-100 group-focus-within/top:visible group-focus-within/top:opacity-100`}
+                  data-open={desktopOpen === item.id}
+                  className={`${desktopOpen === item.id ? 'visible opacity-100' : 'invisible opacity-0'} site-nav-popover absolute left-0 top-full w-72 border border-mahida-200 bg-white p-2 shadow-xl transition-opacity group-hover/top:visible group-hover/top:opacity-100 group-focus-within/top:visible group-focus-within/top:opacity-100`}
                 >
                   {item.children.map((child) => (
-                    <div key={child.id} className="group/unit relative">
+                    <div key={child.id} className="site-nav-unit group/unit relative">
                       <div className="flex items-center">
                         <Link
                           href={child.path}
@@ -221,7 +224,8 @@ export default function NavbarClient({
                       </div>
                       {child.children.length > 0 && (
                         <div
-                          className={`${childOpen === child.id ? 'visible opacity-100' : 'invisible opacity-0'} absolute right-full top-0 w-80 border border-mahida-200 bg-white p-2 shadow-xl group-hover/unit:visible group-hover/unit:opacity-100 group-focus-within/unit:visible group-focus-within/unit:opacity-100`}
+                          data-open={childOpen === child.id}
+                          className={`${childOpen === child.id ? 'visible opacity-100' : 'invisible opacity-0'} site-nav-subpopover absolute right-full top-0 w-80 border border-mahida-200 bg-white p-2 shadow-xl group-hover/unit:visible group-hover/unit:opacity-100 group-focus-within/unit:visible group-focus-within/unit:opacity-100`}
                         >
                           {child.children.map((unit) => (
                             <Link
@@ -247,7 +251,7 @@ export default function NavbarClient({
           aria-expanded={open}
           aria-controls="mobile-site-menu"
           aria-label={open ? 'Tutup menu' : 'Buka menu'}
-          onClick={() => setOpen((old) => !old)}
+          onClick={() => open ? dismiss() : setOpen(true)}
           className="grid h-11 w-11 place-items-center bg-emerald-forest text-white lg:hidden"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
@@ -259,14 +263,16 @@ export default function NavbarClient({
             type="button"
             tabIndex={-1}
             aria-label="Tutup menu"
-            onClick={() => setOpen(false)}
-            className="absolute inset-x-0 top-full h-[max(0px,calc(100dvh-var(--site-nav-bottom,76px)))] bg-black/50 lg:hidden"
+            onClick={dismiss}
+            data-closing={closing}
+            className="site-menu-backdrop absolute inset-x-0 top-full h-[max(0px,calc(100dvh-var(--site-nav-bottom,76px)))] bg-black/50 lg:hidden"
           />
           <nav
             ref={panel}
             id="mobile-site-menu"
+            data-closing={closing}
             aria-label="Navigasi ponsel"
-            className="absolute inset-x-0 top-full max-h-[max(0px,calc(100dvh-var(--site-nav-bottom,76px)))] overflow-y-auto bg-white px-4 py-3 shadow-xl md:left-auto md:w-[420px] lg:hidden"
+            className="site-mobile-panel absolute inset-x-0 top-full max-h-[max(0px,calc(100dvh-var(--site-nav-bottom,76px)))] overflow-y-auto bg-white px-4 py-3 shadow-xl md:left-auto md:w-[420px] lg:hidden"
           >
             <Link
               href="/"

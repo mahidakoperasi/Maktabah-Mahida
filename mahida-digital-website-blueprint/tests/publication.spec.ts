@@ -449,6 +449,10 @@ test('gallery sidebar stays within content, optional logo scrolls away, mobile d
       await menuTrigger.click();
       const mobileMenu = page.getByRole('navigation', { name: 'Navigasi ponsel' });
       await expect(mobileMenu).toBeVisible();
+      await expect.poll(async () => {
+        const bounds = (await mobileMenu.boundingBox())!;
+        return Math.abs(bounds.y - navigation.y - navigation.height);
+      }).toBeLessThanOrEqual(1);
       const menuBounds = (await mobileMenu.boundingBox())!;
       expect(Math.abs(menuBounds.y - navigation.y - navigation.height)).toBeLessThanOrEqual(1);
       expect(menuBounds.y + menuBounds.height).toBeLessThanOrEqual(851);

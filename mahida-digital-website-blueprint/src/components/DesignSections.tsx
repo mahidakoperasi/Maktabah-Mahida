@@ -55,7 +55,7 @@ export default async function DesignSections({ path }: { path: string }) {
                   ?.layout ?? defaultSectionLayout(path, s.title)
               }
             >
-              <h2 className="flex min-w-0 items-center gap-3 break-words text-2xl font-bold md:text-3xl">
+              <h2 data-motion="reveal" className="flex min-w-0 items-center gap-3 break-words text-2xl font-bold md:text-3xl">
                 {Icon && <Icon aria-hidden size={24} />}
                 <span className="min-w-0 break-words">{s.title}</span>
               </h2>

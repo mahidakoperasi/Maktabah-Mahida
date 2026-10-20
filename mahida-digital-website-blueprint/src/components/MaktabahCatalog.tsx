@@ -82,7 +82,7 @@ export function BookCards({
       className={`library-books library-columns-${settings.columns} library-cards-${settings.cardStyle}`}
     >
       {books.map((book) => (
-        <article key={book.id} className="library-book">
+        <article key={book.id} data-motion="reveal" className="library-book motion-card">
           <Link href={`/maktabah/kitab/${book.slug}`}>
             <div className="library-cover">
               <EditorialImage
@@ -132,7 +132,7 @@ export function FanCards({ fans, books }: { fans: Fan[]; books: Book[] }) {
   return visible.length ? (
     <div className="library-fans">
       {visible.map((f) => (
-        <Link key={f.slug} href={`/maktabah/fan/${f.slug}`}>
+        <Link key={f.slug} data-motion="reveal" className="motion-card overflow-hidden" href={`/maktabah/fan/${f.slug}`}>
           <EditorialImage
             url={f.imageUrl}
             label={f.imageAlt || f.name}
