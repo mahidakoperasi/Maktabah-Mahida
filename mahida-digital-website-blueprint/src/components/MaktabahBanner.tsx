@@ -70,7 +70,7 @@ export default function MaktabahBanner({
       style={style}
       className={`library-section library-banner library-banner-${b.placement} ${src ? "library-banner-with-image" : "library-banner-no-image"}`}
     >
-      <div className="library-banner-copy">
+      <div data-motion="hero" className="library-banner-copy">
         {eyebrow && <p className="library-eyebrow">{eyebrow}</p>}
         <h1 dir="auto">
           <ArabicText text={title} />

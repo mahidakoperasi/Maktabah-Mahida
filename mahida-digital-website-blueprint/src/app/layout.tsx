@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PublicAnalytics from "@/components/PublicAnalytics";
 import PublicPromotion from "@/components/PublicPromotion";
+import PublicMotion from "@/components/PublicMotion";
 import { getHomepageSettings } from "@/lib/homepage-settings";
 import { publicImageUrl } from "@/lib/media-links";
 import PublicSiteChrome from "@/components/PublicSiteChrome";
@@ -55,6 +56,7 @@ export default async function RootLayout({
       </head>
       <body className="bg-cream text-charcoal antialiased min-h-screen flex flex-col">
         <PublicAnalytics />
+        <PublicMotion />
         <PublicPromotion />
         <PublicSiteChrome>
           <PublicationHeader />

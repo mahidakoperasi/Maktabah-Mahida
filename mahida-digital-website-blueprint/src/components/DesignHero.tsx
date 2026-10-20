@@ -48,6 +48,7 @@ export default async function DesignHero({
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#092d21]/35 via-[#0d3528]/25 to-transparent" />
       )}
       <div
+        data-motion="hero"
         className={`relative w-full ${hero ? '[&_h1]:drop-shadow-[0_2px_5px_rgba(0,0,0,0.9)] [&_p]:drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]' : ''}`}
       >
         {children}

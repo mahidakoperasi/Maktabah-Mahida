@@ -4,8 +4,8 @@ import ArticleCover from './ArticleCover';
 export default function SummaryCard({ href, title, excerpt, cover, label }: {
   href: string; title: string; excerpt?: string | null; cover?: string | null; label?: string;
 }) {
-  return <article className="min-w-0 overflow-hidden rounded-xl border border-mahida-200 bg-white shadow-sm">
-    <Link href={href} className="block bg-mahida-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700" aria-label={`Buka ${title}`}>
+  return <article data-motion="reveal" className="motion-card min-w-0 overflow-hidden rounded-xl border border-mahida-200 bg-white shadow-sm">
+    <Link href={href} className="motion-image-frame block overflow-hidden bg-mahida-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700" aria-label={`Buka ${title}`}>
       <ArticleCover url={cover ?? null} />
     </Link>
     <div className="p-5 sm:p-6">

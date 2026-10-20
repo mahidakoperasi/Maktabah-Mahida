@@ -2074,3 +2074,208 @@ body:has([data-admin-shell]) > main {
 }
 /* Keep filter rows compact when the main search form stacks on phones. */
 .library-search > .library-search-filters { flex-direction: row; align-items: flex-start; }
+
+/* One quiet motion language for the public site. Reading, forms and Admin do
+   not opt in. Content is never hidden while waiting for JavaScript. */
+@keyframes mahida-panel-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes mahida-panel-out {
+  to { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes mahida-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes mahida-backdrop-out {
+  to { opacity: 0; }
+}
+@keyframes mahida-promotion-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mahida-promotion-out {
+  to { opacity: 0; transform: translateY(6px) scale(0.99); }
+}
+html[data-public-motion="on"] .site-nav-popover,
+html[data-public-motion="on"] .site-nav-subpopover {
+  transform: translateY(7px);
+  transform-origin: top;
+  transition: opacity 180ms ease, transform 180ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s 180ms;
+}
+html[data-public-motion="on"] :is(.site-nav-item:hover, .site-nav-item:focus-within) > .site-nav-popover,
+html[data-public-motion="on"] :is(.site-nav-unit:hover, .site-nav-unit:focus-within) > .site-nav-subpopover,
+html[data-public-motion="on"] :is(.site-nav-popover, .site-nav-subpopover)[data-open="true"] {
+  transform: translateY(0);
+  transition-delay: 0s;
+}
+.site-nav-link { position: relative; }
+html[data-public-motion="on"] .site-nav-link::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0.75rem;
+  bottom: 5px;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
+}
+html[data-public-motion="on"] .site-nav-link:is(:hover, :focus-visible, [aria-current="page"])::after {
+  transform: scaleX(1);
+}
+html[data-public-motion="on"] .nav-chevron {
+  transition: rotate 180ms ease;
+}
+html[data-public-motion="on"] button[aria-expanded="true"] > .nav-chevron {
+  rotate: 180deg;
+}
+html[data-public-motion="on"] :is(.site-mobile-panel, .site-mobile-branch) {
+  animation: mahida-panel-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+html[data-public-motion="on"] .site-mobile-panel[data-closing="true"] {
+  animation: mahida-panel-out 140ms ease both;
+}
+html[data-public-motion="on"] .site-menu-backdrop {
+  animation: mahida-backdrop-in 180ms ease;
+}
+html[data-public-motion="on"] .site-menu-backdrop[data-closing="true"] {
+  animation: mahida-backdrop-out 140ms ease both;
+}
+html[data-public-motion="on"] :is(.motion-card, .motion-button, .btn-primary, .btn-secondary) {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}
+html[data-public-motion="on"] :is(.motion-card, [data-motion-media]) img {
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-public-motion="on"] :is(.motion-card:hover, [data-motion-media]:hover) img {
+    transform: scale(1.025);
+  }
+  html[data-public-motion="on"] :is(.motion-button, .btn-primary, .btn-secondary):hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* Poster and copy share one viewport; the registration action stays reachable
+   even when Admin supplies the longest supported title and description. */
+.promotion-dialog {
+  width: min(940px, calc(100vw - 32px));
+  max-height: calc(100svh - 32px);
+  overflow: hidden;
+  border: 1px solid #d8e0d8;
+  border-radius: 16px;
+  background: #fffef9;
+  box-shadow: 0 24px 80px #061f2633;
+}
+.promotion-layout {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  height: min(620px, calc(100svh - 32px));
+  min-height: 0;
+}
+.promotion-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #d8e0d8;
+  border-radius: 50%;
+  background: #fffef9;
+  color: #173c31;
+}
+.promotion-close:focus-visible { outline: 2px solid #18583f; outline-offset: 3px; }
+.promotion-poster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 1.25rem;
+  background: #eef2e9;
+}
+.promotion-poster-image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.promotion-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 4.25rem 1.75rem 1.75rem;
+}
+.promotion-copy {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.5rem;
+  scrollbar-gutter: stable;
+}
+.promotion-eyebrow {
+  margin-bottom: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #526558;
+}
+.promotion-title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: clamp(1.35rem, 2.3vw, 1.8rem);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+.promotion-description {
+  margin-top: 1rem;
+  white-space: pre-line;
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: #526558;
+  overflow-wrap: anywhere;
+}
+.promotion-actions {
+  flex-shrink: 0;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid #dce3d8;
+}
+.promotion-actions .btn-primary {
+  font-family: var(--font-sans);
+  min-height: 48px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+@media (max-width: 767px) {
+  .promotion-dialog { width: min(520px, calc(100vw - 24px)); max-height: calc(100svh - 24px); }
+  .promotion-layout { display: flex; flex-direction: column; height: min(740px, calc(100svh - 24px)); }
+  .promotion-poster { flex: 0 0 min(32svh, 250px); padding: 0.75rem; }
+  .promotion-content { flex: 1; padding: 1.1rem; }
+  .promotion-title { font-size: 1.3rem; }
+  .promotion-description { margin-top: 0.65rem; }
+  .promotion-actions { margin-top: 0.75rem; padding-top: 0.75rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .promotion-dialog[open] { animation: mahida-promotion-in 240ms cubic-bezier(0.22, 1, 0.36, 1); }
+  .promotion-dialog[open]::backdrop { animation: mahida-backdrop-in 180ms ease; }
+  .promotion-dialog[open][data-closing="true"] { animation: mahida-promotion-out 140ms ease both; }
+  .promotion-dialog[open][data-closing="true"]::backdrop { animation: mahida-backdrop-out 140ms ease both; }
+}

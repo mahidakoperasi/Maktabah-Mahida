@@ -73,7 +73,7 @@ export default async function Page({
                     </div>
                   </>
                 ) : (
-                  <h2>{section.title}</h2>
+                  <h2 data-motion="reveal">{section.title}</h2>
                 )}
                 {section.id === "search" && <LibrarySearch settings={s} />}
                 {section.id === "fans" && (
