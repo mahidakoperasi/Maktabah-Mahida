@@ -177,8 +177,11 @@ export default function KitabBlocks({
                 className="kitab-footnote"
               >
                 <div className="kitab-footnote-heading">
-                  <span>
-                    Catatan kaki {note?.number || block.noteNumber || "?"}
+                  <span
+                    className="kitab-footnote-number"
+                    aria-label={`Catatan kaki ${note?.number || block.noteNumber || "?"}`}
+                  >
+                    {note?.number || block.noteNumber || "?"}.
                   </span>
                   {localNotes[block.id]?.references[0] && (
                     <a
