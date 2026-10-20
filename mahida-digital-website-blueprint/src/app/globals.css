@@ -646,7 +646,7 @@
   background: #fffdf7;
   padding: 2rem 2.4rem;
   border: 1px solid #bd9b5426;
-  line-height: 1.95;
+  line-height: 1.85;
   font-family: Lora, Georgia, serif;
 }
 .library-reading .reading-text {
@@ -655,7 +655,14 @@
 }
 .kitab-blocks > p,
 .kitab-blocks > .kitab-list {
-  margin: 1.3rem 0;
+  margin: 1rem 0;
+}
+
+/* Amiri has a smaller visual body than the Latin reading face. Keep its
+   inline size proportional to the reader controls without expanding each line. */
+.kitab-blocks .arabic-inline {
+  font-size: 1.18em;
+  line-height: 1;
 }
 
 .kitab-blocks .kitab-rtl {
@@ -688,6 +695,9 @@
 .kitab-blocks p.kitab-rtl {
   font-size: 1.08em;
   line-height: 2;
+}
+.kitab-blocks .kitab-rtl .arabic-inline {
+  font-size: 1em;
 }
 .kitab-blocks h2,
 .kitab-blocks h3,
@@ -1920,33 +1930,69 @@ body:has([data-admin-shell]) > main {
   text-decoration: underline;
   scroll-margin-top: 100px;
 }
+.kitab-footnote-reference a:focus-visible,
+.kitab-footnote-heading a:focus-visible {
+  outline: 2px solid #18583f;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
 .kitab-footnotes {
-  border-top: 1px solid #bd9a49;
-  margin-top: 2.5rem;
-  padding-top: 1rem;
+  border-top: 1px solid #bd9b5466;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  line-height: 1.75;
 }
 .kitab-footnotes > h2 {
-  font-size: 1.2rem;
+  font-size: 1.05rem;
+  line-height: 1.4;
+  margin: 0 0 0.5rem;
 }
 .kitab-footnotes .kitab-footnote {
   font-size: inherit;
-  padding-block: 1rem;
+  padding-block: 0.85rem;
   margin: 0;
   border-top: 0;
   border-bottom: 1px solid #e4ddce;
   scroll-margin-top: 100px;
 }
+.kitab-footnotes .kitab-footnote:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
 .kitab-footnote-heading {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.85em;
+  gap: 0.25rem 0.75rem;
+  font-size: max(0.8em, 0.8125rem);
   color: #586859;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.5;
+}
+.kitab-footnote-number {
+  flex-shrink: 0;
+  color: #18583f;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .kitab-footnote-heading a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  max-width: 100%;
   text-decoration: underline;
+}
+.kitab-footnote .kitab-blocks > p,
+.kitab-note-dialog .kitab-blocks > p {
+  margin-block: 0.5em;
+}
+.kitab-footnote .kitab-blocks > p:first-child,
+.kitab-note-dialog .kitab-blocks > p:first-child {
+  margin-top: 0;
+}
+.kitab-footnote .kitab-blocks > p:last-child {
+  margin-bottom: 0;
 }
 .kitab-note-dialog {
   position: fixed;
@@ -1961,7 +2007,8 @@ body:has([data-admin-shell]) > main {
   border: 1px solid #bd9a49;
   border-radius: 12px;
   box-shadow: 0 12px 40px #102f3026;
-  line-height: 1.8;
+  line-height: 1.75;
+  font-family: Lora, Georgia, serif;
 }
 .kitab-note-dialog::backdrop {
   background: #173c3126;
@@ -1976,6 +2023,7 @@ body:has([data-admin-shell]) > main {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 0.6rem;
+  z-index: 1;
 }
 .kitab-note-dialog-heading h2 {
   font-size: 1rem;
@@ -1998,6 +2046,9 @@ body:has([data-admin-shell]) > main {
   font-size: 0.9rem;
 }
 @media (max-width: 767px) {
+  .kitab-footnote-heading a {
+    min-height: 44px;
+  }
   .kitab-note-dialog {
     top: auto !important;
     left: 0 !important;

@@ -30,3 +30,13 @@ Pada langkah rilis, jalankan migrasi bersama backup/preview/health yang biasa di
 - Seluruh 89 pengujian regresi lulus pada database uji sementara. Suite mencakup 18 pengujian Maktabah; pemeriksaan Maktabah diulang setelah merapikan jarak filter pencarian HP.
 - Pemeriksaan baru meliputi kesesuaian normalisasi Arab di JavaScript/PostgreSQL, nomor catatan asli, catatan yang dipakai ulang, judul/heading/tabel/isi/catatan, indeks terjemahan lama, paginasi dan pemilihan hasil, draf privat, pembaruan indeks ketika sinkronisasi/arsip/pemblokiran, kembali ke posisi baca, fokus/Esc, catatan panjang, ukuran huruf, serta pengaturan draf/terbit.
 - Tampilan pencarian, sorotan isi, dan kotak/panel catatan kaki diperiksa pada desktop dan HP. Google Docs memakai fixture uji; kredensial dan isi dokumen produksi tidak dipakai.
+
+## Perapian bacaan setelah rilis 1de2789
+
+Teks Arab di tengah paragraf disesuaikan dengan ukuran bacaan dan tidak menambah tinggi baris Indonesia. Paragraf Arab tersendiri mempertahankan ukuran dan arah RTL yang sudah dipakai. Paragraf utama tetap mengikuti perataan dokumen sumber.
+
+Catatan akhir bab memakai nomor ringkas dengan label aksesibel, garis pemisah tipis, jarak antarparagraf yang lebih rapat, serta tautan kembali yang mudah disentuh di HP. Ukuran catatan tetap mengikuti pengaturan admin 14–24 px. Kotak desktop dan panel HP memakai tipografi kitab yang sama. Nomor, ID rujukan, pencarian, dan data Google Docs tidak diubah.
+
+Perubahan tampilan cukup dirilis sebagai aplikasi. Tidak perlu menautkan ulang atau menyinkronkan ulang kitab hanya untuk memperoleh gaya baru.
+
+Verifikasi lokal: TypeScript, build produksi, dan 19 pengujian Maktabah lulus. ESLint tanpa error dengan dua warning yang sudah ada. Pemeriksaan browser pada lebar 320, 390, 768, dan 1440 px memastikan tidak ada overflow horizontal, arah Indonesia/Arab tetap benar, teks Arab campuran membesar secara proporsional, dan catatan panjang tetap berada dalam viewport. Tampilan bacaan serta catatan Arab ditinjau pada desktop dan HP. Pengujian memakai database sementara dan fixture Google Docs, tanpa mengakses VPS.

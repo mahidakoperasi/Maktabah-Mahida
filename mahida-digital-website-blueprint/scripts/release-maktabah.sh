@@ -50,7 +50,7 @@ if [ "$current_revision" = "$EXPECTED" ]; then
   released=1
   exit 0
 fi
-test "$current_revision" = e8091658920408da8f1da2f5b9aabe41bf007be5 || { echo 'Versi produksi berbeda dari dasar Maktabah e809165; rilis dihentikan.' >&2; exit 1; }
+test "$current_revision" = 1de2789366f909ad8407904cd437320ff42927ea || { echo 'Versi produksi berbeda dari dasar Maktabah 1de2789; rilis dihentikan.' >&2; exit 1; }
 docker network inspect "$NETWORK" >/dev/null
 docker_root="$(docker info -f '{{.DockerRootDir}}')"
 available_mb="$(df -Pm "$docker_root" | awk 'NR==2 { print $4 }')"
