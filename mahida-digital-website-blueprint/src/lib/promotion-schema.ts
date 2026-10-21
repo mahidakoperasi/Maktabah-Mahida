@@ -138,6 +138,18 @@ export function activePromotion(value: Promotion | null, now = Date.now()) {
     ? value
     : null;
 }
+// One source of truth for the compact admissions banner: only a published,
+ // active SPMB/PPDB campaign qualifies. General promotions never become SPMB.
+export function spmbBannerPromotion(value: Promotion | null, now = Date.now()) {
+  const promotion = activePromotion(value, now);
+  if (!promotion) return null;
+  return /\b(?:spmb|ppdb)\b|pendaftaran\s+(?:santri|murid|siswa)\s+baru|penerimaan\s+(?:santri|murid|peserta\s+didik)\s+baru/i.test(
+    `${promotion.name} ${promotion.title}`,
+  )
+    ? promotion
+    : null;
+}
+
 export function excludedPromotionPath(path: string) {
   return /^\/(admin|api|masuk|daftar)(\/|$)/.test(path);
 }
