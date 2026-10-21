@@ -3,7 +3,7 @@ import type { BrowserContext } from '@playwright/test';
 import pg from 'pg';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'node:crypto';
-import { activePromotion, emptyPromotion, promotionSchema, promotionHref, type Promotion } from '../src/lib/promotion-schema';
+import { activePromotion, emptyPromotion, promotionSchema, promotionHref, spmbBannerPromotion, type Promotion } from '../src/lib/promotion-schema';
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 let admin: number, editor: number;
 const body = 'Teks Indonesia dengan **بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ** di tengah kalimat. Paragraf panjang untuk menguji perataan isi di semua ukuran layar.\n\nبِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\n\n## Judul isi\n\n[Tautan tetap bekerja](https://example.org)';
@@ -487,4 +487,34 @@ test('routine promotion statistics respect periods, campaign identity and permis
     (await (await context.request.get('/api/admin/analytics?days=7')).json())
       .promotion.counts,
   ).toEqual({ view: 0, close: 0, click: 0 });
+});
+
+test('SPMB banner only accepts a currently active admissions promotion', () => {
+  const now = Date.now();
+  const campaignSpmb = { ...campaign(), title: 'SPMB Mahida 2027/2028' };
+  expect(spmbBannerPromotion(campaignSpmb, now)?.id).toBe(campaignSpmb.id);
+  expect(spmbBannerPromotion({ ...campaignSpmb, title: 'Kegiatan Pesantren', name: '' }, now)).toBeNull();
+  expect(spmbBannerPromotion({ ...campaignSpmb, enabled: false }, now)).toBeNull();
+  expect(spmbBannerPromotion({ ...campaignSpmb, endsAt: new Date(now).toISOString() }, now)).toBeNull();
+  expect(spmbBannerPromotion({ ...campaignSpmb, startsAt: new Date(now + 60_000).toISOString() }, now)).toBeNull();
+  expect(spmbBannerPromotion({ ...campaignSpmb, buttonUrl: '/admin' }, now)).toBeNull();
+});
+
+test('small SPMB banner uses published campaign and disappears when paused', async ({ page }) => {
+  const spmb = { ...campaign(), title: 'SPMB Mahida 2027/2028', buttonLabel: 'Daftar Sekarang' };
+  await configure(spmb);
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/');
+    const banner = page.getByRole('region', { name: 'Informasi SPMB Mahida' });
+    await expect(banner).toBeVisible();
+    await expect(banner.getByRole('link', { name: 'Daftar Sekarang' })).toHaveAttribute('href', '/tentang/pendaftaran');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await configure({ ...spmb, enabled: false });
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Informasi SPMB Mahida' })).toHaveCount(0);
+  await configure({ ...spmb, title: 'Agenda Mahida', name: '' });
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Informasi SPMB Mahida' })).toHaveCount(0);
 });
