@@ -38,7 +38,7 @@ export default function PublicDirectoryLinks({
   ];
 
   return (
-    <div className={footer ? 'mt-10 grid gap-8 border-t border-white/15 pt-8 sm:grid-cols-2' : 'grid gap-10 sm:grid-cols-2'}>
+    <div className={footer ? 'mt-6 grid gap-6 border-t border-white/15 pt-6 sm:grid-cols-2' : 'grid gap-10 sm:grid-cols-2'}>
       {groups.filter((group) => group.entries.length).map((group) => (
         <section key={group.title} aria-label={group.title}>
           <h2 className={footer ? 'mb-4 font-semibold text-[#f0d43b]' : 'mb-4 font-serif text-2xl font-bold text-emerald-forest'}>{group.title}</h2>
