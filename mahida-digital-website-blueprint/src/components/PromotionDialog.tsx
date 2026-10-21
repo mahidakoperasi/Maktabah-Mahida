@@ -70,7 +70,7 @@ export default function PromotionDialog({
         >
           <X size={20} />
         </button>
-        <div className="promotion-poster">
+        <div className="promotion-poster" aria-label="Poster informasi promosi">
           {src && !failed ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -96,7 +96,7 @@ export default function PromotionDialog({
         <div className="promotion-content">
           <div className="promotion-copy">
             <p className="promotion-eyebrow">
-              {preview ? "Pratinjau Promosi" : "Informasi Mahida"}
+              {preview ? "Pratinjau Promosi" : "Pengumuman Mahida"}
             </p>
             <h2 id="promotion-title" className="promotion-title">
               {promotion.title || "Judul promosi"}
@@ -114,6 +114,7 @@ export default function PromotionDialog({
           )}
           </div>
           <div className="promotion-actions">
+          <p className="promotion-action-hint">Informasi resmi dari Mahida</p>
           {preview ? (
             <button type="button" className="btn-primary w-full" disabled>
               {promotion.buttonLabel || "Daftar Sekarang"}
