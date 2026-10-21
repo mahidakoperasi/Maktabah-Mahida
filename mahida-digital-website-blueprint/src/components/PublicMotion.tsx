@@ -46,13 +46,25 @@ export default function PublicMotion() {
           // Hash targets and keyboard focus must settle immediately.
           if (target.contains(document.activeElement) || (target.id && location.hash === `#${target.id}`)) return;
           const element = target as HTMLElement;
-          const fadeOnly = element.dataset.motion === "fade";
+          const variant = element.dataset.motion ?? "reveal";
+          const smallScreen = window.matchMedia("(max-width: 640px)").matches;
+          // Stagger only a few cards; no animation is needed to make content visible.
+          const rawDelay = Number(element.dataset.motionDelay ?? 0);
+          const delay = Number.isFinite(rawDelay) ? Math.max(0, Math.min(180, rawDelay)) : 0;
+          const distance = variant === "hero" ? 18 : variant === "card" ? 14 : variant === "banner" ? 8 : 10;
+          const offset = smallScreen ? Math.min(10, distance) : distance;
+          const fadeOnly = variant === "fade";
+          const scale = variant === "hero" ? " scale(0.99)" : variant === "card" ? " scale(0.995)" : "";
           const animation = element.animate(
             [
-              { opacity: 0.35, transform: fadeOnly ? "none" : "translateY(12px)" },
+              { opacity: fadeOnly ? 0.65 : 0.4, transform: fadeOnly ? "none" : `translateY(${offset}px)${scale}` },
               { opacity: 1, transform: "none" },
             ],
-            { duration: element.dataset.motion === "hero" ? 480 : 380, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+            {
+              duration: variant === "hero" ? 520 : variant === "card" ? 440 : variant === "banner" ? 420 : 380,
+              delay,
+              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+            },
           );
           active.set(target, animation);
           void animation.finished.then(() => active.delete(target), () => active.delete(target));
