@@ -8,6 +8,7 @@ import { getHomepageSettings } from '@/lib/homepage-settings';
 import { karyaPostPath } from '@/lib/karya-post';
 import EditorialImage from '@/components/EditorialImage';
 import DesignHero from '@/components/DesignHero';
+import SpmbBanner from '@/components/SpmbBanner';
 import DesignSections from '@/components/DesignSections';
 import { getDesign } from '@/lib/design-store';
 
@@ -134,6 +135,8 @@ export default async function HomePage() {
           </div>
         </div>
       </DesignHero>
+
+      <SpmbBanner />
 
       {layout?.showEducation !== false && (
         <section
