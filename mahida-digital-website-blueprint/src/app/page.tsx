@@ -94,13 +94,13 @@ export default async function HomePage() {
         path="/"
         image={settings.heroImageUrl}
         video={settings.heroVideoUrl}
-        className="flex min-h-[590px] items-center md:min-h-[670px] lg:min-h-[760px]"
+        className="flex min-h-[530px] items-center sm:min-h-[560px] md:min-h-[620px] lg:min-h-[680px]"
       >
-        <div className="relative mx-auto w-full max-w-[1440px] px-5 py-20 md:px-8 lg:px-12">
+        <div className="relative mx-auto w-full max-w-[1440px] px-5 py-16 md:px-8 md:py-20 lg:px-12 lg:py-24">
           <p className="mb-5 text-xs font-bold uppercase tracking-[0.2em] text-[#e4c72f]">
             {settings.heroEyebrow}
           </p>
-          <h1 className="max-w-5xl text-4xl font-black leading-[1.08] tracking-[-0.045em] md:text-6xl lg:text-[clamp(4.5rem,7vw,7.5rem)]">
+          <h1 className="max-w-5xl text-4xl font-black leading-[1.08] tracking-[-0.045em] md:text-6xl lg:text-[clamp(4rem,6vw,6.5rem)]">
             {settings.heroTitleLine1}
             <br />
             {settings.heroTitleLine2}
@@ -135,10 +135,62 @@ export default async function HomePage() {
         </div>
       </DesignHero>
 
+      {layout?.showEducation !== false && (
+        <section
+          aria-labelledby="unit-heading"
+          className="bg-[#fffef9] py-14 md:py-20 lg:py-24"
+        >
+          <div className="mx-auto max-w-[1440px] px-5 md:px-8 lg:px-12">
+            <div data-motion="reveal" className="mb-9 grid gap-4 md:grid-cols-[1fr_1fr] md:items-end lg:mb-12">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-rich">
+                  {settings.unitsEyebrow}
+                </p>
+                <h2
+                  id="unit-heading"
+                  className="mt-3 max-w-2xl text-3xl font-black leading-tight tracking-tight text-[#143d2a] md:text-5xl lg:text-6xl"
+                >
+                  {settings.unitsTitle}
+                </h2>
+              </div>
+              <p className="max-w-md text-base leading-7 text-warm-gray-600 md:justify-self-end">
+                {settings.unitsDescription}
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 lg:gap-4">
+              {units.map((unit, index) => (
+                <Link
+                  key={unit.id}
+                  data-motion="reveal"
+                  href={unit.path}
+                  className={`motion-card group flex min-h-[210px] flex-col justify-between border border-mahida-200 bg-[#f1f5ef] p-6 transition hover:-translate-y-1 hover:border-emerald-forest hover:shadow-lg md:min-h-[245px] lg:min-h-[275px] ${units.length === 5 ? (index < 3 ? 'lg:col-span-2' : 'lg:col-span-3') : units.length === 3 || units.length === 6 ? 'lg:col-span-2' : units.length === 1 ? 'lg:col-span-6' : 'lg:col-span-3'}`}
+                >
+                  <span className="flex items-start justify-between text-xs font-bold tracking-widest text-emerald-rich">
+                    <span>
+                      {String(index + 1).padStart(2, '0')} /{' '}
+                      {String(units.length).padStart(2, '0')}
+                    </span>
+                    <ArrowUpRight size={22} aria-hidden />
+                  </span>
+                  <span className="max-w-md text-2xl font-extrabold leading-tight tracking-tight text-[#143d2a] md:text-3xl lg:text-[clamp(1.5rem,2.2vw,2.5rem)]">
+                    {unit.label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+            {units.length === 0 && (
+              <p className="empty-state mt-4">
+                Unit pendidikan akan tampil setelah diterbitkan dan diaktifkan
+                melalui Admin.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
       {layout?.showWorks !== false && (
         <section
           aria-labelledby="news-heading"
-          className="bg-[#f2f4ed] py-16 md:py-24 lg:py-28"
+          className="bg-[#f2f4ed] py-14 md:py-20 lg:py-24"
         >
           <div className="mx-auto max-w-[1440px] px-5 md:px-8 lg:px-12">
             <div data-motion="reveal" className="mb-9 lg:mb-12">
@@ -153,7 +205,7 @@ export default async function HomePage() {
               </h2>
             </div>
             {articles.length ? (
-              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-4">
                 {articles.map((article, index) => (
                   <Link
                     key={article.id}
@@ -167,7 +219,7 @@ export default async function HomePage() {
                       label={`Sampul ${article.title}`}
                       className="aspect-video w-full"
                     />
-                    <div className="p-5 md:p-7">
+                    <div className="p-5 md:p-6">
                       <p className="text-xs font-bold uppercase tracking-widest text-emerald-rich">
                         {article.publishedAt
                           ? new Date(article.publishedAt).toLocaleDateString(
@@ -200,59 +252,7 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-      {layout?.showEducation !== false && (
-        <section
-          aria-labelledby="unit-heading"
-          className="bg-[#fffef9] py-16 md:py-24 lg:py-28"
-        >
-          <div className="mx-auto max-w-[1440px] px-5 md:px-8 lg:px-12">
-            <div data-motion="reveal" className="mb-9 grid gap-4 md:grid-cols-[1fr_1fr] md:items-end lg:mb-12">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-rich">
-                  {settings.unitsEyebrow}
-                </p>
-                <h2
-                  id="unit-heading"
-                  className="mt-3 max-w-2xl text-3xl font-black leading-tight tracking-tight text-[#143d2a] md:text-5xl lg:text-6xl"
-                >
-                  {settings.unitsTitle}
-                </h2>
-              </div>
-              <p className="max-w-md text-base leading-7 text-warm-gray-600 md:justify-self-end">
-                {settings.unitsDescription}
-              </p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-6 lg:gap-4">
-              {units.map((unit, index) => (
-                <Link
-                  key={unit.id}
-                  data-motion="reveal"
-                  href={unit.path}
-                  className={`motion-card group flex min-h-[245px] flex-col justify-between border border-mahida-200 bg-[#f1f5ef] p-6 transition hover:-translate-y-1 hover:border-emerald-forest hover:shadow-lg md:min-h-[300px] lg:min-h-[350px] ${index === 0 || index === units.length - 1 ? 'lg:col-span-3' : 'lg:col-span-2'}`}
-                >
-                  <span className="flex items-start justify-between text-xs font-bold tracking-widest text-emerald-rich">
-                    <span>
-                      {String(index + 1).padStart(2, '0')} /{' '}
-                      {String(units.length).padStart(2, '0')}
-                    </span>
-                    <ArrowUpRight size={22} aria-hidden />
-                  </span>
-                  <span className="max-w-md text-2xl font-extrabold leading-tight tracking-tight text-[#143d2a] md:text-3xl lg:text-[clamp(1.5rem,2.2vw,2.5rem)]">
-                    {unit.label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-            {units.length === 0 && (
-              <p className="empty-state mt-4">
-                Unit pendidikan akan tampil setelah diterbitkan dan diaktifkan
-                melalui Admin.
-              </p>
-            )}
-          </div>
-        </section>
-      )}
-      <div className="mx-auto max-w-[1280px] px-5 pb-12">
+      <div className="mx-auto max-w-[1280px] px-5 pb-10 md:pb-12">
         <DesignSections path="/" />
       </div>
     </>
