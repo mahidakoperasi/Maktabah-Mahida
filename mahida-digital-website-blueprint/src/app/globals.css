@@ -2279,3 +2279,26 @@ html[data-public-motion="on"] :is(.motion-card, [data-motion-media]) img {
   .promotion-dialog[open][data-closing="true"] { animation: mahida-promotion-out 140ms ease both; }
   .promotion-dialog[open][data-closing="true"]::backdrop { animation: mahida-backdrop-out 140ms ease both; }
 }
+
+/* Tahap 2: quiet premium details for the existing promotion dialog. */
+.promotion-dialog {
+  border-color: #d9dfd1;
+  border-radius: 18px;
+  box-shadow: 0 28px 85px #061e1659;
+}
+.promotion-poster { background: linear-gradient(150deg, #eff3e9, #e5ede1); }
+.promotion-close { transition: background-color 160ms ease, border-color 160ms ease; }
+.promotion-close:hover { background: #eaf0e6; border-color: #b9cbbc; }
+.promotion-eyebrow { color: #287450; font-weight: 800; }
+.promotion-actions .btn-primary { border-radius: 8px; }
+.promotion-action-hint {
+  margin-bottom: 0.65rem;
+  color: #58675b;
+  font-size: 0.75rem;
+  text-align: center;
+}
+@media (max-width: 767px) {
+  .promotion-dialog { border-radius: 14px; }
+  .promotion-content { padding: 1rem; }
+  .promotion-close { top: 8px; right: 8px; }
+}
