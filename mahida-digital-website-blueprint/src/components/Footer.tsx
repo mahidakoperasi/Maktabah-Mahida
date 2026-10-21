@@ -15,8 +15,8 @@ export default async function Footer() {
 
   return (
     <footer data-motion="fade" className="site-footer bg-[#062d20] text-white">
-      <div className="mx-auto max-w-[1450px] px-5 py-10 sm:px-8 md:py-12 lg:px-12">
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_2.4fr] lg:gap-12">
+      <div className="mx-auto max-w-[1450px] px-5 py-8 sm:px-8 md:py-10 lg:px-12">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_2.4fr] lg:gap-8">
           <div className="max-w-md">
             <div className="flex items-center gap-3">
               {settings.siteLogoUrl && (
@@ -33,14 +33,14 @@ export default async function Footer() {
                 <p className="text-xs text-white/65">{settings.siteTagline}</p>
               </div>
             </div>
-            <p className="mt-4 text-sm leading-7 text-white/70">
+            <p className="mt-3 text-sm leading-6 text-white/70">
               {settings.footerDescription}
             </p>
           </div>
 
           <nav
             aria-label="Tautan footer"
-            className="grid gap-6 border-t border-white/15 pt-7 sm:grid-cols-2 lg:border-t-0 lg:pt-0 xl:grid-cols-4"
+            className="grid gap-x-5 gap-y-5 border-t border-white/15 pt-5 sm:grid-cols-2 lg:border-t-0 lg:pt-0 xl:grid-cols-4"
           >
             {footerItems.map((item) => (
               <div key={item.id} className="min-w-0">
@@ -72,7 +72,7 @@ export default async function Footer() {
           <PublicDirectoryLinks {...directory} variant="footer" />
         )}
 
-        <p className="mt-8 border-t border-white/15 pt-5 text-xs text-white/55">
+        <p className="mt-6 border-t border-white/15 pt-4 text-xs text-white/55">
           © {new Date().getFullYear()} {settings.siteName}
         </p>
       </div>
