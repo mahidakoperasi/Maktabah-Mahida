@@ -164,7 +164,8 @@ export default async function HomePage() {
               {units.map((unit, index) => (
                 <Link
                   key={unit.id}
-                  data-motion="reveal"
+                  data-motion="card"
+                  data-motion-delay={(index % 3) * 65}
                   href={unit.path}
                   className={`motion-card group flex min-h-[210px] flex-col justify-between border border-mahida-200 bg-[#f1f5ef] p-6 transition hover:-translate-y-1 hover:border-emerald-forest hover:shadow-lg md:min-h-[245px] lg:min-h-[275px] ${units.length === 5 ? (index < 3 ? 'lg:col-span-2' : 'lg:col-span-3') : units.length === 3 || units.length === 6 ? 'lg:col-span-2' : units.length === 1 ? 'lg:col-span-6' : 'lg:col-span-3'}`}
                 >
@@ -212,7 +213,8 @@ export default async function HomePage() {
                 {articles.map((article, index) => (
                   <Link
                     key={article.id}
-                    data-motion="reveal"
+                    data-motion="card"
+                    data-motion-delay={index * 70}
                     href={article.href}
                     className={`motion-card group overflow-hidden border border-mahida-200 bg-white transition hover:shadow-lg ${index === 0 ? 'md:col-span-2 lg:col-span-2 lg:row-span-2' : 'lg:col-span-2'}`}
                   >
