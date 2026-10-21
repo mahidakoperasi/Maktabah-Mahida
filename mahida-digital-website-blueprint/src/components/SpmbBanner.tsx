@@ -16,7 +16,7 @@ export default async function SpmbBanner() {
 
   return (
     <section aria-label="Informasi SPMB Mahida" className="bg-[#103d2d] text-white">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between md:px-8 lg:px-12">
+      <div data-motion="banner" className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between md:px-8 lg:px-12">
         <div className="flex min-w-0 items-start gap-3 sm:items-center">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-[#e4c72f]">
             <Megaphone aria-hidden="true" size={20} />
