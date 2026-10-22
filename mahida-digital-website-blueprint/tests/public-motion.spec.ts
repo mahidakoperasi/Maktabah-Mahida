@@ -107,3 +107,18 @@ test("promotion keeps close and registration visible with long copy on desktop a
     await expect(dialog).toHaveCount(0);
   }
 });
+
+test("homepage stagger is capped and banner/card content remains accessible", async ({ page }) => {
+  await page.goto("/");
+  const cards = page.locator('[data-motion="card"]');
+  await expect(cards.first()).toBeVisible();
+  const delays = await cards.evaluateAll(elements =>
+    elements.map(el => Number((el as HTMLElement).dataset.motionDelay || 0))
+  );
+  expect(delays.every(delay => Number.isFinite(delay) && delay >= 0 && delay <= 180)).toBe(true);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator("html")).toHaveAttribute("data-public-motion", "reduce");
+  await expect(cards.first()).toBeVisible();
+  await page.setViewportSize({width:320,height:568});
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

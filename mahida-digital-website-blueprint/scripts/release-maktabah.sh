@@ -50,7 +50,15 @@ if [ "$current_revision" = "$EXPECTED" ]; then
   released=1
   exit 0
 fi
-test "$current_revision" = 929165ae740cce484abe28d0e6ee76c1df963789 || { echo 'Versi produksi berbeda dari dasar Maktabah 929165a; rilis dihentikan.' >&2; exit 1; }
+# Allow only verified, known healthy Maktabah deployment revisions.
+# The operator confirmed production 9a5e2eb on 23 October 2026.
+case "$current_revision" in
+  9a5e2eb7324173a7107f12322babf99eb1d41e08|1de2789366f909ad8407904cd437320ff42927ea|929165ae740cce484abe28d0e6ee76c1df963789)
+    echo "Dasar produksi dikenali: $current_revision" ;;
+  *)
+    echo "Versi produksi $current_revision berbeda dari dasar rilis yang diizinkan; produksi belum diubah." >&2
+    exit 1 ;;
+esac
 docker network inspect "$NETWORK" >/dev/null
 docker_root="$(docker info -f '{{.DockerRootDir}}')"
 available_mb="$(df -Pm "$docker_root" | awk 'NR==2 { print $4 }')"

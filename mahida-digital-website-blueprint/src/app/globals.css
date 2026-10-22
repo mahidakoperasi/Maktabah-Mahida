@@ -2302,3 +2302,25 @@ html[data-public-motion="on"] :is(.motion-card, [data-motion-media]) img {
   .promotion-content { padding: 1rem; }
   .promotion-close { top: 8px; right: 8px; }
 }
+
+/* Stage 3: tactile, subtle interactions; no layout-shifting or perpetual motion. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html[data-public-motion="on"] .motion-card:hover {
+    box-shadow: 0 16px 34px -24px rgba(10, 49, 33, 0.45);
+  }
+  html[data-public-motion="on"] .motion-card:focus-visible {
+    outline: 3px solid #b89a3d;
+    outline-offset: 3px;
+  }
+  html[data-public-motion="on"] .motion-button:active,
+  html[data-public-motion="on"] .btn-primary:active {
+    transform: translateY(0);
+  }
+}
+html[data-public-motion="on"] .motion-card {
+  transition-duration: 240ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .promotion-close { transition: none; }
+}

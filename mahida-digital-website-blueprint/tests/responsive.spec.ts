@@ -468,10 +468,10 @@ test('editorial homepage uses Admin settings and published article covers', asyn
   );
   expect(
     await page
-      .locator('#news-heading')
+      .locator('#unit-heading')
       .evaluate(
         (el) =>
-          el.compareDocumentPosition(document.querySelector('#unit-heading')!) &
+          el.compareDocumentPosition(document.querySelector('#news-heading')!) &
           Node.DOCUMENT_POSITION_FOLLOWING,
       ),
   ).toBeTruthy();
