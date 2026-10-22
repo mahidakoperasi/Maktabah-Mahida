@@ -50,10 +50,10 @@ if [ "$current_revision" = "$EXPECTED" ]; then
   released=1
   exit 0
 fi
-# Only known healthy Maktabah deployment revisions may be upgraded.
-# The latest confirmed VPS deployment is 1de2789 (9 October 2026).
+# Allow only verified, known healthy Maktabah deployment revisions.
+# The operator confirmed production 9a5e2eb on 23 October 2026.
 case "$current_revision" in
-  1de2789366f909ad8407904cd437320ff42927ea|929165ae740cce484abe28d0e6ee76c1df963789)
+  9a5e2eb7324173a7107f12322babf99eb1d41e08|1de2789366f909ad8407904cd437320ff42927ea|929165ae740cce484abe28d0e6ee76c1df963789)
     echo "Dasar produksi dikenali: $current_revision" ;;
   *)
     echo "Versi produksi $current_revision berbeda dari dasar rilis yang diizinkan; produksi belum diubah." >&2
