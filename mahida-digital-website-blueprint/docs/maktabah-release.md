@@ -1,6 +1,6 @@
 # Rilis Maktabah Mahida
 
-Rilis desain beranda, SPMB, dan animasi publik ini melanjutkan versi produksi Maktabah yang tervalidasi: `mahida:maktabah-1de2789` (atau `929165a` jika memang masih aktif). Pastikan revisi aktual melalui `docker inspect` sebelum menjalankan skrip. Jalankan di VPS sebagai root. Source dan image harus berasal dari commit yang sama. Gunakan artifact baru dari CI commit rilis ini; image yang sudah dipakai pada rilis sebelumnya tidak berisi penyempurnaan terbaru.
+Rilis desain beranda, SPMB, dan animasi publik ini melanjutkan versi produksi Maktabah `mahida:maktabah-9a5e2eb` yang dikonfirmasi sehat pada 23 Oktober 2026. Pastikan revisi aktual melalui `docker inspect` sebelum menjalankan skrip. Jalankan di VPS sebagai root. Source dan image harus berasal dari commit yang sama. Gunakan artifact baru dari CI commit rilis ini; image yang sudah dipakai pada rilis sebelumnya tidak berisi penyempurnaan terbaru.
 
 ## Fitur dan batasan
 
@@ -50,7 +50,7 @@ git -C "$SOURCE_DIR" rev-parse HEAD
 bash -n "$SOURCE_DIR/mahida-digital-website-blueprint/scripts/release-maktabah.sh"
 ```
 
-HEAD harus sama dengan SHA rilis. Produksi harus `running healthy`, dengan label revisi tepat `1de2789366f909ad8407904cd437320ff42927ea` atau `929165ae740cce484abe28d0e6ee76c1df963789`. Jika berbeda, berhenti dan audit terlebih dahulu. Script membutuhkan minimal 2 GB kosong di filesystem Docker; VPS terakhir memiliki sekitar 9,1 GB kosong. Port preview 3001 harus tersedia. Jika terpakai, periksa pemiliknya sebelum tindakan lain.
+HEAD harus sama dengan SHA rilis. Produksi harus `running healthy`, dengan label revisi `9a5e2eb7324173a7107f12322babf99eb1d41e08` (atau dua revisi lama yang juga diizinkan skrip). Jika berbeda, berhenti dan audit terlebih dahulu. Script membutuhkan minimal 2 GB kosong di filesystem Docker; VPS terakhir dilaporkan memiliki 6,4 GB kosong. Port preview 3001 harus tersedia. Jika terpakai, periksa pemiliknya sebelum tindakan lain.
 
 ## 3. Pertahankan Google Docs yang sudah aktif
 
@@ -123,12 +123,12 @@ ROLLBACK_CONTAINER="$(cat /root/mahida-backups/maktabah-rollback-container.txt)"
 docker inspect -f '{{.Name}} {{.Config.Image}} {{.State.Status}}' "$ROLLBACK_CONTAINER"
 ```
 
-Pastikan kontainer rollback yang dipilih adalah kontainer produksi lama yang sehat dan revisinya termasuk dua revisi yang diizinkan oleh skrip, kemudian:
+Pastikan kontainer rollback yang dipilih adalah kontainer produksi lama yang sehat dan revisinya termasuk revisi yang diizinkan oleh skrip, kemudian:
 
 ```bash
 (
   flock -n 9 || exit 1
-  case "$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$ROLLBACK_CONTAINER")" in 1de2789366f909ad8407904cd437320ff42927ea|929165ae740cce484abe28d0e6ee76c1df963789) ;; *) exit 1 ;; esac
+  case "$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$ROLLBACK_CONTAINER")" in 9a5e2eb7324173a7107f12322babf99eb1d41e08|1de2789366f909ad8407904cd437320ff42927ea|929165ae740cce484abe28d0e6ee76c1df963789) ;; *) exit 1 ;; esac
   FAILED_CONTAINER="mahida-app-maktabah-held-$(date +%Y%m%d%H%M%S)"
   docker stop mahida-app || exit 1
   if ! docker rename mahida-app "$FAILED_CONTAINER"; then
